@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "sample-maker",
+    "slug": "sample-maker",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  },
+  "name": "sample-maker"
+}
