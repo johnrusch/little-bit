@@ -21,9 +21,8 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      {/* <Text>Hey</Text> */}
-      <View style={{ borderColor: 'red', borderWidth: 2, flex: 1}}>
-        <FontAwesomeIcon icon={ faMicrophone } style={styles.recordButton} size={ 128 } color={recording ? '#FFA164' : 'black'}/>
+      <View style={{ borderColor: 'red', borderWidth: 2, flex: 1, justifyContent: 'center' }}>
+        <FontAwesomeIcon icon={ faMicrophone } style={styles.recordButton} size={ 150 } color={recording ? '#FFA164' : 'black'}/>
       </View>
       <NavBar />
     </View>
@@ -38,10 +37,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,1)"
   },
   recordButton: {
-    borderColor: "red",
+    borderColor: "blue",
     borderWidth: 1,
     alignSelf: "center",
-    width: "50%",
-    marginBottom: '50%'
+    width: "50%"
   },
 });
