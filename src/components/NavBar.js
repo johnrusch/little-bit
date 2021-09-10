@@ -18,8 +18,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#69FAA0",
     paddingTop: 75,
     paddingLeft: 25,
-    paddingBottom: 25,
-    borderWidth: 1,
-    borderColor: 'blue'
+    paddingBottom: 25
   },
 });

@@ -2,6 +2,10 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import Amplify, { Auth } from 'aws-amplify';
+import awsconfig from './aws-exports';
+Amplify.configure(awsconfig);
+
 import Home from './src/screens/Home';
 
 export default function App() {
