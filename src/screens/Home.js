@@ -47,7 +47,7 @@ const Home = () => {
          Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
       );
       setRecording(recording);
-      console.log('Recording started');
+      console.log('Recording started', recording);
     } catch (err) {
       console.error('Failed to start recording', err);
     }

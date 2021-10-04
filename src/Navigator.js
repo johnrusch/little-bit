@@ -14,11 +14,11 @@ const Navigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Login" component={Login} />
+        {/* <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Signup" component={Signup} options={({navigation}) => ({
             title: '',
             headerStyle: {
-                backgroundColor: '#f9fafd',
+                backgroundColor: '#f9fafd',  
                 shadowColor: '#f9fafd',
                 elevation: 0,
               },
@@ -33,7 +33,7 @@ const Navigator = () => {
                   />
                 </View>
               )
-        })}/>
+        })}/> */}
         <Stack.Screen name="Home" component={Home} />
       </Stack.Navigator>
     </NavigationContainer>
