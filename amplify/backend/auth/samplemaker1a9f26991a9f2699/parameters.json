@@ -1,8 +1,8 @@
 {
-    "identityPoolName": "samplemaker67f1d5e0_identitypool_67f1d5e0",
-    "allowUnauthenticatedIdentities": true,
-    "resourceNameTruncated": "sample67f1d5e0",
-    "userPoolName": "samplemaker67f1d5e0_userpool_67f1d5e0",
+    "identityPoolName": "samplemaker1a9f2699_identitypool_1a9f2699",
+    "allowUnauthenticatedIdentities": false,
+    "resourceNameTruncated": "sample1a9f2699",
+    "userPoolName": "samplemaker1a9f2699_userpool_1a9f2699",
     "autoVerifiedAttributes": [
         "email"
     ],
@@ -20,9 +20,7 @@
     "requiredAttributes": [
         "email"
     ],
-    "aliasAttributes": [
-        "preferred_username"
-    ],
+    "aliasAttributes": [],
     "userpoolClientGenerateSecret": false,
     "userpoolClientRefreshTokenValidity": 30,
     "userpoolClientWriteAttributes": [
@@ -31,10 +29,10 @@
     "userpoolClientReadAttributes": [
         "email"
     ],
-    "userpoolClientLambdaRole": "sample67f1d5e0_userpoolclient_lambda_role",
+    "userpoolClientLambdaRole": "sample1a9f2699_userpoolclient_lambda_role",
     "userpoolClientSetAttributes": false,
-    "sharedId": "67f1d5e0",
-    "resourceName": "samplemaker67f1d5e0",
+    "sharedId": "1a9f2699",
+    "resourceName": "samplemaker1a9f26991a9f2699",
     "authSelections": "identityPoolAndUserPool",
     "authRoleArn": {
         "Fn::GetAtt": [
@@ -48,9 +46,24 @@
             "Arn"
         ]
     },
-    "useDefault": "default",
-    "userPoolGroupList": [],
+    "useDefault": "manual",
+    "thirdPartyAuth": false,
+    "usernameAttributes": [
+        "email"
+    ],
+    "userPoolGroups": true,
+    "adminQueries": false,
+    "triggers": "{}",
+    "hostedUI": false,
+    "userPoolGroupList": [
+        "users"
+    ],
     "serviceName": "Cognito",
     "usernameCaseSensitive": false,
+    "parentStack": {
+        "Ref": "AWS::StackId"
+    },
+    "breakCircularDependency": true,
+    "permissions": [],
     "dependsOn": []
 }

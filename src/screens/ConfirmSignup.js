@@ -16,7 +16,7 @@ import {CommonActions} from '@react-navigation/native';
 
 import { windowHeight, windowWidth } from "../utils/Dimensions";
 
-const ConfirmScreen = (props) => {
+const ConfirmSignup = (props) => {
     const digit1Ref = useRef();
     const digit2Ref = useRef();
     const digit3Ref = useRef();
@@ -190,7 +190,7 @@ const ConfirmScreen = (props) => {
     );
   };
   
-  export default ConfirmScreen;
+  export default ConfirmSignup;
   
   const styles = StyleSheet.create({
     container: {

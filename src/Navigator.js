@@ -7,6 +7,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Login from "./screens/Login";
 import Signup from "./screens/Signup";
 import Home from "./screens/Home";
+import ConfirmSignup from "./screens/ConfirmSignup";
 
 const Stack = createNativeStackNavigator();
 
@@ -14,7 +15,7 @@ const Navigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        {/* <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Signup" component={Signup} options={({navigation}) => ({
             title: '',
             headerStyle: {
@@ -33,7 +34,8 @@ const Navigator = () => {
                   />
                 </View>
               )
-        })}/> */}
+        })}/>
+        <Stack.Screen name="ConfirmSignup" component={ConfirmSignup} />
         <Stack.Screen name="Home" component={Home} />
       </Stack.Navigator>
     </NavigationContainer>
