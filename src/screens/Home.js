@@ -13,26 +13,17 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import { Audio } from 'expo-av';
-
+import { Storage, Auth } from 'aws-amplify';
 import RecordIcon from "../../svgs/RecordIcon";
 import NavBar from "../components/NavBar";
+import * as FileSystem from 'expo-file-system';
 
-const Home = () => {
+const Home = (props) => {
   const [recording, setRecording] = useState();
+  const [userEmail, setUserEmail] = useState();
+  const [userSounds, setUserSounds] = useState([]);
 
-  const getAudioPermission = async () => {
-    try {
-      console.log("Requesting Permission...");
-      await Audio.requestPermissionsAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      }); 
-      console.log("Permission granted!")
-    } catch (err) {
-      console.log("Failed", err)
-    }
-  };
+  const login = props.route.params
 
   const startRecording = async () => {
     try {
@@ -56,14 +47,40 @@ const Home = () => {
   const stopRecording = async () => {
     console.log('Stopping recording...');
     setRecording(undefined);
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI(); 
+    const rec = await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    const resp = await fetch(uri);
+    const blob = await resp.blob();
+    await Storage.put(`${userEmail}/${new Date().toISOString()}.m4a`, blob); 
     console.log('Recording stopped and stored at', uri);
   }
 
+  const getUser = async () => {
+    const user = await Auth.currentAuthenticatedUser();
+    console.log('GETTING USER', user.attributes.email)
+    setUserEmail(user.attributes.email);
+  }
+
+  const listSounds = async (email) => {
+    const files = await Storage.list(`${email}/`);
+    const arr = [];
+    for (const file of files) {
+      const sound = await Storage.get(file.key);
+      console.log(sound);
+      arr.push(file.key);
+    }
+    console.log(arr);
+    setUserSounds(arr);
+  }
+
   useEffect(() => {
-    // getAudioPermission();
+    getUser();
   }, [])
+
+  useEffect(() => {
+    listSounds(userEmail);
+    console.log(userSounds);
+  }, [userEmail])
 
   return (
     <View style={styles.container}>
@@ -73,6 +90,7 @@ const Home = () => {
           justifyContent: "center",
         }}
       >
+        {console.log("LOGIN??", userEmail)}
         <TouchableOpacity onPress={recording ? stopRecording : startRecording}>
           <FontAwesomeIcon
             icon={faMicrophone}

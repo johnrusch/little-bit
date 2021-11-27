@@ -10,6 +10,17 @@ const Login = ({navigation}) => {
     const [username, setUsername] = useState();
     const [password, setPassword] = useState();
 
+    const handleLogin = async (username, password) => {
+      if (username && password) {
+        try {
+          const login = await api.logIn(username, password)
+          navigation.navigate('Home')
+        } catch (error) {
+          alert("Invalid Login:", error.message)
+        }
+      }
+    }
+
     return (
         <View style={styles.container}>
             <Text style={styles.text}>
@@ -30,7 +41,7 @@ const Login = ({navigation}) => {
                 iconType="lock"
                 secureTextEntry={true}
             />
-            <FormButton buttonTitle="Sign In" onPress={() => alert("Sign in pressed!")} />
+            <FormButton buttonTitle="Sign In" onPress={() => handleLogin(username, password)}/>
 
             <TouchableOpacity style={styles.forgotButton} onPress={() => {}}>
                 <Text style={styles.navButtonText}>Forgot Password?</Text>

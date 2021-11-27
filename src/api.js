@@ -4,8 +4,10 @@ const logIn = async (username, password) => {
     try {
         const logIn = await Auth.signIn(username, password);
         console.log(logIn);
+        return logIn;
     } catch (err) {
         console.log(`Error signing in: ${err.message}`, err)
+        return null;
     }
 }
 
