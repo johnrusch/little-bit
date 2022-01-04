@@ -51,14 +51,14 @@ const Home = (props) => {
     const uri = recording.getURI();
     const resp = await fetch(uri);
     const blob = await resp.blob();
-    await Storage.put(`${userEmail}/${new Date().toISOString()}.m4a`, blob); 
+    await Storage.put(`${userEmail}/${new Date().toISOString().replace(/(:|\s+)/g, "-")}.m4a`, blob); 
     console.log('Recording stopped and stored at', uri);
   }
 
   const getUser = async () => {
     const user = await Auth.currentAuthenticatedUser();
     console.log('GETTING USER', user.attributes.email)
-    setUserEmail(user.attributes.email);
+    setUserEmail(user.attributes.email.split('@')[0]);
   }
 
   const listSounds = async (email) => {
