@@ -51,7 +51,7 @@ const Home = (props) => {
     const uri = recording.getURI();
     const resp = await fetch(uri);
     const blob = await resp.blob();
-    await Storage.put(`${userEmail}/${new Date().toISOString().replace(/(:|\s+)/g, "-")}.m4a`, blob); 
+    await Storage.put(`${userEmail}/unprocessed/${new Date().toISOString().replace(/(:|\s+)/g, "-")}.m4a`, blob); 
     console.log('Recording stopped and stored at', uri);
   }
 
@@ -62,14 +62,14 @@ const Home = (props) => {
   }
 
   const listSounds = async (email) => {
-    const files = await Storage.list(`${email}/`);
+    const files = await Storage.list(`/`, {bucket: 'sample-maker-sounds'});
     const arr = [];
-    for (const file of files) {
-      const sound = await Storage.get(file.key);
-      console.log(sound);
-      arr.push(file.key);
-    }
-    console.log(arr);
+    // for (const file of files) {
+    //   const sound = await Storage.get(file.key);
+    //   console.log(sound)
+    //   arr.push(file.key);
+    // }
+    console.log(arr, 'ARr');
     setUserSounds(arr);
   }
 
@@ -79,7 +79,7 @@ const Home = (props) => {
 
   useEffect(() => {
     listSounds(userEmail);
-    console.log(userSounds);
+    console.log(userSounds, 'SOUNDS');
   }, [userEmail])
 
   return (
