@@ -1,14 +1,16 @@
 {
+  "version": "1",
+  "cognitoConfig": {
     "identityPoolName": "samplemaker1a9f2699_identitypool_1a9f2699",
-    "allowUnauthenticatedIdentities": false,
+    "allowUnauthenticatedIdentities": true,
     "resourceNameTruncated": "sample1a9f2699",
     "userPoolName": "samplemaker1a9f2699_userpool_1a9f2699",
     "autoVerifiedAttributes": [
-        "email"
+      "email"
     ],
     "mfaConfiguration": "OFF",
     "mfaTypes": [
-        "SMS Text Message"
+      "SMS Text Message"
     ],
     "smsAuthenticationMessage": "Your authentication code is {####}",
     "smsVerificationMessage": "Your verification code is {####}",
@@ -18,52 +20,50 @@
     "passwordPolicyMinLength": 8,
     "passwordPolicyCharacters": [],
     "requiredAttributes": [
-        "email"
+      "email"
     ],
     "aliasAttributes": [],
     "userpoolClientGenerateSecret": false,
     "userpoolClientRefreshTokenValidity": 30,
     "userpoolClientWriteAttributes": [
-        "email"
+      "email"
     ],
     "userpoolClientReadAttributes": [
-        "email"
+      "email"
     ],
     "userpoolClientLambdaRole": "sample1a9f2699_userpoolclient_lambda_role",
     "userpoolClientSetAttributes": false,
-    "sharedId": "1a9f2699",
-    "resourceName": "samplemaker1a9f26991a9f2699",
     "authSelections": "identityPoolAndUserPool",
-    "authRoleArn": {
-        "Fn::GetAtt": [
-            "AuthRole",
-            "Arn"
-        ]
-    },
-    "unauthRoleArn": {
-        "Fn::GetAtt": [
-            "UnauthRole",
-            "Arn"
-        ]
-    },
+    "resourceName": "samplemaker1a9f26991a9f2699",
+    "serviceName": "Cognito",
     "useDefault": "manual",
-    "thirdPartyAuth": false,
-    "usernameAttributes": [
-        "email"
+    "sharedId": "1a9f2699",
+    "userPoolGroupList": [
+      "users"
     ],
     "userPoolGroups": true,
-    "adminQueries": false,
-    "triggers": "{}",
-    "hostedUI": false,
-    "userPoolGroupList": [
-        "users"
+    "usernameAttributes": [
+      "email"
     ],
-    "serviceName": "Cognito",
     "usernameCaseSensitive": false,
-    "parentStack": {
-        "Ref": "AWS::StackId"
+    "adminQueries": false,
+    "hostedUI": false,
+    "thirdPartyAuth": false,
+    "triggers": {},
+    "authRoleArn": {
+      "Fn::GetAtt": [
+        "AuthRole",
+        "Arn"
+      ]
+    },
+    "unauthRoleArn": {
+      "Fn::GetAtt": [
+        "UnauthRole",
+        "Arn"
+      ]
     },
     "breakCircularDependency": true,
-    "permissions": [],
+    "useEnabledMfas": false,
     "dependsOn": []
+  }
 }

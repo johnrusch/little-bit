@@ -62,11 +62,11 @@
 			"Default" : "DISALLOW"		},
 		"AuthenticatedAllowList": {
 			"Type": "String",
-			"Default" : "DISALLOW"
+			"Default" : "NONE"
 		},
 		"GuestAllowList": {
 			"Type": "String",
-			"Default" : "DISALLOW"
+			"Default" : "NONE"
 		},
 		"selectedGuestPermissions": {
 			"Type": "CommaDelimitedList",
@@ -467,6 +467,7 @@
 							"Condition": {
 								"StringLike": {
 									"s3:prefix": [
+										"*",
 										"public/",
 										"public/*",
 										"protected/",
@@ -628,6 +629,7 @@
 							"Condition": {
 								"StringLike": {
 									"s3:prefix": [
+										"*",
 										"public/",
 										"public/*",
 										"protected/",
