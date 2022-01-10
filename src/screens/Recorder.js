@@ -51,6 +51,7 @@ const Recorder = (props) => {
     setRecording(undefined);
     const rec = await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
+    console.log(uri.split('.').slice(-1)[0]);
     const resp = await fetch(uri);
     const blob = await resp.blob();
     await Storage.put(
