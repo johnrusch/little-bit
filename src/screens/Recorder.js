@@ -25,6 +25,8 @@ const Recorder = (props) => {
 
   const userData = useContext(UserContext);
 
+  console.log(userData.user)
+
   const startRecording = async () => {
     try {
       console.log("Requesting permissions..");
@@ -52,7 +54,7 @@ const Recorder = (props) => {
     const resp = await fetch(uri);
     const blob = await resp.blob();
     await Storage.put(
-      `${userEmail}/${new Date().toISOString().replace(/(:|\s+)/g, "-")}.m4a`,
+      `${userData.user}/${new Date().toISOString().replace(/(:|\s+)/g, "-")}.m4a`,
       blob
     );
     console.log("Recording stopped and stored at", uri);
