@@ -51,28 +51,31 @@ const getSounds = async (email) => {
         protected: "",
         private: "",
       },
-    //   level: "public",
+      level: "public",
       cacheControl: 'no-cache'
     });
     const sounds = [];
     for (const file of files) {
-      const soundURL = await Storage.get(file.key, {bucket: 'sample-maker-sounds'});
+        const soundURL = await Storage.get(file.key, {bucket: 'sample-maker-sounds'});
+        console.log(soundURL)
       const newURL = soundURL.replace('public//', '')
-      const fileName = file.key.split('/')[2].split('.')[0];
-      const downloadResumable = FileSystem.createDownloadResumable(
-        newURL,
-        FileSystem.documentDirectory + fileName + '.wav',
-        {}
-      );
-      let localPath
-      try {
-        const { uri } = await downloadResumable.downloadAsync();
-        console.log('Finished downloading to ', uri);
-        localPath = uri;
-      } catch (e) {
-        console.error(e);
-      }
-      sounds.push({ name: fileName, url: localPath });
+      fetch(newURL).then(resp => console.log(resp, 'RESP'));
+    //   const blob = await resp.blob();
+    //   const fileName = file.key.split('/')[2].split('.')[0];
+    //   const downloadResumable = FileSystem.createDownloadResumable(
+    //     newURL,
+    //     FileSystem.documentDirectory + fileName + '.wav',
+    //     {}
+    //   );
+    //   let localPath
+    //   try {
+    //     const { uri } = await downloadResumable.downloadAsync();
+    //     console.log('Finished downloading to ', uri);
+    //     localPath = uri;
+    //   } catch (e) {
+    //     console.error(e);
+    //   }
+    //   sounds.push({ name: fileName, url: localPath });
     }
     return sounds;
   };

@@ -4,7 +4,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faMicrophone, faPlay } from "@fortawesome/free-solid-svg-icons";
 
 const NavBar = (props) => {
-  console.log(props.navigation.getState().index);
 
   return (
     <View style={styles.container}>

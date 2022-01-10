@@ -62,11 +62,11 @@
 			"Default" : "DISALLOW"		},
 		"AuthenticatedAllowList": {
 			"Type": "String",
-			"Default" : "NONE"
+			"Default" : "DISALLOW"
 		},
 		"GuestAllowList": {
 			"Type": "String",
-			"Default" : "NONE"
+			"Default" : "DISALLOW"
 		},
 		"selectedGuestPermissions": {
 			"Type": "CommaDelimitedList",
