@@ -52,10 +52,11 @@ const Recorder = (props) => {
     const rec = await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
     console.log(uri.split('.').slice(-1)[0]);
+    const format = uri.split('.').slice(-1)[0];
     const resp = await fetch(uri);
     const blob = await resp.blob();
     await Storage.put(
-      `${userData.user}/${new Date().toISOString().replace(/(:|\s+)/g, "-")}.m4a`,
+      `${userData.user}/${new Date().toISOString().replace(/(:|\s+)/g, "-")}.${format}`,
       blob
     );
     console.log("Recording stopped and stored at", uri);
