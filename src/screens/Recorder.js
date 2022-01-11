@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Text,
   TouchableOpacity,
+  Dimensions,
 } from "react-native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
@@ -18,14 +19,22 @@ import RecordIcon from "../../svgs/RecordIcon";
 import NavBar from "../components/NavBar";
 import * as FileSystem from "expo-file-system";
 import UserContext from "../contexts/UserContext";
-
+import NameSoundModal from "../components/recording/NameSoundModal";
+import { windowHeight } from "../utils/Dimensions";
 
 const Recorder = (props) => {
   const [recording, setRecording] = useState();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [format, setFormat] = useState();
+  const [blob, setBlob] = useState();
+
+  const [text, setText] = useState(
+    `${new Date().toISOString().replace(/(:|\s+)/g, "-")}`
+  );
 
   const userData = useContext(UserContext);
 
-  console.log(userData.user)
+  console.log(userData.user);
 
   const startRecording = async () => {
     try {
@@ -51,15 +60,41 @@ const Recorder = (props) => {
     setRecording(undefined);
     const rec = await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
-    console.log(uri.split('.').slice(-1)[0]);
-    const format = uri.split('.').slice(-1)[0];
+    console.log(uri.split(".").slice(-1)[0]);
+    setFormat(uri.split(".").slice(-1)[0]);
     const resp = await fetch(uri);
-    const blob = await resp.blob();
-    await Storage.put(
-      `${userData.user}/${new Date().toISOString().replace(/(:|\s+)/g, "-")}.${format}`,
-      blob
-    );
+    setBlob(await resp.blob());
     console.log("Recording stopped and stored at", uri);
+    setModalVisible(true);
+  };
+
+  const nameRecording = async () => {
+    setModalVisible(true);
+    saveRecording();
+  };
+
+  const saveRecording = async () => {
+    await Storage.put(`${userData.user}/${text}.${format}`, blob);
+    setModalVisible(false);
+    setFormat();
+    setBlob();
+    setText();
+  };
+
+  const handleTextSubmit = () => {
+    setModalVisible(!modalVisible);
+  };
+
+  const renderModal = () => {
+    return (
+      <NameSoundModal
+        text={text}
+        setText={setText}
+        saveRecording={saveRecording}
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+      />
+    );
   };
 
   return (
@@ -70,6 +105,8 @@ const Recorder = (props) => {
           justifyContent: "center",
         }}
       >
+        {renderModal()}
+
         <TouchableOpacity onPress={recording ? stopRecording : startRecording}>
           <FontAwesomeIcon
             icon={faMicrophone}
