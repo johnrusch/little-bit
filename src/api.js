@@ -61,27 +61,16 @@ const getUser = async () => {
 };
 
 const getSounds = async (email) => {
-  const files = await Storage.list(`/${email}`, {
-    bucket: "sample-maker-sounds",
-    customPrefix: {
-      public: "",
-      protected: "",
-      private: "",
-    },
-    level: "public",
-    cacheControl: "no-cache",
-  });
+  const files = await Storage.list(`processed/${email}`);
+  console.log(files);
   const sounds = [];
   const bucket = "sample-maker-sounds";
   for (const file of files) {
-    const soundURL = await Storage.get(file.key, {
-      bucket: "sample-maker-sounds",
-      customPrefix: "",
-    });
+    const soundURL = await Storage.get(file.key);
     const newURL = soundURL.replace("public//", "");
-    console.log(newURL);
+    console.log(soundURL);
       const fileName = file.key.split('/')[2].split('.')[0];
-      sounds.push({ name: fileName, url: newURL });
+      sounds.push({ name: fileName, url: soundURL });
   }
   return sounds;
 };

@@ -74,7 +74,7 @@ const Recorder = (props) => {
   };
 
   const saveRecording = async () => {
-    await Storage.put(`${userData.user}/${text}.${format}`, blob);
+    await Storage.put(`unprocessed/${userData.user}/${text}.${format}`, blob);
     setModalVisible(false);
     setFormat();
     setBlob();

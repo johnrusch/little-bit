@@ -23,44 +23,36 @@ const Sound = ({ name, url }) => {
   const [soundObject, setSoundObject] = useState();
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const playSound = () => {
-    soundObject && soundObject.play();
-  }
-
-  const pauseSound = () => {
-    soundObject && isPlaying && soundObject.pause();
-  }
-
-  const handlePlayPause = () => {
-    if (!soundObject) alert("Sound not available");
-
-    if (!isPlaying) {
-      playSound();
-    } else {
-      pauseSound();
-    }
-
+  const toggleAudioPlayback = () => {
+    !isPlaying ? soundObject.playAsync() : soundObject.pauseAsync();
     setIsPlaying(!isPlaying);
   }
 
   useEffect(() => {
     const loadSound = async () => {
       try {
-        const player = new Player(url);
-        setSoundObject(player);
+        const { sound } = await Audio.Sound.createAsync({ uri: url });
+        setSoundObject(sound);
       } catch (error) {
         console.log("Unable to load sound: ", error.message);
       }
     };
 
+    const unloadSound = () => {
+      soundObject && soundObject.unloadAsync().then();
+      setSoundObject(null);
+    }
+
     loadSound();
 
-    // return soundObject.destroy();
+    return unloadSound();
   }, []);
+
+  console.log(soundObject)
 
   return (
     <View style={{ flexDirection: "row", padding: 15, alignItems: "center" }}>
-      <TouchableOpacity onPress={() => handlePlayPause()}>
+      <TouchableOpacity onPress={() => toggleAudioPlayback()}>
         <FontAwesomeIcon icon={!isPlaying ? faPlay : faPause} size={30} color={"black"} />
       </TouchableOpacity>
       <Text style={{ marginLeft: windowWidth / 5, fontSize: 20 }}>{name}</Text>
