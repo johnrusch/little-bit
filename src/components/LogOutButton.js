@@ -3,7 +3,7 @@ import { Text, TouchableOpacity, StyleSheet } from "react-native";
 
 import { windowHeight, windowWidth } from "../utils/Dimensions";
 
-const FormButton = ({ buttonTitle, ...rest }) => {
+const LogOutButton = ({ buttonTitle, ...rest }) => {
   return (
     <TouchableOpacity style={styles.buttonContainer} {...rest}>
       <Text style={styles.buttonText}>{buttonTitle}</Text>
@@ -11,22 +11,21 @@ const FormButton = ({ buttonTitle, ...rest }) => {
   );
 };
 
-export default FormButton;
+export default LogOutButton;
 
 const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 10,
-    width: '100%',
-    height: windowHeight / 15,
-    backgroundColor: '#69FAA0',
+    // backgroundColor: '#69FAA0',
     padding: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 30
+    borderRadius: 40,
+    marginRight: 10
   },
   buttonText: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: '#ffffff',
+      color: '#37AD65',
   }
 });

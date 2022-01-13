@@ -14,7 +14,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import { Audio } from "expo-av";
-import { Storage, Auth } from "aws-amplify";
+import { Storage, Auth, Hub } from "aws-amplify";
 import RecordIcon from "../../svgs/RecordIcon";
 import NavBar from "../components/NavBar";
 import * as FileSystem from "expo-file-system";
@@ -34,8 +34,6 @@ const Recorder = (props) => {
 
   const userData = useContext(UserContext);
 
-  console.log(userData.user);
-
   const startRecording = async () => {
     try {
       console.log("Requesting permissions..");
@@ -49,7 +47,7 @@ const Recorder = (props) => {
         Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
       );
       setRecording(recording);
-      console.log("Recording started", recording);
+      // console.log("Recording starteds", recording);
     } catch (err) {
       console.error("Failed to start recording", err);
     }
@@ -64,7 +62,7 @@ const Recorder = (props) => {
     setFormat(uri.split(".").slice(-1)[0]);
     const resp = await fetch(uri);
     setBlob(await resp.blob());
-    console.log("Recording stopped and stored at", uri);
+    // console.log("Recording stopped and stored at", uri);
     setModalVisible(true);
   };
 
@@ -112,7 +110,7 @@ const Recorder = (props) => {
             icon={faMicrophone}
             style={styles.recordButton}
             size={150}
-            color={recording ? "#FFA164" : "black"}
+            color={recording ? "#FA7069" : "black"}
           />
         </TouchableOpacity>
       </View>

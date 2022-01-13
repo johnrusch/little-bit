@@ -11,14 +11,14 @@ const NavBar = (props) => {
         <FontAwesomeIcon
           icon={faMicrophone}
           size={40}
-          color={props.navigation.getState().index === 0 ? "#FFA164" : "black"}
+          color={props.navigation.getState().index === 0 ? "black" : "#37AD65"}
         />
       </TouchableOpacity>
       <TouchableOpacity onPress={() => props.navigation.navigate("Sounds")}>
         <FontAwesomeIcon
           icon={faPlay}
           size={40}
-          color={props.navigation.getState().index === 1 ? "#FFA164" : "black"}
+          color={props.navigation.getState().index === 1 ? "black" : "#37AD65"}
         />
       </TouchableOpacity>
     </View>

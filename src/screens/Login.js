@@ -13,10 +13,9 @@ const Login = ({navigation}) => {
     const handleLogin = async (username, password) => {
       if (username && password) {
         try {
-          const login = await api.logIn(username, password)
-          navigation.navigate('Home')
+          const login = await api.logIn(username, password);
         } catch (error) {
-          alert("Invalid Login:", error.message)
+          alert("Invalid Login:", error.message);
         }
       }
     }
@@ -24,7 +23,7 @@ const Login = ({navigation}) => {
     return (
         <View style={styles.container}>
             <Text style={styles.text}>
-                Sample Maker
+                Itty Bitty
             </Text>
             <FormInput
                 labelValue={username}
@@ -56,6 +55,8 @@ const Login = ({navigation}) => {
 
 const styles = StyleSheet.create({
     container: {
+      flex: 1,
+      backgroundColor: "#f9fafd",
       justifyContent: 'center',
       alignItems: 'center',
       padding: 20,
@@ -75,12 +76,12 @@ const styles = StyleSheet.create({
       marginTop: 15,
     },
     forgotButton: {
-      marginVertical: 35,
+      marginTop: 15,
     },
     navButtonText: {
       fontSize: 18,
       fontWeight: '500',
-      color: '#2e64e5',
+      color: '#8382FA',
     },
   });
 

@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faFrown } from "@fortawesome/free-solid-svg-icons";
 import { Audio } from "expo-av";
 import { Storage, Auth } from "aws-amplify";
 import * as FileSystem from "expo-file-system";
@@ -20,42 +20,74 @@ import { windowWidth } from "../utils/Dimensions";
 import { Player, MediaStates } from "@react-native-community/audio-toolkit";
 
 const Sound = ({ name, url }) => {
-  const [soundObject, setSoundObject] = useState();
+  const soundObject = React.useRef(new Audio.Sound());
   const [isPlaying, setIsPlaying] = useState(false);
+  const [position, setPosition] = useState();
+  const [duration, setDuration] = useState();
+  const [fileNotLoaded, setFileNotLoaded] = useState(false);
 
   const toggleAudioPlayback = () => {
-    !isPlaying ? soundObject.playAsync() : soundObject.pauseAsync();
+    !isPlaying ? soundObject.current.playAsync() : soundObject.current.pauseAsync();
     setIsPlaying(!isPlaying);
+  };
+
+  const onPlaybackStatusUpdate = async playbackStatus => {
+    if (!playbackStatus.isLoaded) {
+      console.log("Sound not loaded: ", playbackStatus.error)
+      setFileNotLoaded(true);
+      if (playbackStatus.error) {
+        console.log(`Encountered a fatal error during playback: ${playbackStatus.error}`);
+        // Send Expo team the error on Slack or the forums so we can help you debug!
+      }
+    } else {
+      setFileNotLoaded(false);
+    }
+
+    setPosition(playbackStatus.positionMillis);
+    setDuration(playbackStatus.durationMillis);
+
+    if (playbackStatus.didJustFinish && !playbackStatus.isLooping) {
+      setIsPlaying(false);
+      await soundObject.current.setStatusAsync({ shouldPlay: false, positionMillis: 0 });
+    }
   }
 
   useEffect(() => {
     const loadSound = async () => {
       try {
-        const { sound } = await Audio.Sound.createAsync({ uri: url });
-        setSoundObject(sound);
+        await soundObject.current.loadAsync({ uri: url }, {volume: 0.8}, true);
+        await soundObject.current.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
       } catch (error) {
         console.log("Unable to load sound: ", error.message);
       }
     };
 
     const unloadSound = () => {
-      soundObject && soundObject.unloadAsync().then();
-      setSoundObject(null);
-    }
+      soundObject.current && soundObject.current.unloadAsync().then();
+    };
 
     loadSound();
 
     return unloadSound();
   }, []);
 
-  console.log(soundObject)
-
   return (
     <View style={{ flexDirection: "row", padding: 15, alignItems: "center" }}>
-      <TouchableOpacity onPress={() => toggleAudioPlayback()}>
-        <FontAwesomeIcon icon={!isPlaying ? faPlay : faPause} size={30} color={"black"} />
+      <TouchableOpacity style={{ marginRight: 15 }}onPress={() => toggleAudioPlayback()}>
+        <FontAwesomeIcon
+          icon={fileNotLoaded ? faFrown : !isPlaying ? faPlay : faPause}
+          size={30}
+          color={fileNotLoaded ? "#AD2D26" : "black"}
+        />
       </TouchableOpacity>
-      <Text style={{ marginLeft: windowWidth / 5, fontSize: 20 }}>{name}</Text>
+      <View style={{ alignItems: 'center', flex: 1 }}>
+        <Text style={{ fontSize: 20 }}>
+          {name}
+        </Text>
+        {fileNotLoaded && <Text style={{ color: "#AD2D26" }}>
+          Unable to load sound
+        </Text>}
+      </View>
     </View>
   );
 };
