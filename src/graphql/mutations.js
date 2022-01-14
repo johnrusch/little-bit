@@ -10,6 +10,9 @@ export const createSample = /* GraphQL */ `
       id
       username
       sampleName
+      _version
+      _deleted
+      _lastChangedAt
       createdAt
       updatedAt
     }
@@ -24,6 +27,9 @@ export const updateSample = /* GraphQL */ `
       id
       username
       sampleName
+      _version
+      _deleted
+      _lastChangedAt
       createdAt
       updatedAt
     }
@@ -38,6 +44,9 @@ export const deleteSample = /* GraphQL */ `
       id
       username
       sampleName
+      _version
+      _deleted
+      _lastChangedAt
       createdAt
       updatedAt
     }

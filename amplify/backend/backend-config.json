@@ -46,6 +46,18 @@
     "samplemaker": {
       "service": "S3",
       "providerPlugin": "awscloudformation"
+    },
+    "AmplifyDataStoreeqdn4ioae5cddgqrvsc73yvkzestaging": {
+      "service": "DynamoDB",
+      "serviceType": "imported",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": []
+    },
+    "Sampleeqdn4ioae5cddgqrvsc73yvkzestaging": {
+      "service": "DynamoDB",
+      "serviceType": "imported",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": []
     }
   },
   "api": {
@@ -75,5 +87,6 @@
         }
       }
     }
-  }
+  },
+  "function": {}
 }

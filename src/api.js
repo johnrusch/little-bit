@@ -4,7 +4,7 @@ import * as FileSystem from "expo-file-system";
 const logIn = async (username, password) => {
   try {
     const logIn = await Auth.signIn(username, password);
-    return getUserEmailPrefix(logIn);
+    return getUsername(logIn);
   } catch (err) {
     console.log(`Error signing in: ${err.message}`, err);
     return null;
@@ -38,14 +38,14 @@ const logOut = async () => {
 const isLoggedIn = async () => {
   try {
     const user = await Auth.currentAuthenticatedUser();
-    return getUserEmailPrefix(user);
+    return getUsername(user);
   } catch (error) {
     return false;
   }
 };
 
-const getUserEmailPrefix = (user) => {
-  return user.attributes.email.split("@")[0];
+const getUsername = (user) => {
+  return user.attributes.sub;
 };
 
 const getSounds = async (email) => {
@@ -67,6 +67,6 @@ export default {
   signUp,
   logOut,
   isLoggedIn,
-  getUserEmailPrefix,
+  getUsername,
   getSounds,
 };

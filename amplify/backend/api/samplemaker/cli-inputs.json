@@ -3,24 +3,11 @@
   "serviceConfiguration": {
     "apiName": "samplemaker",
     "serviceName": "AppSync",
-    "gqlSchemaPath": "/Users/johnrusch/code/sample-maker/amplify/backend/api/samplemaker/schema.graphql",
+    "gqlSchemaPath": "/tmp/amplify-b556b2c1-e54e-4648-b6b3-8d54c3ccad78/amplify/backend/api/samplemaker/schema.graphql",
     "defaultAuthType": {
       "mode": "API_KEY",
       "keyDescription": "api key description",
       "expirationTime": 30
-    },
-    "conflictResolution": {
-      "defaultResolutionStrategy": {
-        "type": "AUTOMERGE"
-      },
-      "perModelResolutionStrategy": [
-        {
-          "resolutionStrategy": {
-            "type": "AUTOMERGE"
-          },
-          "entityName": "Sample"
-        }
-      ]
     },
     "additionalAuthTypes": [
       {
@@ -30,6 +17,11 @@
         "mode": "AMAZON_COGNITO_USER_POOLS",
         "cognitoUserPoolId": "authsamplemaker1a9f26991a9f2699"
       }
-    ]
+    ],
+    "conflictResolution": {
+      "defaultResolutionStrategy": {
+        "type": "AUTOMERGE"
+      }
+    }
   }
 }

@@ -6,7 +6,9 @@ import { View, Button } from "react-native";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { UserProvider } from "../contexts/UserContext";
 import { Hub, API, DataStore } from "aws-amplify";
+import { CognitoSyncClient } from "@aws-sdk/client-cognito-sync";
 import Sample from "../models/index";
+import { AWS_REGION } from '@env';
 
 import NavBar from "../components/NavBar";
 import Login from "../screens/Login";
@@ -27,11 +29,13 @@ const Navigator = () => {
 
   const removeListeners = () => {
     Hub.remove("auth");
-    Hub.remove("datastore");
+    Hub.remove("storage");
     return;
   };
 
   useEffect(() => {
+    const cognitoSyncClient = new CognitoSyncClient({ region: AWS_REGION })
+
     const getUser = async () => {
       const username = await api.isLoggedIn();
       setUser(username);
@@ -43,7 +47,7 @@ const Navigator = () => {
       // console.log("HUB EVENT", payload);
       switch (payload.event) {
         case "signIn":
-          const username = api.getUserEmailPrefix(payload.data);
+          const username = api.getUsername(payload.data);
           setUser(username);
           setUserSounds(await api.getSounds(username));
           break;
@@ -53,6 +57,11 @@ const Navigator = () => {
           break;
       }
     });
+
+    Hub.listen('storage', (data) => {
+      const { payload } = data;
+      console.log('STORAGE HUB EVENT', payload)
+    })
 
     getUser();
 

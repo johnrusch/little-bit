@@ -7,6 +7,9 @@ export const onCreateSample = /* GraphQL */ `
       id
       username
       sampleName
+      _version
+      _deleted
+      _lastChangedAt
       createdAt
       updatedAt
     }
@@ -18,6 +21,9 @@ export const onUpdateSample = /* GraphQL */ `
       id
       username
       sampleName
+      _version
+      _deleted
+      _lastChangedAt
       createdAt
       updatedAt
     }
@@ -29,6 +35,9 @@ export const onDeleteSample = /* GraphQL */ `
       id
       username
       sampleName
+      _version
+      _deleted
+      _lastChangedAt
       createdAt
       updatedAt
     }
