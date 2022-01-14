@@ -88,5 +88,45 @@
       }
     }
   },
-  "function": {}
+  "function": {
+    "EditAndConvertRecordings": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda",
+      "dependsOn": [
+        {
+          "category": "storage",
+          "resourceName": "samplemaker",
+          "attributes": [
+            "BucketName"
+          ]
+        },
+        {
+          "category": "storage",
+          "resourceName": "AmplifyDataStoreeqdn4ioae5cddgqrvsc73yvkzestaging",
+          "attributes": [
+            "Name",
+            "Arn",
+            "StreamArn"
+          ]
+        },
+        {
+          "category": "storage",
+          "resourceName": "Sampleeqdn4ioae5cddgqrvsc73yvkzestaging",
+          "attributes": [
+            "Name",
+            "Arn",
+            "StreamArn"
+          ]
+        },
+        {
+          "category": "api",
+          "resourceName": "samplemaker",
+          "attributes": [
+            "GraphQLAPIIdOutput"
+          ]
+        }
+      ]
+    }
+  }
 }
