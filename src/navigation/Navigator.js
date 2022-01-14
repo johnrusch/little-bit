@@ -5,7 +5,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, Button } from "react-native";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { UserProvider } from "../contexts/UserContext";
-import { Hub, API, DataStore } from "aws-amplify";
+import { Hub, API } from "aws-amplify";
+import { DataStore } from "@aws-amplify/datastore";
 import { CognitoSyncClient } from "@aws-sdk/client-cognito-sync";
 import Sample from "../models/index";
 import { AWS_REGION } from '@env';
@@ -50,23 +51,30 @@ const Navigator = () => {
           const username = api.getUsername(payload.data);
           setUser(username);
           setUserSounds(await api.getSounds(username));
+          DataStore.start();
           break;
         case "signOut":
           setUser();
           setUserSounds({});
+          DataStore.stop();
           break;
       }
     });
-
-    Hub.listen('storage', (data) => {
-      const { payload } = data;
-      console.log('STORAGE HUB EVENT', payload)
-    })
 
     getUser();
 
     return removeListeners();
   }, []);
+
+  useEffect(() => {
+    let subscription;
+    if (user) {
+      subscription = DataStore.observeQuery(
+        Sample,
+        sample => sample.username('eq', user),
+      ).subscribe()
+    }
+  }, [user])
 
   return (
     <UserProvider value={{ user: user, sounds: userSounds }}>
