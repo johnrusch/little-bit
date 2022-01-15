@@ -10,8 +10,8 @@ type SampleMetaData = {
 
 export declare class Sample {
   readonly id: string;
+  readonly name: string;
   readonly username: string;
-  readonly sampleName?: string;
   readonly createdAt?: string;
   readonly updatedAt?: string;
   constructor(init: ModelInit<Sample, SampleMetaData>);

@@ -5,8 +5,8 @@ export const onCreateSample = /* GraphQL */ `
   subscription OnCreateSample {
     onCreateSample {
       id
+      name
       username
-      sampleName
       _version
       _deleted
       _lastChangedAt
@@ -19,8 +19,8 @@ export const onUpdateSample = /* GraphQL */ `
   subscription OnUpdateSample {
     onUpdateSample {
       id
+      name
       username
-      sampleName
       _version
       _deleted
       _lastChangedAt
@@ -33,8 +33,8 @@ export const onDeleteSample = /* GraphQL */ `
   subscription OnDeleteSample {
     onDeleteSample {
       id
+      name
       username
-      sampleName
       _version
       _deleted
       _lastChangedAt

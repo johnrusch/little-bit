@@ -1,5 +1,5 @@
 {
-  "AppSyncApiName": "samplemaker",
+  "AppSyncApiName": "SampleMakerAPI",
   "DynamoDBBillingMode": "PAY_PER_REQUEST",
   "DynamoDBEnableServerSideEncryption": false,
   "AuthCognitoUserPoolId": {
@@ -7,5 +7,6 @@
       "authsamplemaker1a9f26991a9f2699",
       "Outputs.UserPoolId"
     ]
-  }
+  },
+  "AuthModeLastUpdated": "2022-01-15T02:51:01.837Z"
 }

@@ -17,90 +17,10 @@
         "true": {},
         "userPoolGroups": {}
       },
-      "storage": {
-        "Sample2roqf4kozvgndnedotepxhjv3istaging": {
-          "tableName": "Sample-2roqf4kozvgndnedotepxhjv3i-staging",
-          "region": "us-west-2",
-          "arn": "arn:aws:dynamodb:us-west-2:691777775550:table/Sample-2roqf4kozvgndnedotepxhjv3i-staging",
-          "streamArn": "arn:aws:dynamodb:us-west-2:691777775550:table/Sample-2roqf4kozvgndnedotepxhjv3i-staging/stream/2022-01-13T05:26:13.790",
-          "partitionKeyName": "id",
-          "partitionKeyType": "S"
-        },
-        "AmplifyDataStore2roqf4kozvgndnedotepxhjv3istaging": {
-          "tableName": "AmplifyDataStore-2roqf4kozvgndnedotepxhjv3i-staging",
-          "region": "us-west-2",
-          "arn": "arn:aws:dynamodb:us-west-2:691777775550:table/AmplifyDataStore-2roqf4kozvgndnedotepxhjv3i-staging",
-          "partitionKeyName": "ds_pk",
-          "partitionKeyType": "S",
-          "sortKeyName": "ds_sk",
-          "sortKeyType": "S"
-        },
-        "AmplifyDataStoreeqdn4ioae5cddgqrvsc73yvkzestaging": {
-          "tableName": "AmplifyDataStore-eqdn4ioae5cddgqrvsc73yvkze-staging",
-          "region": "us-west-2",
-          "arn": "arn:aws:dynamodb:us-west-2:691777775550:table/AmplifyDataStore-eqdn4ioae5cddgqrvsc73yvkze-staging",
-          "partitionKeyName": "ds_pk",
-          "partitionKeyType": "S",
-          "sortKeyName": "ds_sk",
-          "sortKeyType": "S"
-        },
-        "Sampleeqdn4ioae5cddgqrvsc73yvkzestaging": {
-          "tableName": "Sample-eqdn4ioae5cddgqrvsc73yvkze-staging",
-          "region": "us-west-2",
-          "arn": "arn:aws:dynamodb:us-west-2:691777775550:table/Sample-eqdn4ioae5cddgqrvsc73yvkze-staging",
-          "streamArn": "arn:aws:dynamodb:us-west-2:691777775550:table/Sample-eqdn4ioae5cddgqrvsc73yvkze-staging/stream/2022-01-13T23:44:31.810",
-          "partitionKeyName": "id",
-          "partitionKeyType": "S"
-        }
-      },
       "function": {
         "samplemaker3b4d4321": {
           "deploymentBucketName": "amplify-samplemaker-staging-202711-deployment",
           "s3Key": "amplify-builds/samplemaker3b4d4321-4f3552412b514e514c6c-build.zip"
-        }
-      }
-    }
-  },
-  "dev": {
-    "awscloudformation": {
-      "AuthRoleName": "amplify-samplemaker-dev-145113-authRole",
-      "UnauthRoleArn": "arn:aws:iam::691777775550:role/amplify-samplemaker-dev-145113-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::691777775550:role/amplify-samplemaker-dev-145113-authRole",
-      "Region": "us-west-2",
-      "DeploymentBucketName": "amplify-samplemaker-dev-145113-deployment",
-      "UnauthRoleName": "amplify-samplemaker-dev-145113-unauthRole",
-      "StackName": "amplify-samplemaker-dev-145113",
-      "StackId": "arn:aws:cloudformation:us-west-2:691777775550:stack/amplify-samplemaker-dev-145113/5149d280-74c3-11ec-9ff7-06b3205ac39b",
-      "AmplifyAppId": "d2di2xxgh6sy89"
-    },
-    "categories": {
-      "function": {
-        "samplemaker3b4d4321": {
-          "deploymentBucketName": "amplify-samplemaker-dev-145113-deployment",
-          "s3Key": "amplify-builds/samplemaker3b4d4321-4f3552412b514e514c6c-build.zip"
-        }
-      },
-      "auth": {
-        "userPoolGroups": {},
-        "samplemaker1a9f26991a9f2699": {}
-      },
-      "storage": {
-        "Sample2roqf4kozvgndnedotepxhjv3istaging": {
-          "tableName": "Sample-2roqf4kozvgndnedotepxhjv3i-staging",
-          "region": "us-west-2",
-          "arn": "arn:aws:dynamodb:us-west-2:691777775550:table/Sample-2roqf4kozvgndnedotepxhjv3i-staging",
-          "streamArn": "arn:aws:dynamodb:us-west-2:691777775550:table/Sample-2roqf4kozvgndnedotepxhjv3i-staging/stream/2022-01-13T05:26:13.790",
-          "partitionKeyName": "id",
-          "partitionKeyType": "S"
-        },
-        "AmplifyDataStore2roqf4kozvgndnedotepxhjv3istaging": {
-          "tableName": "AmplifyDataStore-2roqf4kozvgndnedotepxhjv3i-staging",
-          "region": "us-west-2",
-          "arn": "arn:aws:dynamodb:us-west-2:691777775550:table/AmplifyDataStore-2roqf4kozvgndnedotepxhjv3i-staging",
-          "partitionKeyName": "ds_pk",
-          "partitionKeyType": "S",
-          "sortKeyName": "ds_sk",
-          "sortKeyType": "S"
         }
       }
     }

@@ -8,8 +8,8 @@ export const createSample = /* GraphQL */ `
   ) {
     createSample(input: $input, condition: $condition) {
       id
+      name
       username
-      sampleName
       _version
       _deleted
       _lastChangedAt
@@ -25,8 +25,8 @@ export const updateSample = /* GraphQL */ `
   ) {
     updateSample(input: $input, condition: $condition) {
       id
+      name
       username
-      sampleName
       _version
       _deleted
       _lastChangedAt
@@ -42,8 +42,8 @@ export const deleteSample = /* GraphQL */ `
   ) {
     deleteSample(input: $input, condition: $condition) {
       id
+      name
       username
-      sampleName
       _version
       _deleted
       _lastChangedAt

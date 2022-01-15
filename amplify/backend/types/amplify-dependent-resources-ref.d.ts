@@ -20,17 +20,9 @@ export type AmplifyDependentResourcesAttributes = {
         }
     },
     "api": {
-        "samplemaker": {
+        "SampleMakerAPI": {
             "GraphQLAPIIdOutput": "string",
             "GraphQLAPIEndpointOutput": "string"
-        }
-    },
-    "function": {
-        "EditAndConvertRecordings": {
-            "Name": "string",
-            "Arn": "string",
-            "Region": "string",
-            "LambdaExecutionRole": "string"
         }
     }
 }
