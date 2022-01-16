@@ -1,12 +1,12 @@
 {
-  "AppSyncApiName": "SampleMakerAPI",
+  "AppSyncApiName": "littlebit",
   "DynamoDBBillingMode": "PAY_PER_REQUEST",
   "DynamoDBEnableServerSideEncryption": false,
+  "AuthModeLastUpdated": "2022-01-16T21:12:58.192Z",
   "AuthCognitoUserPoolId": {
     "Fn::GetAtt": [
-      "authsamplemaker1a9f26991a9f2699",
+      "authlittlebit3ededec2",
       "Outputs.UserPoolId"
     ]
-  },
-  "AuthModeLastUpdated": "2022-01-15T02:51:01.837Z"
+  }
 }

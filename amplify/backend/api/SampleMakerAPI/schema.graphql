@@ -1,6 +1,0 @@
-type Sample @model {
-  id: ID!
-  name: String!
-  username: String!
-}
- 

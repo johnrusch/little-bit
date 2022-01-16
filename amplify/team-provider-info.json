@@ -1,26 +1,25 @@
 {
   "staging": {
     "awscloudformation": {
-      "AuthRoleName": "amplify-samplemaker-staging-202711-authRole",
-      "UnauthRoleArn": "arn:aws:iam::691777775550:role/amplify-samplemaker-staging-202711-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::691777775550:role/amplify-samplemaker-staging-202711-authRole",
+      "AuthRoleName": "amplify-littlebit-staging-201310-authRole",
+      "UnauthRoleArn": "arn:aws:iam::691777775550:role/amplify-littlebit-staging-201310-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::691777775550:role/amplify-littlebit-staging-201310-authRole",
       "Region": "us-west-2",
-      "DeploymentBucketName": "amplify-samplemaker-staging-202711-deployment",
-      "UnauthRoleName": "amplify-samplemaker-staging-202711-unauthRole",
-      "StackName": "amplify-samplemaker-staging-202711",
-      "StackId": "arn:aws:cloudformation:us-west-2:691777775550:stack/amplify-samplemaker-staging-202711/7ad49af0-1275-11ec-a74b-02ecfb88cf61",
-      "AmplifyAppId": "d2di2xxgh6sy89"
+      "DeploymentBucketName": "amplify-littlebit-staging-201310-deployment",
+      "UnauthRoleName": "amplify-littlebit-staging-201310-unauthRole",
+      "StackName": "amplify-littlebit-staging-201310",
+      "StackId": "arn:aws:cloudformation:us-west-2:691777775550:stack/amplify-littlebit-staging-201310/8f91b170-763f-11ec-a929-0a7463c52dcb",
+      "AmplifyAppId": "d23r0s3t08jpzs"
     },
     "categories": {
       "auth": {
-        "samplemaker1a9f26991a9f2699": {},
-        "true": {},
-        "userPoolGroups": {}
+        "littlebit3ededec2": {},
+        "true": {}
       },
       "function": {
-        "samplemaker3b4d4321": {
-          "deploymentBucketName": "amplify-samplemaker-staging-202711-deployment",
-          "s3Key": "amplify-builds/samplemaker3b4d4321-4f3552412b514e514c6c-build.zip"
+        "EditandConvertRecordings": {
+          "deploymentBucketName": "amplify-littlebit-staging-201310-deployment",
+          "s3Key": "amplify-builds/EditandConvertRecordings-434f4b756f4d5a524930-build.zip"
         }
       }
     }

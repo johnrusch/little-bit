@@ -1,9 +1,13 @@
 export type AmplifyDependentResourcesAttributes = {
+    "api": {
+        "littlebit": {
+            "GraphQLAPIKeyOutput": "string",
+            "GraphQLAPIIdOutput": "string",
+            "GraphQLAPIEndpointOutput": "string"
+        }
+    },
     "auth": {
-        "userPoolGroups": {
-            "usersGroupRole": "string"
-        },
-        "samplemaker1a9f26991a9f2699": {
+        "littlebit3ededec2": {
             "IdentityPoolId": "string",
             "IdentityPoolName": "string",
             "UserPoolId": "string",
@@ -13,16 +17,18 @@ export type AmplifyDependentResourcesAttributes = {
             "AppClientID": "string"
         }
     },
-    "storage": {
-        "samplemaker": {
-            "BucketName": "string",
-            "Region": "string"
+    "function": {
+        "EditandConvertRecordings": {
+            "Name": "string",
+            "Arn": "string",
+            "Region": "string",
+            "LambdaExecutionRole": "string"
         }
     },
-    "api": {
-        "SampleMakerAPI": {
-            "GraphQLAPIIdOutput": "string",
-            "GraphQLAPIEndpointOutput": "string"
+    "storage": {
+        "littlebits3": {
+            "BucketName": "string",
+            "Region": "string"
         }
     }
 }
