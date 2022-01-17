@@ -16,14 +16,6 @@
     "s3Key": {
       "Type": "String"
     },
-    "storageSamplesq7hrjmn3na6rkqlbkyxhwi4rqstagingName": {
-      "Type": "String",
-      "Default": "storageSamplesq7hrjmn3na6rkqlbkyxhwi4rqstagingName"
-    },
-    "storageSamplesq7hrjmn3na6rkqlbkyxhwi4rqstagingArn": {
-      "Type": "String",
-      "Default": "storageSamplesq7hrjmn3na6rkqlbkyxhwi4rqstagingArn"
-    },
     "apilittlebitgraphqlAPIGraphQLAPIIdOutput": {
       "Type": "String",
       "Default": "apilittlebitgraphqlAPIGraphQLAPIIdOutput"
@@ -63,12 +55,12 @@
         "FunctionName": {
           "Fn::If": [
             "ShouldNotCreateEnvResources",
-            "SaveSampleRecord",
+            "CreateSampleRecord",
             {
               "Fn::Join": [
                 "",
                 [
-                  "SaveSampleRecord",
+                  "CreateSampleRecord",
                   "-",
                   {
                     "Ref": "env"
@@ -111,12 +103,12 @@
         "RoleName": {
           "Fn::If": [
             "ShouldNotCreateEnvResources",
-            "littlebitLambdaRole469f6ec8",
+            "littlebitLambdaRolede15d86e",
             {
               "Fn::Join": [
                 "",
                 [
-                  "littlebitLambdaRole469f6ec8",
+                  "littlebitLambdaRolede15d86e",
                   "-",
                   {
                     "Ref": "env"
@@ -182,34 +174,6 @@
                   }
                 ]
               }
-            },
-            {
-              "Effect": "Allow",
-              "Action": [
-                "dynamodb:DescribeTable",
-                "dynamodb:GetItem",
-                "dynamodb:Query",
-                "dynamodb:Scan",
-                "dynamodb:PutItem",
-                "dynamodb:UpdateItem",
-                "dynamodb:DeleteItem"
-              ],
-              "Resource": [
-                {
-                  "Ref": "storageSamplesq7hrjmn3na6rkqlbkyxhwi4rqstagingArn"
-                },
-                {
-                  "Fn::Join": [
-                    "/",
-                    [
-                      {
-                        "Ref": "storageSamplesq7hrjmn3na6rkqlbkyxhwi4rqstagingArn"
-                      },
-                      "index/*"
-                    ]
-                  ]
-                }
-              ]
             }
           ]
         }

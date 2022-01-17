@@ -13,3 +13,4 @@ type S3Object {
   region: String!
 }
 
+  

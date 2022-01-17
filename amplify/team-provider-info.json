@@ -21,19 +21,9 @@
           "deploymentBucketName": "amplify-littlebit-staging-201310-deployment",
           "s3Key": "amplify-builds/EditandConvertRecordings-7230466641466978366d-build.zip"
         },
-        "SaveSampleRecord": {
+        "CreateSampleRecord": {
           "deploymentBucketName": "amplify-littlebit-staging-201310-deployment",
-          "s3Key": "amplify-builds/SaveSampleRecord-366b76662f466943774d-build.zip"
-        }
-      },
-      "storage": {
-        "Samplesq7hrjmn3na6rkqlbkyxhwi4rqstaging": {
-          "tableName": "Sample-sq7hrjmn3na6rkqlbkyxhwi4rq-staging",
-          "region": "us-west-2",
-          "arn": "arn:aws:dynamodb:us-west-2:691777775550:table/Sample-sq7hrjmn3na6rkqlbkyxhwi4rq-staging",
-          "streamArn": "arn:aws:dynamodb:us-west-2:691777775550:table/Sample-sq7hrjmn3na6rkqlbkyxhwi4rq-staging/stream/2022-01-17T07:37:48.869",
-          "partitionKeyName": "id",
-          "partitionKeyType": "S"
+          "s3Key": "amplify-builds/CreateSampleRecord-4f5048344862487a544b-build.zip"
         }
       }
     }
