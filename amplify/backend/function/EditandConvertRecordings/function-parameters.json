@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "storage": {
+      "littlebitS3Resource": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    }
+  },
+  "lambdaLayers": [
+    {
+      "type": "ExternalLayer",
+      "arn": "arn:aws:lambda:us-west-2:691777775550:layer:pydubLayer:8"
+    }
+  ]
+}

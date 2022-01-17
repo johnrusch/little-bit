@@ -44,10 +44,58 @@
       }
     }
   },
-  "function": {},
+  "function": {
+    "EditandConvertRecordings": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda",
+      "dependsOn": [
+        {
+          "category": "storage",
+          "resourceName": "littlebitS3Resource",
+          "attributes": [
+            "BucketName"
+          ]
+        }
+      ]
+    },
+    "SaveSampleRecord": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda",
+      "dependsOn": [
+        {
+          "category": "storage",
+          "resourceName": "Samplesq7hrjmn3na6rkqlbkyxhwi4rqstaging",
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "attributeEnvMap": {
+            "Name": "TABLE_NAME",
+            "Arn": "TABLE_ARN"
+          }
+        },
+        {
+          "category": "api",
+          "resourceName": "littlebitgraphqlAPI",
+          "attributes": [
+            "GraphQLAPIIdOutput",
+            "GraphQLAPIEndpointOutput"
+          ]
+        }
+      ]
+    }
+  },
   "storage": {
     "littlebitS3Resource": {
       "service": "S3",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": []
+    },
+    "Samplesq7hrjmn3na6rkqlbkyxhwi4rqstaging": {
+      "service": "DynamoDB",
+      "serviceType": "imported",
       "providerPlugin": "awscloudformation",
       "dependsOn": []
     }
