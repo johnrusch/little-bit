@@ -2,44 +2,62 @@
 // this is an auto generated file. This will be overwritten
 
 export const onCreateSample = /* GraphQL */ `
-  subscription OnCreateSample {
-    onCreateSample {
+  subscription OnCreateSample($owner: String) {
+    onCreateSample(owner: $owner) {
       id
       name
       username
+      file {
+        bucket
+        key
+        region
+      }
+      createdAt
+      updatedAt
       _version
       _deleted
       _lastChangedAt
-      createdAt
-      updatedAt
+      owner
     }
   }
 `;
 export const onUpdateSample = /* GraphQL */ `
-  subscription OnUpdateSample {
-    onUpdateSample {
+  subscription OnUpdateSample($owner: String) {
+    onUpdateSample(owner: $owner) {
       id
       name
       username
+      file {
+        bucket
+        key
+        region
+      }
+      createdAt
+      updatedAt
       _version
       _deleted
       _lastChangedAt
-      createdAt
-      updatedAt
+      owner
     }
   }
 `;
 export const onDeleteSample = /* GraphQL */ `
-  subscription OnDeleteSample {
-    onDeleteSample {
+  subscription OnDeleteSample($owner: String) {
+    onDeleteSample(owner: $owner) {
       id
       name
       username
+      file {
+        bucket
+        key
+        region
+      }
+      createdAt
+      updatedAt
       _version
       _deleted
       _lastChangedAt
-      createdAt
-      updatedAt
+      owner
     }
   }
 `;

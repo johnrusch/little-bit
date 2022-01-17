@@ -23,7 +23,7 @@ const Login = ({navigation}) => {
     return (
         <View style={styles.container}>
             <Text style={styles.text}>
-                Itty Bitty
+                little bit
             </Text>
             <FormInput
                 labelValue={username}

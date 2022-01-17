@@ -60,7 +60,7 @@ const Navigator = () => {
       }
     });
 
-    Hub.listen(/.*/, data => {
+    Hub.listen('storage', data => {
       console.log('EVERYTHING', data)
     })
 
@@ -72,10 +72,8 @@ const Navigator = () => {
   useEffect(() => {
     let subscription;
     const subscribe = async () => {
-      subscription = await DataStore.observe(
-        Sample,
-        sample => sample.username('eq', user),
-      ).subscribe(data => {
+      subscription = await DataStore.observeQuery(
+        Sample).subscribe(data => {
         console.log("DATASTORE", data);
       })
     }

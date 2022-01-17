@@ -1,8 +1,7 @@
 {
-  "AppSyncApiName": "littlebit",
+  "AppSyncApiName": "littlebitgraphqlAPI",
   "DynamoDBBillingMode": "PAY_PER_REQUEST",
   "DynamoDBEnableServerSideEncryption": false,
-  "AuthModeLastUpdated": "2022-01-16T21:12:58.192Z",
   "AuthCognitoUserPoolId": {
     "Fn::GetAtt": [
       "authlittlebit3ededec2",

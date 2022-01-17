@@ -10,11 +10,17 @@ export const createSample = /* GraphQL */ `
       id
       name
       username
+      file {
+        bucket
+        key
+        region
+      }
+      createdAt
+      updatedAt
       _version
       _deleted
       _lastChangedAt
-      createdAt
-      updatedAt
+      owner
     }
   }
 `;
@@ -27,11 +33,17 @@ export const updateSample = /* GraphQL */ `
       id
       name
       username
+      file {
+        bucket
+        key
+        region
+      }
+      createdAt
+      updatedAt
       _version
       _deleted
       _lastChangedAt
-      createdAt
-      updatedAt
+      owner
     }
   }
 `;
@@ -44,11 +56,17 @@ export const deleteSample = /* GraphQL */ `
       id
       name
       username
+      file {
+        bucket
+        key
+        region
+      }
+      createdAt
+      updatedAt
       _version
       _deleted
       _lastChangedAt
-      createdAt
-      updatedAt
+      owner
     }
   }
 `;

@@ -15,12 +15,6 @@
       "auth": {
         "littlebit3ededec2": {},
         "true": {}
-      },
-      "function": {
-        "EditandConvertRecordings": {
-          "deploymentBucketName": "amplify-littlebit-staging-201310-deployment",
-          "s3Key": "amplify-builds/EditandConvertRecordings-434f4b756f4d5a524930-build.zip"
-        }
       }
     }
   }

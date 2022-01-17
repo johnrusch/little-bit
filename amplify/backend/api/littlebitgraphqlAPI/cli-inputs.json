@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "serviceConfiguration": {
+    "apiName": "littlebitgraphqlAPI",
+    "serviceName": "AppSync",
+    "gqlSchemaPath": "/Users/johnrusch/code/sample-maker/amplify/backend/api/littlebitgraphqlAPI/schema.graphql",
+    "defaultAuthType": {
+      "mode": "AMAZON_COGNITO_USER_POOLS",
+      "cognitoUserPoolId": "authlittlebit3ededec2"
+    },
+    "conflictResolution": {
+      "defaultResolutionStrategy": {
+        "type": "AUTOMERGE"
+      }
+    }
+  }
+}

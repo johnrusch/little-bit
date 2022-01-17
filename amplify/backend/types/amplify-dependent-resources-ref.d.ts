@@ -1,7 +1,6 @@
 export type AmplifyDependentResourcesAttributes = {
     "api": {
-        "littlebit": {
-            "GraphQLAPIKeyOutput": "string",
+        "littlebitgraphqlAPI": {
             "GraphQLAPIIdOutput": "string",
             "GraphQLAPIEndpointOutput": "string"
         }
@@ -17,16 +16,8 @@ export type AmplifyDependentResourcesAttributes = {
             "AppClientID": "string"
         }
     },
-    "function": {
-        "EditandConvertRecordings": {
-            "Name": "string",
-            "Arn": "string",
-            "Region": "string",
-            "LambdaExecutionRole": "string"
-        }
-    },
     "storage": {
-        "littlebits3": {
+        "littlebitS3Resource": {
             "BucketName": "string",
             "Region": "string"
         }
