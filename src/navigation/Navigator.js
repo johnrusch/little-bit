@@ -5,10 +5,11 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, Button } from "react-native";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { UserProvider } from "../contexts/UserContext";
-import { Hub, API, DataStore } from "aws-amplify";
+import { Hub, API, DataStore, graphqlOperation } from "aws-amplify";
+import * as subscriptions from "../graphql/subscriptions";
 import { CognitoSyncClient } from "@aws-sdk/client-cognito-sync";
 import Sample from "../models/index";
-import { AWS_REGION } from '@env';
+import { AWS_REGION } from "@env";
 
 import NavBar from "../components/NavBar";
 import Login from "../screens/Login";
@@ -34,7 +35,7 @@ const Navigator = () => {
   };
 
   useEffect(() => {
-    const cognitoSyncClient = new CognitoSyncClient({ region: AWS_REGION })
+    const cognitoSyncClient = new CognitoSyncClient({ region: AWS_REGION });
 
     const getUser = async () => {
       const username = await api.isLoggedIn();
@@ -60,9 +61,16 @@ const Navigator = () => {
       }
     });
 
-    Hub.listen('storage', data => {
-      console.log('EVERYTHING', data)
-    })
+    let subscription;
+
+    Hub.listen("datastore", async (data) => {
+      console.log("datastore stuff", data);
+      if (user) {
+        subscription = await DataStore.observe(Sample).subscribe((data) => {
+          console.log("SAMPLE EVENT DATASTORE", data);
+        });
+      }
+    });
 
     getUser();
 
@@ -72,18 +80,19 @@ const Navigator = () => {
   // useEffect(() => {
   //   let subscription;
   //   const subscribe = async () => {
-  //     subscription = await DataStore.observeQuery(
-  //       Sample).subscribe(data => {
-  //       console.log("DATASTORE", data);
-  //     })
-  //   }
-  //   if (!user) return
+  //     subscription = await DataStore.observe(Sample, (sample) =>
+  //       sample.user_id("eq", user)
+  //     ).subscribe((data) => {
+  //       console.log("SAMPLE EVENT DATASTORE", data);
+  //     });
+  //   };
+  //   if (!user) return;
   //   else {
-  //     subscribe()
+  //     subscribe();
   //   }
-    
+
   //   // return subscription.unsubscribe();
-  // }, [user])
+  // }, [user]);
   // console.log(DataStore, user);
 
   return (

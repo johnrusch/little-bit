@@ -23,7 +23,7 @@
         },
         "CreateSampleRecord": {
           "deploymentBucketName": "amplify-littlebit-staging-201310-deployment",
-          "s3Key": "amplify-builds/CreateSampleRecord-2b6f45446c5a5278562b-build.zip"
+          "s3Key": "amplify-builds/CreateSampleRecord-6f69626f7952746b3664-build.zip"
         }
       }
     }
