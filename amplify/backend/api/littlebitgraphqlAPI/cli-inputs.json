@@ -3,7 +3,7 @@
   "serviceConfiguration": {
     "apiName": "littlebitgraphqlAPI",
     "serviceName": "AppSync",
-    "gqlSchemaPath": "/tmp/amplify-4d8ac19e-0f22-4200-af64-b0d3d151d239/amplify/backend/api/littlebitgraphqlAPI/schema.graphql",
+    "gqlSchemaPath": "/Users/johnrusch/code/sample-maker/amplify/backend/api/littlebitgraphqlAPI/schema.graphql",
     "defaultAuthType": {
       "mode": "AMAZON_COGNITO_USER_POOLS",
       "cognitoUserPoolId": "authlittlebit3ededec2"
@@ -16,8 +16,9 @@
     "additionalAuthTypes": [
       {
         "mode": "API_KEY",
-        "keyDescription": "api key description",
-        "expirationTime": 30
+        "expirationTime": 365,
+        "apiKeyExpirationDate": "2023-01-18T03:35:34.472Z",
+        "keyDescription": "LittleBitAPIKey"
       },
       {
         "mode": "AWS_IAM"

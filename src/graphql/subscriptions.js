@@ -2,11 +2,11 @@
 // this is an auto generated file. This will be overwritten
 
 export const onCreateSample = /* GraphQL */ `
-  subscription OnCreateSample($owner: String) {
-    onCreateSample(owner: $owner) {
+  subscription OnCreateSample {
+    onCreateSample {
       id
       name
-      username
+      user_id
       file {
         bucket
         key
@@ -17,16 +17,15 @@ export const onCreateSample = /* GraphQL */ `
       _version
       _deleted
       _lastChangedAt
-      owner
     }
   }
 `;
 export const onUpdateSample = /* GraphQL */ `
-  subscription OnUpdateSample($owner: String) {
-    onUpdateSample(owner: $owner) {
+  subscription OnUpdateSample {
+    onUpdateSample {
       id
       name
-      username
+      user_id
       file {
         bucket
         key
@@ -37,16 +36,15 @@ export const onUpdateSample = /* GraphQL */ `
       _version
       _deleted
       _lastChangedAt
-      owner
     }
   }
 `;
 export const onDeleteSample = /* GraphQL */ `
-  subscription OnDeleteSample($owner: String) {
-    onDeleteSample(owner: $owner) {
+  subscription OnDeleteSample {
+    onDeleteSample {
       id
       name
-      username
+      user_id
       file {
         bucket
         key
@@ -57,7 +55,6 @@ export const onDeleteSample = /* GraphQL */ `
       _version
       _deleted
       _lastChangedAt
-      owner
     }
   }
 `;

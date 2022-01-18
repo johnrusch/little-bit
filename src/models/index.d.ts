@@ -16,7 +16,7 @@ type SampleMetaData = {
 export declare class Sample {
   readonly id: string;
   readonly name: string;
-  readonly username?: string;
+  readonly user_id?: string;
   readonly file?: S3Object;
   readonly createdAt?: string;
   readonly updatedAt?: string;

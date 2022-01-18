@@ -1,9 +1,7 @@
-
-
-type Sample @model @auth(rules: [{ allow: owner }]) {
+type Sample @model @auth(rules: [{allow: public, provider: apiKey}]) {
   id: ID!
   name: String!
-  username: String
+  user_id: String
   file: S3Object
 }
 
@@ -12,5 +10,4 @@ type S3Object {
   key: String!
   region: String!
 }
-
-  
+ 

@@ -69,22 +69,22 @@ const Navigator = () => {
     return removeListeners();
   }, []);
 
-  useEffect(() => {
-    let subscription;
-    const subscribe = async () => {
-      subscription = await DataStore.observeQuery(
-        Sample).subscribe(data => {
-        console.log("DATASTORE", data);
-      })
-    }
-    if (!user) return
-    else {
-      subscribe()
-    }
+  // useEffect(() => {
+  //   let subscription;
+  //   const subscribe = async () => {
+  //     subscription = await DataStore.observeQuery(
+  //       Sample).subscribe(data => {
+  //       console.log("DATASTORE", data);
+  //     })
+  //   }
+  //   if (!user) return
+  //   else {
+  //     subscribe()
+  //   }
     
-    // return subscription.unsubscribe();
-  }, [user])
-  console.log(DataStore, user);
+  //   // return subscription.unsubscribe();
+  // }, [user])
+  // console.log(DataStore, user);
 
   return (
     <UserProvider value={{ user: user, sounds: userSounds }}>

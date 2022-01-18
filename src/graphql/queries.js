@@ -6,7 +6,7 @@ export const getSample = /* GraphQL */ `
     getSample(id: $id) {
       id
       name
-      username
+      user_id
       file {
         bucket
         key
@@ -17,7 +17,6 @@ export const getSample = /* GraphQL */ `
       _version
       _deleted
       _lastChangedAt
-      owner
     }
   }
 `;
@@ -31,7 +30,7 @@ export const listSamples = /* GraphQL */ `
       items {
         id
         name
-        username
+        user_id
         file {
           bucket
           key
@@ -42,7 +41,6 @@ export const listSamples = /* GraphQL */ `
         _version
         _deleted
         _lastChangedAt
-        owner
       }
       nextToken
       startedAt
@@ -65,7 +63,7 @@ export const syncSamples = /* GraphQL */ `
       items {
         id
         name
-        username
+        user_id
         file {
           bucket
           key
@@ -76,7 +74,6 @@ export const syncSamples = /* GraphQL */ `
         _version
         _deleted
         _lastChangedAt
-        owner
       }
       nextToken
       startedAt

@@ -23,6 +23,10 @@
     "apilittlebitgraphqlAPIGraphQLAPIEndpointOutput": {
       "Type": "String",
       "Default": "apilittlebitgraphqlAPIGraphQLAPIEndpointOutput"
+    },
+    "apilittlebitgraphqlAPIGraphQLAPIKeyOutput": {
+      "Type": "String",
+      "Default": "apilittlebitgraphqlAPIGraphQLAPIKeyOutput"
     }
   },
   "Conditions": {
@@ -83,6 +87,9 @@
             },
             "API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIENDPOINTOUTPUT": {
               "Ref": "apilittlebitgraphqlAPIGraphQLAPIEndpointOutput"
+            },
+            "API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIKEYOUTPUT": {
+              "Ref": "apilittlebitgraphqlAPIGraphQLAPIKeyOutput"
             }
           }
         },

@@ -9,7 +9,7 @@ export const createSample = /* GraphQL */ `
     createSample(input: $input, condition: $condition) {
       id
       name
-      username
+      user_id
       file {
         bucket
         key
@@ -20,7 +20,6 @@ export const createSample = /* GraphQL */ `
       _version
       _deleted
       _lastChangedAt
-      owner
     }
   }
 `;
@@ -32,7 +31,7 @@ export const updateSample = /* GraphQL */ `
     updateSample(input: $input, condition: $condition) {
       id
       name
-      username
+      user_id
       file {
         bucket
         key
@@ -43,7 +42,6 @@ export const updateSample = /* GraphQL */ `
       _version
       _deleted
       _lastChangedAt
-      owner
     }
   }
 `;
@@ -55,7 +53,7 @@ export const deleteSample = /* GraphQL */ `
     deleteSample(input: $input, condition: $condition) {
       id
       name
-      username
+      user_id
       file {
         bucket
         key
@@ -66,7 +64,6 @@ export const deleteSample = /* GraphQL */ `
       _version
       _deleted
       _lastChangedAt
-      owner
     }
   }
 `;

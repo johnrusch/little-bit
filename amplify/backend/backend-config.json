@@ -15,8 +15,9 @@
             {
               "authenticationType": "API_KEY",
               "apiKeyConfig": {
-                "apiKeyExpirationDays": 30,
-                "description": "api key description"
+                "apiKeyExpirationDays": 365,
+                "apiKeyExpirationDate": "2023-01-18T03:35:34.472Z",
+                "description": "LittleBitAPIKey"
               }
             },
             {
@@ -80,7 +81,8 @@
           "resourceName": "littlebitgraphqlAPI",
           "attributes": [
             "GraphQLAPIIdOutput",
-            "GraphQLAPIEndpointOutput"
+            "GraphQLAPIEndpointOutput",
+            "GraphQLAPIKeyOutput"
           ]
         }
       ]
