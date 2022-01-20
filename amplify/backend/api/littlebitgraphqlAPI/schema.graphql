@@ -10,4 +10,4 @@ type S3Object {
   key: String!
   region: String!
 }
-   
+     
