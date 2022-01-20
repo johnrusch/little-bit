@@ -57,7 +57,7 @@ const Signup = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#f9fafd",
+    backgroundColor: "#D0F7DD",
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   navButtonText: {
     fontSize: 18,
     fontWeight: "500",
-    color: "#8382FA",
+    color: "#337A4F",
   },
   textPrivate: {
     flexDirection: "row",

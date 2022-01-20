@@ -56,7 +56,7 @@ const Login = ({navigation}) => {
 const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#f9fafd",
+      backgroundColor: "#D0F7DD",
       justifyContent: 'center',
       alignItems: 'center',
       padding: 20,
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     navButtonText: {
       fontSize: 18,
       fontWeight: '500',
-      color: '#8382FA',
+      color: '#337A4F',
     },
   });
 

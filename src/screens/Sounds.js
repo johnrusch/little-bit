@@ -50,7 +50,7 @@ export default Sounds;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#E8FBEE",
+    backgroundColor: "rgba(255,255,255,1)",
   },
   recordButton: {
     alignSelf: "center",

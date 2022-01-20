@@ -72,6 +72,7 @@ const Recorder = (props) => {
   };
 
   const saveRecording = async () => {
+    userData.setLoading(true);
     await Storage.put(`unprocessed/${userData.user}/${text}.${format}`, blob);
     setModalVisible(false);
     setFormat();
@@ -94,6 +95,8 @@ const Recorder = (props) => {
       />
     );
   };
+
+  console.log(userData.loading, 'RECORDER PROPS')
 
   return (
     <View style={styles.container}>
@@ -123,7 +126,7 @@ export default Recorder;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#E8FBEE",
+    backgroundColor: "rgba(255,255,255,1)",
   },
   recordButton: {
     alignSelf: "center",

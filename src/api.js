@@ -51,12 +51,13 @@ const getUsername = (user) => {
 
 const listUserSounds = async (userID) => {
   const sounds = await API.graphql(graphqlOperation(queries.listSamples, {user_id: userID}))
+  console.log("user sounds", sounds);
   return sounds.data.listSamples.items
 }
 
 const getSound = async (model) => {
   const { name, file } = model;
-  if (!file) return;
+  if (!file || model._deleted) return;
   const key = file.key.split("/").slice(1).join("/")
   const url = await Storage.get(key);
   const soundObj = { name, url }
@@ -69,6 +70,7 @@ const loadUserSounds = async (userID) => {
   const sounds = [];
   for (const file of files) {
     const sound = await getSound(file);
+    if (!sound) continue;
     sounds.push(sound);
   }
   return sounds;

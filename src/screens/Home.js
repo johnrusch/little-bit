@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   StatusBar,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Text,
   TouchableOpacity,
-  Button
+  Button,
 } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
@@ -21,26 +21,44 @@ import NavBar from "../components/NavBar";
 import Recorder from "./Recorder";
 import Sounds from "./Sounds";
 import * as FileSystem from "expo-file-system";
+import UserContext from "../contexts/UserContext";
 import api from "../api";
 import LogOutButton from "../components/LogOutButton";
+import LoadingModal from "../components/LoadingModal";
 
 const Home = (props) => {
   const Tabs = createBottomTabNavigator();
 
+  const context = useContext(UserContext);
+
+  console.log(context.setLoading, 'HOME CONTEXT')
+
   return (
-    <Tabs.Navigator
-      tabBar={(props) => <NavBar {...props} />}
-      screenOptions={{
-        tabBarStyle: { backgroundColor: "#69FAA0" },
-        tabBarActiveTintColor: "#FFA164",
-        headerShadowVisible: false,
-        headerStyle: { backgroundColor: '#E8FBEE' },
-        headerRight: () => <LogOutButton buttonTitle="Log Out" onPress={async () => await api.logOut()}/>
-      }}
-    >
-      <Tabs.Screen name="Recorder" options={{ title: '' }}component={Recorder} />
-      <Tabs.Screen name="Sounds" options={{ title: '' }}component={Sounds} />
-    </Tabs.Navigator>
+    <>
+      <Tabs.Navigator
+        tabBar={(props) => <NavBar {...props} />}
+        screenOptions={{
+          tabBarStyle: { backgroundColor: "#69FAA0" },
+          tabBarActiveTintColor: "#FFA164",
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: "rgba(255,255,255,1)" },
+          headerRight: () => (
+            <LogOutButton
+              buttonTitle="Log Out"
+              onPress={async () => await api.logOut()}
+            />
+          ),
+        }}
+      >
+        <Tabs.Screen
+          name="Recorder"
+          options={{ title: "" }}
+          component={Recorder}
+        />
+        <Tabs.Screen name="Sounds" options={{ title: "" }} component={Sounds} />
+      </Tabs.Navigator>
+      {context.loading && <LoadingModal size="large" color="#37AD65"/>}
+    </>
   );
 };
 
@@ -57,6 +75,6 @@ const styles = StyleSheet.create({
   },
   logOutButton: {
     marginRight: 20,
-    padding: 10
-  }
+    padding: 10,
+  },
 });

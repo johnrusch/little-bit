@@ -88,13 +88,14 @@ def handler(event, context):
     # Process each chunk with your parameters
     for i, chunk in enumerate(chunks):
         # Create a silence chunk that's 0.5 seconds (or 500 ms) long for padding.
-        silence_chunk = AudioSegment.silent(duration=750)
+        beginning_chunk = AudioSegment.silent(duration=250)
+        ending_chunk = AudioSegment.silent(duration=750)
         print(i)
         # Add the padding chunk to beginning and end of the entire chunk.
-        audio_chunk = silence_chunk + chunk + silence_chunk
+        audio_chunk = beginning_chunk + chunk + ending_chunk
     
         # Normalize the entire chunk.
-        normalized_chunk = match_target_amplitude(audio_chunk, -16.0)
+        normalized_chunk = match_target_amplitude(audio_chunk, -20.0)
     
         # Export the audio chunk with new bitrate.
         filename = "{}-{}.wav".format(s3_source_filename, i)
