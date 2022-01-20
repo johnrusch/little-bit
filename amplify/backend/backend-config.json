@@ -16,7 +16,7 @@
               "authenticationType": "API_KEY",
               "apiKeyConfig": {
                 "apiKeyExpirationDays": 365,
-                "apiKeyExpirationDate": "2023-01-18T03:35:34.472Z",
+                "apiKeyExpirationDate": "2023-01-20T01:01:34.144Z",
                 "description": "LittleBitAPIKey"
               }
             },

@@ -4,8 +4,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 
 import Amplify, { Auth } from 'aws-amplify';
+import { DataStore } from '@aws-amplify/datastore';
 import awsconfig from './src/aws-exports';
 Amplify.configure(awsconfig);
+DataStore.configure(awsconfig);
 
 import Navigator from './src/navigation/Navigator';
 

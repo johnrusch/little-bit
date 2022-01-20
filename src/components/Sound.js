@@ -72,7 +72,7 @@ const Sound = ({ name, url }) => {
   }, []);
 
   return (
-    <View style={{ flexDirection: "row", padding: 15, alignItems: "center" }}>
+    <View style={{ flexDirection: "row", padding: 15, alignItems: "center", backgroundColor: '#E8FBEE' }}>
       <TouchableOpacity style={{ marginRight: 15 }}onPress={() => toggleAudioPlayback()}>
         <FontAwesomeIcon
           icon={fileNotLoaded ? faFrown : !isPlaying ? faPlay : faPause}

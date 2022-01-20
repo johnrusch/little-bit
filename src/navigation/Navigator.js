@@ -5,7 +5,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, Button } from "react-native";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { UserProvider } from "../contexts/UserContext";
-import { Hub, API, DataStore, graphqlOperation } from "aws-amplify";
+import { Hub, API, graphqlOperation } from "aws-amplify";
+import { DataStore } from "@aws-amplify/datastore";
 import * as subscriptions from "../graphql/subscriptions";
 import { CognitoSyncClient } from "@aws-sdk/client-cognito-sync";
 import Sample from "../models/index";
@@ -25,22 +26,26 @@ const Stack = createNativeStackNavigator();
 const Navigator = () => {
   const subscription = React.useRef();
   const [user, setUser] = useState(false);
-  const [userSounds, setUserSounds] = useState({});
+  const [userSounds, setUserSounds] = useState([]);
   const [topicSubscription, setTopicSubscription] = useState();
+
+  const onStartUp = async (userID) => {
+    setUser(userID);
+    setUserSounds(await api.loadUserSounds(userID));
+    await DataStore.clear();
+    await DataStore.start();
+  };
 
   const removeListeners = () => {
     Hub.remove("auth");
-    Hub.remove("storage");
-    return;
   };
 
   useEffect(() => {
-    const cognitoSyncClient = new CognitoSyncClient({ region: AWS_REGION });
-
     const getUser = async () => {
       const username = await api.isLoggedIn();
-      setUser(username);
-      setUserSounds(await api.getSounds(username));
+      if (username) {
+        await onStartUp(username);
+      }
     };
 
     Hub.listen("auth", async (data) => {
@@ -49,26 +54,16 @@ const Navigator = () => {
       switch (payload.event) {
         case "signIn":
           const username = api.getUsername(payload.data);
-          setUser(username);
-          setUserSounds(await api.getSounds(username));
-          await DataStore.start();
+          await onStartUp(username);
           break;
         case "signOut":
           setUser();
-          setUserSounds({});
+          setUserSounds([]);
+          DataStore.clear();
           await DataStore.stop();
+          removeListeners();
+          subscription.current && subscription.current.unsubscribe();
           break;
-      }
-    });
-
-    let subscription;
-
-    Hub.listen("datastore", async (data) => {
-      console.log("datastore stuff", data);
-      if (user) {
-        subscription = await DataStore.observe(Sample).subscribe((data) => {
-          console.log("SAMPLE EVENT DATASTORE", data);
-        });
       }
     });
 
@@ -77,23 +72,43 @@ const Navigator = () => {
     return removeListeners();
   }, []);
 
-  // useEffect(() => {
-  //   let subscription;
-  //   const subscribe = async () => {
-  //     subscription = await DataStore.observe(Sample, (sample) =>
-  //       sample.user_id("eq", user)
-  //     ).subscribe((data) => {
-  //       console.log("SAMPLE EVENT DATASTORE", data);
-  //     });
-  //   };
-  //   if (!user) return;
-  //   else {
-  //     subscribe();
-  //   }
+  useEffect(() => {
+    console.log("clearing subscription");
 
-  //   // return subscription.unsubscribe();
-  // }, [user]);
-  // console.log(DataStore, user);
+    const unsubscribe = async (subscription) => {
+      await subscription.unsubscribe();
+    };
+
+    subscription.current && unsubscribe(subscription.current);
+
+    // const subscribe = async () => {
+    //   subscription.current = await API.graphql(graphqlOperation(subscriptions.onCreateSample, {user_id: user})).subscribe({
+    //     next: async (update) => {
+    //       console.log("subscription data", update.value);
+    //       const newSound = update.value.data.onCreateSample;
+    //       const sound = await api.getSound(newSound);
+    //       const newUserSounds = [...userSounds, sound];
+    //       setUserSounds(newUserSounds);
+    //     },
+    //     error: (error) => console.log("SOMETHING WRONG", error),
+    //   });
+    // };
+
+    const subscribe = () => {
+      subscription.current = DataStore.observeQuery(Sample, (sample) =>
+        sample.user_id("eq", user)
+      ).subscribe((data) => {
+        console.log("Data Store observer", data);
+      });
+    };
+    if (!user) return;
+    else {
+      console.log("SUBSCRIBING");
+      subscribe();
+    }
+  }, [user]);
+
+  console.log(DataStore);
 
   return (
     <UserProvider value={{ user: user, sounds: userSounds }}>

@@ -34,6 +34,7 @@ const Home = (props) => {
         tabBarStyle: { backgroundColor: "#69FAA0" },
         tabBarActiveTintColor: "#FFA164",
         headerShadowVisible: false,
+        headerStyle: { backgroundColor: '#E8FBEE' },
         headerRight: () => <LogOutButton buttonTitle="Log Out" onPress={async () => await api.logOut()}/>
       }}
     >

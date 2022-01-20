@@ -1,5 +1,6 @@
-import { Auth, Storage } from "aws-amplify";
+import { Auth, Storage, API, graphqlOperation } from "aws-amplify";
 import * as FileSystem from "expo-file-system";
+import * as queries from './graphql/queries';
 
 const logIn = async (username, password) => {
   try {
@@ -48,7 +49,32 @@ const getUsername = (user) => {
   return user.attributes.sub;
 };
 
-const getSounds = async (email) => {
+const listUserSounds = async (userID) => {
+  const sounds = await API.graphql(graphqlOperation(queries.listSamples, {user_id: userID}))
+  return sounds.data.listSamples.items
+}
+
+const getSound = async (model) => {
+  const { name, file } = model;
+  if (!file) return;
+  const key = file.key.split("/").slice(1).join("/")
+  const url = await Storage.get(key);
+  const soundObj = { name, url }
+  // console.log(soundObj, 'FROM GET SOUND');
+  return soundObj;
+}
+
+const loadUserSounds = async (userID) => {
+  const files = await listUserSounds(userID);
+  const sounds = [];
+  for (const file of files) {
+    const sound = await getSound(file);
+    sounds.push(sound);
+  }
+  return sounds;
+}
+
+const getSoundsFromS3 = async (email) => {
   if (!email) return;
   const files = await Storage.list(`processed/${email}`);
   const sounds = [];
@@ -68,5 +94,7 @@ export default {
   logOut,
   isLoggedIn,
   getUsername,
-  getSounds,
+  getSoundsFromS3,
+  loadUserSounds,
+  getSound
 };

@@ -2,8 +2,8 @@
 // this is an auto generated file. This will be overwritten
 
 export const onCreateSample = /* GraphQL */ `
-  subscription OnCreateSample {
-    onCreateSample {
+  subscription OnCreateSample($user_id: String) {
+    onCreateSample(user_id: $user_id) {
       id
       name
       user_id
@@ -21,8 +21,8 @@ export const onCreateSample = /* GraphQL */ `
   }
 `;
 export const onUpdateSample = /* GraphQL */ `
-  subscription OnUpdateSample {
-    onUpdateSample {
+  subscription OnUpdateSample($user_id: String) {
+    onUpdateSample(user_id: $user_id) {
       id
       name
       user_id
@@ -40,8 +40,8 @@ export const onUpdateSample = /* GraphQL */ `
   }
 `;
 export const onDeleteSample = /* GraphQL */ `
-  subscription OnDeleteSample {
-    onDeleteSample {
+  subscription OnDeleteSample($user_id: String) {
+    onDeleteSample(user_id: $user_id) {
       id
       name
       user_id

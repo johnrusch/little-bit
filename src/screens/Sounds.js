@@ -27,7 +27,8 @@ const Sounds = (props) => {
 
   const renderSounds = sounds => {
     return sounds.map((sound, i) => {
-      return <Sound name={sound.name} url={sound.url} key={i}/>
+      if (!sound) return;
+      return <Sound name={sound.name || "untitled"} url={sound.url} key={i}/>
     })
   }
 
@@ -38,7 +39,7 @@ const Sounds = (props) => {
           flex: 1
         }}
       >
-        {renderSounds(userData.sounds)}
+        {userData.sounds && renderSounds(userData.sounds)}
       </View>
     </ScrollView>
   );
@@ -49,7 +50,7 @@ export default Sounds;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgba(255,255,255,1)",
+    backgroundColor: "#E8FBEE",
   },
   recordButton: {
     alignSelf: "center",
