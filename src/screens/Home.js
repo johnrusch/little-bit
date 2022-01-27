@@ -31,8 +31,6 @@ const Home = (props) => {
 
   const context = useContext(UserContext);
 
-  console.log(context.setLoading, 'HOME CONTEXT')
-
   return (
     <>
       <Tabs.Navigator

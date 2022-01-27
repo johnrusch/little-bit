@@ -1,16 +1,20 @@
-import React, {useState} from 'react';
+import React, {useState, useContext} from 'react';
 import { StyleSheet, Text, TouchableOpacity, Image, View } from 'react-native';
 
 import FormButton from '../components/FormButton';
 import FormInput from '../components/FormInput';
 import api from '../api';
 import { NavigationContainer } from '@react-navigation/native';
+import UserContext from '../contexts/UserContext';
 
 const Login = ({navigation}) => {
     const [username, setUsername] = useState();
     const [password, setPassword] = useState();
 
+    const context = useContext(UserContext);
+
     const handleLogin = async (username, password) => {
+      context.setLoading(true);
       if (username && password) {
         try {
           const login = await api.logIn(username, password);

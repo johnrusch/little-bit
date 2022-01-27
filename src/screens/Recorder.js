@@ -72,7 +72,7 @@ const Recorder = (props) => {
   };
 
   const saveRecording = async () => {
-    userData.setLoading(true);
+    // userData.setLoading();
     await Storage.put(`unprocessed/${userData.user}/${text}.${format}`, blob);
     setModalVisible(false);
     setFormat();
@@ -95,8 +95,6 @@ const Recorder = (props) => {
       />
     );
   };
-
-  console.log(userData.loading, 'RECORDER PROPS')
 
   return (
     <View style={styles.container}>

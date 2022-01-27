@@ -84,6 +84,7 @@ def handler(event, context):
     
     print(chunks)
     
+    def get_noise_signal(sound):
     
     # Process each chunk with your parameters
     for i, chunk in enumerate(chunks):
@@ -107,6 +108,9 @@ def handler(event, context):
         print("Exporting chunk{0}.mp3.".format(i), "/tmp/{}".format(filename), s3_source_bucket, "/{}/{}".format(username, filename))
         s3_client.upload_file("/tmp/{}".format(filename), s3_source_bucket, "public/processed/{}/{}".format(username, new_filename))
         
+
+    # reduce noise in an audio file
+    def reduce_noise(sound):
 
     # new_id = uuid.uuid4()
     # item_id = str(new_id)

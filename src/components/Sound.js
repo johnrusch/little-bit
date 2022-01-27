@@ -26,15 +26,23 @@ const Sound = ({ name, url }) => {
   const [duration, setDuration] = useState();
   const [fileNotLoaded, setFileNotLoaded] = useState(false);
 
+  const handleIfPlayable = () => {
+    if (fileNotLoaded) {
+    }
+  }
+
   const toggleAudioPlayback = () => {
+    if (!soundObject.current._loaded) {
+      setFileNotLoaded(true);
+      return;
+    }
     !isPlaying ? soundObject.current.playAsync() : soundObject.current.pauseAsync();
     setIsPlaying(!isPlaying);
   };
 
   const onPlaybackStatusUpdate = async playbackStatus => {
     if (!playbackStatus.isLoaded) {
-      console.log("Sound not loaded: ", playbackStatus.error)
-      setFileNotLoaded(true);
+      await loadSound();
       if (playbackStatus.error) {
         console.log(`Encountered a fatal error during playback: ${playbackStatus.error}`);
         // Send Expo team the error on Slack or the forums so we can help you debug!
@@ -52,15 +60,17 @@ const Sound = ({ name, url }) => {
     }
   }
 
+  const loadSound = async () => {
+    try {
+      await soundObject.current.loadAsync({ uri: url }, {volume: 0.8}, true);
+      await soundObject.current.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+    } catch (error) {
+      console.log("Unable to load sound: ", error.message);
+      setFileNotLoaded(true);
+    }
+  };
+
   useEffect(() => {
-    const loadSound = async () => {
-      try {
-        await soundObject.current.loadAsync({ uri: url }, {volume: 0.8}, true);
-        await soundObject.current.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
-      } catch (error) {
-        console.log("Unable to load sound: ", error.message);
-      }
-    };
 
     const unloadSound = () => {
       soundObject.current && soundObject.current.unloadAsync().then();
@@ -70,6 +80,10 @@ const Sound = ({ name, url }) => {
 
     return unloadSound();
   }, []);
+
+
+
+  
 
   return (
     <View style={{ flexDirection: "row", padding: 15, alignItems: "center", backgroundColor: 'rgba(255,255,255,1)' }}>

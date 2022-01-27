@@ -51,7 +51,7 @@ const getUsername = (user) => {
 
 const listUserSounds = async (userID) => {
   const sounds = await API.graphql(graphqlOperation(queries.listSamples, {user_id: userID}))
-  console.log("user sounds", sounds);
+  // console.log("user sounds", sounds);
   return sounds.data.listSamples.items
 }
 
