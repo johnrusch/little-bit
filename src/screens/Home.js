@@ -31,6 +31,19 @@ const Home = (props) => {
 
   const context = useContext(UserContext);
 
+    // if (loading)
+  //   return (
+  //     <Spinner
+  //       visible={loading}
+  //       textContent={
+  //         loggingIn
+  //           ? loggingInTexts[getLoadingText(loggingInTexts)]
+  //           : loadingTexts[getLoadingText(loadingTexts)]
+  //       }
+  //       textStyle={{ color: "black" }}
+  //     />
+  //   );
+
   return (
     <>
       <Tabs.Navigator
@@ -55,7 +68,6 @@ const Home = (props) => {
         />
         <Tabs.Screen name="Sounds" options={{ title: "" }} component={Sounds} />
       </Tabs.Navigator>
-      {context.loading && <LoadingModal size="large" color="#37AD65"/>}
     </>
   );
 };

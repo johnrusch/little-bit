@@ -30,7 +30,6 @@ const Navigator = (props) => {
   const subscription = React.useRef();
   const [user, setUser] = useState(false);
   const [userSounds, setUserSounds] = useState('no sounds loaded');
-  const [topicSubscription, setTopicSubscription] = useState();
   const [loading, setLoading] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
   const { loadingTexts, loggingInTexts, getLoadingText } = loadingUtils;
@@ -44,7 +43,6 @@ const Navigator = (props) => {
   };
 
   const addSounds = (newSound) => {
-    
     const currentSounds = Array.from(userSounds);
     currentSounds.push(newSound);
     console.log("ADDED A SOUND", currentSounds.length);
@@ -55,9 +53,8 @@ const Navigator = (props) => {
     Hub.remove("auth");
   };
 
-  const handleLoading = (loggingIn) => {
-    if (loggingIn) setLoggingIn(true);
-    setLoading(true);
+  const handleLoading = (loading) => {
+    setLoading(loading);
     return setTimeout(() => {
       setLoading(false);
       new Alert.alert(
@@ -69,7 +66,7 @@ const Navigator = (props) => {
   
 
   useEffect(() => {
-    // setLoading(true);
+    setLoading(true);
     const getUser = async () => {
       const userID = await api.isLoggedIn();
       if (userID) {
@@ -138,18 +135,18 @@ const Navigator = (props) => {
     setLoading(false);
   }, [user, userSounds]);
 
-  // if (loading)
-  //   return (
-  //     <Spinner
-  //       visible={loading}
-  //       textContent={
-  //         loggingIn
-  //           ? loggingInTexts[getLoadingText(loggingInTexts)]
-  //           : loadingTexts[getLoadingText(loadingTexts)]
-  //       }
-  //       textStyle={{ color: "black" }}
-  //     />
-  //   );
+  if (loading)
+    return (
+      <Spinner
+        visible={loading}
+        textContent={
+          loggingIn
+            ? loggingInTexts[getLoadingText(loggingInTexts)]
+            : loadingTexts[getLoadingText(loadingTexts)]
+        }
+        textStyle={{ color: "black" }}
+      />
+    );
 
   return (
     <UserProvider
@@ -157,7 +154,7 @@ const Navigator = (props) => {
         user,
         sounds: userSounds,
         loading: loading,
-        setLoading: handleLoading,
+        setLoading: setLoading,
       }}
     >
       <NavigationContainer>

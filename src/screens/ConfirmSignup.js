@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect, useContext} from 'react';
 import {
   View,
   Image,
@@ -13,6 +13,7 @@ import {Auth} from 'aws-amplify';
 import api from '../api';
 import DigitBox from '../components/DigitBox';
 import {CommonActions} from '@react-navigation/native';
+import UserContext from '../contexts/UserContext';
 
 import { windowHeight, windowWidth } from "../utils/Dimensions";
 
@@ -23,6 +24,8 @@ const ConfirmSignup = (props) => {
     const digit4Ref = useRef();
     const digit5Ref = useRef();
     const digit6Ref = useRef();
+
+    const context = useContext(UserContext);
   
     const [loading, setLoading] = useState(false);
     const [confirmationCode, setConfirmationCode] = useState({
@@ -49,7 +52,7 @@ const ConfirmSignup = (props) => {
     }, [confirmationCode.digit6]);
   
     const navigateUserHome = () => {
-      setLoading(false)
+      // context.setLoading(false)
       const resetAction = CommonActions.reset({
         index: 0,
         routes: [
@@ -64,13 +67,13 @@ const ConfirmSignup = (props) => {
     const confirmSignUp = async () => {
       let {digit1, digit2, digit3, digit4, digit5, digit6} = confirmationCode;
       let codeToConfirm = digit1 + digit2 + digit3 + digit4 + digit5 + digit6;
-      setLoading(true)
+      context.setLoading(true)
       try {
         await Auth.confirmSignUp(username, codeToConfirm);
         await api.logIn(username, password);
         navigateUserHome();
       } catch (error) {
-        setLoading(false)
+        context.setLoading(false)
         setDisplayError(true);
         setConfirmationCode({digit1: '', digit2: '', digit3: '', digit4: '', digit5: '', digit6: ''});
         digit1Ref.current.focus();
@@ -78,11 +81,11 @@ const ConfirmSignup = (props) => {
     };
   
     return (
-      loading ? 
-      <View style={{flex: 1, backgroundColor: '#343a40', justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-      : 
+      // loading ? 
+      // <View style={{flex: 1, backgroundColor: '#343a40', justifyContent: "center", alignItems: "center" }}>
+      //   <ActivityIndicator size="large" />
+      // </View>
+      // : 
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={{fontSize: 30, marginLeft: 35, color: '#D8D8D8', fontWeight: '100'}}>Confirmation</Text>

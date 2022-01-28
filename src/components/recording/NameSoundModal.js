@@ -8,6 +8,7 @@ import {
   View,
   TextInput,
   Dimensions,
+  KeyboardAvoidingView,
 } from "react-native";
 import { windowHeight, windowWidth } from "../../utils/Dimensions";
 const NameSoundModal = ({
@@ -19,55 +20,67 @@ const NameSoundModal = ({
 }) => {
   const inputRef = useRef(null);
 
+  const handleSubmit = () => {
+    if (text.length < 1) {
+      Alert.alert("Please enter a name");
+    } else {
+      saveRecording();
+    }
+  };
+
   useEffect(() => {
     inputRef.current && inputRef.current.focus();
   }, []);
 
   return (
-    <View style={styles.centeredView}>
       <Modal
+        style={{ margin: 0 }}
         animationType="slide"
-        transparent={true}
+        transparent
         visible={modalVisible}
         onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
+          new Alert.alert("Modal has been closed.");
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>Name your new sample!</Text>
-            <TextInput
-              ref={inputRef}
-              style={styles.textInput}
-              onChangeText={(text) => setText(text)}
-              defaultValue={text}
-              autoFocus={true}
-              selectTextOnFocus
-            />
-            <Pressable
-              onPress={saveRecording}
-              style={[styles.button, styles.buttonClose]}
-            >
-              <Text style={styles.textStyle}>Submit Name</Text>
-            </Pressable>
-          </View>
+        <View style={styles.modalView}>
+          <Text style={styles.modalText}>Name your new sample!</Text>
+          <TextInput
+            ref={inputRef}
+            style={styles.textInput}
+            onChangeText={(text) => setText(text)}
+            defaultValue={text}
+            autoFocus={true}
+            selectTextOnFocus
+          />
+          <Pressable
+            onPress={() => handleSubmit()}
+            style={[styles.button, styles.buttonClose]}
+          >
+            <Text style={styles.buttonTextStyle}>Submit Name</Text>
+          </Pressable>
         </View>
       </Modal>
-    </View>
   );
 };
 
 const styles = StyleSheet.create({
   centeredView: {
+    flex: 1,
     position: "absolute",
     top: windowHeight / 2 - 150,
     left: windowWidth / 2 - 150,
+    right: windowWidth / 2 - 150,
     alignItems: "center",
     marginTop: 22,
+    borderWidth: 1,
   },
   modalView: {
-    margin: 20,
+    flex: 1,
+    top: windowHeight / 2 - 150,
+    left: windowWidth / 2 - 150,
+    right: windowWidth / 2 - 150,
+    position: "absolute",
     backgroundColor: "white",
     borderRadius: 20,
     padding: 35,
@@ -89,13 +102,13 @@ const styles = StyleSheet.create({
   buttonClose: {
     backgroundColor: "#69FAA1",
   },
-  textStyle: {
+  buttonTextStyle: {
     color: "white",
     fontWeight: "bold",
     textAlign: "center",
   },
   modalText: {
-    marginBottom: 15,
+    marginBottom: 10,
     textAlign: "center",
     fontWeight: "800",
   },

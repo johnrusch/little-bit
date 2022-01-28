@@ -24,7 +24,7 @@ import { windowHeight } from "../utils/Dimensions";
 
 const Recorder = (props) => {
   const [recording, setRecording] = useState();
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(true);
   const [format, setFormat] = useState();
   const [blob, setBlob] = useState();
 
@@ -72,7 +72,7 @@ const Recorder = (props) => {
   };
 
   const saveRecording = async () => {
-    // userData.setLoading();
+    userData.setLoading(true);
     await Storage.put(`unprocessed/${userData.user}/${text}.${format}`, blob);
     setModalVisible(false);
     setFormat();
