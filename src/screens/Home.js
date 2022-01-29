@@ -22,16 +22,75 @@ import Recorder from "./Recorder";
 import Sounds from "./Sounds";
 import * as FileSystem from "expo-file-system";
 import UserContext from "../contexts/UserContext";
-import api from "../api";
+import { AUTH, SOUNDS } from "../api";
 import LogOutButton from "../components/LogOutButton";
 import LoadingModal from "../components/LoadingModal";
 
 const Home = (props) => {
+  const { user, navigation } = props;
+  const [sounds, setSounds] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   const Tabs = createBottomTabNavigator();
 
   const context = useContext(UserContext);
 
-    // if (loading)
+  const renderTabs = () => {
+    return (
+      <Tabs.Navigator
+        tabBar={(props) => <NavBar {...props} />}
+        initialRouteName="Recorder"
+        screenOptions={{
+          tabBarStyle: { backgroundColor: "#69FAA0" },
+          tabBarActiveTintColor: "#FFA164",
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: "rgba(255,255,255,1)" },
+          headerRight: () => (
+            <LogOutButton
+              buttonTitle="Log Out"
+              onPress={async () => await AUTH.logOut()}
+            />
+          ),
+        }}
+      >
+        <Tabs.Screen
+          name="Recorder"
+          component={Recorder}
+          options={{
+            tabBarLabel: "Record",
+            tabBarIcon: ({ color }) => (
+              <FontAwesomeIcon icon={faMicrophone} color={color} size={24} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="Sounds"
+          component={Sounds}
+          options={{
+            tabBarLabel: "Sounds",
+            tabBarIcon: ({ color }) => (
+              <FontAwesomeIcon icon={faMicrophone} color={color} size={24} />
+            ),
+          }}
+        />
+      </Tabs.Navigator>
+    );
+  };
+
+  useEffect(() => {
+    SOUNDS.loadUserSounds(user).then((sounds) => {
+      context.setUserSounds(sounds);
+    });
+
+    const subscription = SOUNDS.subscribeToUserSounds(user, setSounds);
+
+    return () => {
+      subscription.unsubscribe();
+    }
+  }, []);
+    
+
+  // if (loading)
   //   return (
   //     <Spinner
   //       visible={loading}
@@ -46,28 +105,7 @@ const Home = (props) => {
 
   return (
     <>
-      <Tabs.Navigator
-        tabBar={(props) => <NavBar {...props} />}
-        screenOptions={{
-          tabBarStyle: { backgroundColor: "#69FAA0" },
-          tabBarActiveTintColor: "#FFA164",
-          headerShadowVisible: false,
-          headerStyle: { backgroundColor: "rgba(255,255,255,1)" },
-          headerRight: () => (
-            <LogOutButton
-              buttonTitle="Log Out"
-              onPress={async () => await api.logOut()}
-            />
-          ),
-        }}
-      >
-        <Tabs.Screen
-          name="Recorder"
-          options={{ title: "" }}
-          component={Recorder}
-        />
-        <Tabs.Screen name="Sounds" options={{ title: "" }} component={Sounds} />
-      </Tabs.Navigator>
+      {renderTabs()}
     </>
   );
 };

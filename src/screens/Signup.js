@@ -3,7 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, Image, View } from "react-native";
 
 import FormButton from "../components/FormButton";
 import FormInput from "../components/FormInput";
-import api from "../api";
+import { AUTH } from "../api";
 
 const Signup = ({ navigation }) => {
   const [newUser, setNewUser] = useState({});
@@ -38,7 +38,7 @@ const Signup = ({ navigation }) => {
         buttonTitle="Sign Up"
         onPress={async () => {
           if (newUser.email && newUser.password && newUser.password === confirmPassword) {
-            const signUp = await api.signUp(newUser)
+            const signUp = await AUTH.signUp(newUser)
             signUp && navigation.navigate("ConfirmSignup", { username: newUser.email, password: newUser.password });
           } else {
             alert("Please enter all fields to create a new account")

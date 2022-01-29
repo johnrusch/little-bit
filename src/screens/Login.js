@@ -3,7 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, Image, View } from 'react-native';
 
 import FormButton from '../components/FormButton';
 import FormInput from '../components/FormInput';
-import api from '../api';
+import { AUTH } from '../api';
 import { NavigationContainer } from '@react-navigation/native';
 import UserContext from '../contexts/UserContext';
 
@@ -17,7 +17,7 @@ const Login = ({navigation}) => {
       context.setLoading(true);
       if (username && password) {
         try {
-          const login = await api.logIn(username, password);
+          const login = await AUTH.logIn(username, password);
         } catch (error) {
           alert("Invalid Login:", error.message);
         }

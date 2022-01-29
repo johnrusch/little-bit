@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {Auth} from 'aws-amplify';
-import api from '../api';
+import { AUTH } from '../api';
 import DigitBox from '../components/DigitBox';
 import {CommonActions} from '@react-navigation/native';
 import UserContext from '../contexts/UserContext';
