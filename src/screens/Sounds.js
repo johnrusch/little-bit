@@ -1,12 +1,20 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import Sound from "../components/Sound";
 import EditSoundModal from "../components/modals/EditSoundModal";
+import { wait } from "../utils/loading";
 
 const Sounds = (props) => {
-  const { user, sounds } = props;
+  const { user, sounds, setLoadingStatus, setSounds, setRefreshing, refreshing } = props;
   const [modalVisible, setModalVisible] = useState(false);
-  const [updateSound, setUpdateSound] = useState({});
+  const [soundToUpdate, setSoundToUpdate] = useState({});
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    wait(1500).then(() => {
+      setRefreshing(false);
+    });
+  }, []);
 
   const renderSounds = (sounds) => {
     return sounds.map((sound, i) => {
@@ -16,16 +24,26 @@ const Sounds = (props) => {
           name={sound.name || "untitled"}
           url={sound.url}
           key={i}
-          setUpdateSound={setUpdateSound}
+          setSoundToUpdate={setSoundToUpdate}
+          refreshing={refreshing}
         />
       );
     });
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {sounds && renderSounds(sounds)}
-      <EditSoundModal modalVisible={modalVisible} setModalVisible={setModalVisible} updateSound={updateSound} />
+      <EditSoundModal
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        soundToUpdate={soundToUpdate}
+      />
     </ScrollView>
   );
 };

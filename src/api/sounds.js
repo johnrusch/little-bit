@@ -15,12 +15,12 @@ const listUserSounds = async (userID) => {
 };
 
 const getSound = async (model) => {
-  const { name, file } = model;
+  const { file } = model;
   if (!file || model._deleted) return;
   const key = file.key.split("/").slice(1).join("/");
   try {
     const url = await Storage.get(key);
-    const soundObj = { name, url };
+    const soundObj = { ...model, url, isLoaded: false };
     return soundObj;
   } catch (error) {
     console.log("Error fetching sound", error);
@@ -56,7 +56,7 @@ const SOUNDS = {
           if (!sound) return;
           setSounds((prevSounds) => [...prevSounds, sound]);
           console.log("SUBSCRIPTION DATA", update.value);
-          setLoadingStatus({ loading: false, processingSound: false});
+          setLoadingStatus({ loading: false, processingSound: false });
         },
         error: (error) => console.log("SOMETHING WRONG", error),
       });

@@ -11,10 +11,11 @@ const Login = ({navigation}) => {
     const [username, setUsername] = useState();
     const [password, setPassword] = useState();
 
+    
     const context = useContext(UserContext);
 
     const handleLogin = async (username, password) => {
-      context.setLoading(true);
+      // context.setLoading(true);
       if (username && password) {
         try {
           const login = await AUTH.logIn(username, password);

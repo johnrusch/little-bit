@@ -23,3 +23,7 @@ export const getLoggingInText = () => {
   const index = Math.floor(Math.random() * loggingInTexts.length);
   return loggingInTexts[index];
 }
+
+export const wait = (timeout) => {
+  return new Promise(resolve => setTimeout(resolve, timeout));
+}

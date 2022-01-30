@@ -28,7 +28,11 @@ const Home = (props) => {
   const subscription = useRef();
   const { user, navigation } = props;
   const [sounds, setSounds] = useState([]);
-  const [loadingStatus, setLoadingStatus] = useState({ loading: true, processingSound: false});
+  const [loadingStatus, setLoadingStatus] = useState({
+    loading: true,
+    processingSound: false,
+  });
+  const [refreshing, setRefreshing] = useState(false);
 
   const Tabs = createBottomTabNavigator();
 
@@ -53,54 +57,74 @@ const Home = (props) => {
         <Tabs.Screen
           name="Recorder"
           options={{
-            title: '',
+            title: "",
             tabBarLabel: "Record",
             tabBarIcon: ({ color }) => (
               <FontAwesomeIcon icon={faMicrophone} color={color} size={24} />
             ),
           }}
         >
-          {(props) => <Recorder {...props} user={user} setLoadingStatus={setLoadingStatus}/>}
+          {(props) => (
+            <Recorder
+              {...props}
+              user={user}
+              setLoadingStatus={setLoadingStatus}
+            />
+          )}
         </Tabs.Screen>
         <Tabs.Screen
           name="Sounds"
           options={{
-            title: '',
+            title: "",
             tabBarLabel: "Sounds",
             tabBarIcon: ({ color }) => (
               <FontAwesomeIcon icon={faMicrophone} color={color} size={24} />
             ),
           }}
         >
-          {(props) => <Sounds {...props} user={user} setLoadingStatus={setLoadingStatus} sounds={sounds}/>}
+          {(props) => (
+            <Sounds
+              {...props}
+              user={user}
+              setLoadingStatus={setLoadingStatus}
+              sounds={sounds}
+              setSounds={setSounds}
+              setRefreshing={setRefreshing}
+              refreshing={refreshing}
+            />
+          )}
         </Tabs.Screen>
       </Tabs.Navigator>
     );
   };
 
-
   useEffect(() => {
     setLoadingStatus({ loading: true, processingSound: false });
-    SOUNDS.loadUserSounds(user).then((sounds) => {
-      setSounds(sounds);
-    }).then(() => {
-      console.log(sounds.length, "sounds length");
-      subscription.current = SOUNDS.subscribeToUserSounds(user, setSounds, setLoadingStatus);
-      setLoadingStatus({ loading: false, processingSound: false });
-    })
+    SOUNDS.loadUserSounds(user)
+      .then((sounds) => {
+        setSounds(sounds);
+      })
+      .then(() => {
+        console.log(sounds.length, "sounds length");
+        subscription.current = SOUNDS.subscribeToUserSounds(
+          user,
+          setSounds,
+          setLoadingStatus
+        );
+        setLoadingStatus({ loading: false, processingSound: false });
+      });
 
     return () => {
       if (subscription.current) {
         subscription.current.unsubscribe();
       }
-    }
-  }, []);
-
+    };
+  }, [refreshing]);
 
   return (
     <>
       {renderTabs()}
-      <LoadingModal size='large' loadingStatus={loadingStatus} />
+      <LoadingModal size="large" loadingStatus={loadingStatus} />
     </>
   );
 };
