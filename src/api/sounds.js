@@ -1,12 +1,12 @@
 import { Storage, API, graphqlOperation } from "aws-amplify";
-import * as queries from "./graphql/queries";
+import * as subscriptions from "../graphql/subscriptions";
+import * as queries from "../graphql/queries";
 
 const listUserSounds = async (userID) => {
   try {
     const sounds = await API.graphql(
       graphqlOperation(queries.listSamples, { user_id: userID })
     );
-    console.log("Successfully fetched user sounds", sounds);
     return sounds.data.listSamples.items;
   } catch (err) {
     console.log("Error fetching user sounds", err);
@@ -21,7 +21,6 @@ const getSound = async (model) => {
   try {
     const url = await Storage.get(key);
     const soundObj = { name, url };
-    console.log("Successfully fetched sound", soundObj);
     return soundObj;
   } catch (error) {
     console.log("Error fetching sound", error);
@@ -39,24 +38,25 @@ const SOUNDS = {
         if (!sound) continue;
         sounds.push(sound);
       }
-      console.log("SOUNDS", sounds);
       return sounds;
     } catch (error) {
       console.log("Error loading user sounds: ", error);
     }
   },
   getSound,
-  subscribeToUserSounds: async (userID, setSounds) => {
+  subscribeToUserSounds: (userID, setSounds, setLoadingStatus) => {
     try {
       const subscription = API.graphql(
-        graphqlOperation(queries.onCreateSample, { user_id: userID })
+        graphqlOperation(subscriptions.onCreateSample, { user_id: userID })
       ).subscribe({
         next: async (update) => {
+          setLoadingStatus({ loading: true, processingSound: true });
           const newSound = update.value.data.onCreateSample;
           const sound = await getSound(newSound);
           if (!sound) return;
           setSounds((prevSounds) => [...prevSounds, sound]);
           console.log("SUBSCRIPTION DATA", update.value);
+          setLoadingStatus({ loading: false, processingSound: false});
         },
         error: (error) => console.log("SOMETHING WRONG", error),
       });
@@ -65,7 +65,7 @@ const SOUNDS = {
     } catch (error) {
       console.log("Error subscribing to user sounds: ", error);
     }
-  }
+  },
 };
 
 export default SOUNDS;

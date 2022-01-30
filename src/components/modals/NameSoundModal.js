@@ -33,16 +33,17 @@ const NameSoundModal = ({
   }, []);
 
   return (
-      <Modal
-        style={{ margin: 0 }}
-        animationType="slide"
-        transparent
-        visible={modalVisible}
-        onRequestClose={() => {
-          new Alert.alert("Modal has been closed.");
-          setModalVisible(!modalVisible);
-        }}
-      >
+    <Modal
+      style={{ margin: 0 }}
+      animationType="slide"
+      transparent
+      visible={modalVisible}
+      onRequestClose={() => {
+        new Alert.alert("Modal has been closed.");
+        setModalVisible(!modalVisible);
+      }}
+    >
+      <View style={styles.modalBackground}>
         <View style={styles.modalView}>
           <Text style={styles.modalText}>Name your new sample!</Text>
           <TextInput
@@ -60,7 +61,8 @@ const NameSoundModal = ({
             <Text style={styles.buttonTextStyle}>Submit Name</Text>
           </Pressable>
         </View>
-      </Modal>
+      </View>
+    </Modal>
   );
 };
 
@@ -93,6 +95,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    margin: "auto",
   },
   button: {
     borderRadius: 20,

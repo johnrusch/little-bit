@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   StatusBar,
@@ -20,20 +20,17 @@ import RecordIcon from "../../svgs/RecordIcon";
 import NavBar from "../components/NavBar";
 import Recorder from "./Recorder";
 import Sounds from "./Sounds";
-import * as FileSystem from "expo-file-system";
-import UserContext from "../contexts/UserContext";
 import { AUTH, SOUNDS } from "../api";
 import LogOutButton from "../components/LogOutButton";
-import LoadingModal from "../components/LoadingModal";
+import LoadingModal from "../components/modals/LoadingModal";
 
 const Home = (props) => {
+  const subscription = useRef();
   const { user, navigation } = props;
   const [sounds, setSounds] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState({ loading: true, processingSound: false});
 
   const Tabs = createBottomTabNavigator();
-
-  const context = useContext(UserContext);
 
   const renderTabs = () => {
     return (
@@ -55,57 +52,55 @@ const Home = (props) => {
       >
         <Tabs.Screen
           name="Recorder"
-          component={Recorder}
           options={{
+            title: '',
             tabBarLabel: "Record",
             tabBarIcon: ({ color }) => (
               <FontAwesomeIcon icon={faMicrophone} color={color} size={24} />
             ),
           }}
-        />
+        >
+          {(props) => <Recorder {...props} user={user} setLoadingStatus={setLoadingStatus}/>}
+        </Tabs.Screen>
         <Tabs.Screen
           name="Sounds"
-          component={Sounds}
           options={{
+            title: '',
             tabBarLabel: "Sounds",
             tabBarIcon: ({ color }) => (
               <FontAwesomeIcon icon={faMicrophone} color={color} size={24} />
             ),
           }}
-        />
+        >
+          {(props) => <Sounds {...props} user={user} setLoadingStatus={setLoadingStatus} sounds={sounds}/>}
+        </Tabs.Screen>
       </Tabs.Navigator>
     );
   };
 
-  useEffect(() => {
-    SOUNDS.loadUserSounds(user).then((sounds) => {
-      context.setUserSounds(sounds);
-    });
 
-    const subscription = SOUNDS.subscribeToUserSounds(user, setSounds);
+  useEffect(() => {
+    setLoadingStatus({ loading: true, processingSound: false });
+    SOUNDS.loadUserSounds(user).then((sounds) => {
+      setSounds(sounds);
+    }).then(() => {
+      console.log(sounds.length, "sounds length");
+      subscription.current = SOUNDS.subscribeToUserSounds(user, setSounds, setLoadingStatus);
+      setLoadingStatus({ loading: false, processingSound: false });
+    })
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription.current) {
+        subscription.current.unsubscribe();
+      }
     }
   }, []);
-    
 
-  // if (loading)
-  //   return (
-  //     <Spinner
-  //       visible={loading}
-  //       textContent={
-  //         loggingIn
-  //           ? loggingInTexts[getLoadingText(loggingInTexts)]
-  //           : loadingTexts[getLoadingText(loadingTexts)]
-  //       }
-  //       textStyle={{ color: "black" }}
-  //     />
-  //   );
 
   return (
     <>
       {renderTabs()}
+      <LoadingModal size='large' loadingStatus={loadingStatus} />
     </>
   );
 };

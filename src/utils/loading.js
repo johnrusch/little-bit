@@ -14,6 +14,12 @@ export const loggingInTexts = [
   "yeah, gimme a min..."
 ];
 
-export const getLoadingText = (texts) => {
-  return Math.floor(Math.random() * texts.length);
+export const getLoadingText = () => {
+  const index = Math.floor(Math.random() * loadingTexts.length);
+  return loadingTexts[index];
 };
+
+export const getLoggingInText = () => {
+  const index = Math.floor(Math.random() * loggingInTexts.length);
+  return loggingInTexts[index];
+}

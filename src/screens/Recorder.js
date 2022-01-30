@@ -19,12 +19,13 @@ import RecordIcon from "../../svgs/RecordIcon";
 import NavBar from "../components/NavBar";
 import * as FileSystem from "expo-file-system";
 import UserContext from "../contexts/UserContext";
-import NameSoundModal from "../components/recording/NameSoundModal";
+import NameSoundModal from "../components/modals/NameSoundModal";
 import { windowHeight } from "../utils/Dimensions";
 
 const Recorder = (props) => {
+  const { user, setLoadingStatus } = props;
   const [recording, setRecording] = useState();
-  const [modalVisible, setModalVisible] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
   const [format, setFormat] = useState();
   const [blob, setBlob] = useState();
 
@@ -72,8 +73,8 @@ const Recorder = (props) => {
   };
 
   const saveRecording = async () => {
-    userData.setLoading(true);
-    await Storage.put(`unprocessed/${userData.user}/${text}.${format}`, blob);
+    setLoadingStatus({ loading: true, processingSound: true });
+    await Storage.put(`unprocessed/${user}/${text}.${format}`, blob);
     setModalVisible(false);
     setFormat();
     setBlob();

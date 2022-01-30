@@ -1,46 +1,31 @@
-import React, { useState, useEffect, useContext } from "react";
-import {
-  View,
-  StatusBar,
-  StyleSheet,
-  ImageBackground,
-  Image,
-  Keyboard,
-  ActivityIndicator,
-  Text,
-  TouchableOpacity,
-  ScrollView
-} from "react-native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
-import { Audio } from "expo-av";
-import { Storage, Auth } from "aws-amplify";
-import RecordIcon from "../../svgs/RecordIcon";
-import NavBar from "../components/NavBar";
+import React, { useState } from "react";
+import { View, StyleSheet, ScrollView } from "react-native";
 import Sound from "../components/Sound";
-import * as FileSystem from "expo-file-system";
-import UserContext from "../contexts/UserContext";
+import EditSoundModal from "../components/modals/EditSoundModal";
 
 const Sounds = (props) => {
+  const { user, sounds } = props;
+  const [modalVisible, setModalVisible] = useState(false);
+  const [updateSound, setUpdateSound] = useState({});
 
-  const userData = useContext(UserContext);
-
-  const renderSounds = sounds => {
+  const renderSounds = (sounds) => {
     return sounds.map((sound, i) => {
       if (!sound) return;
-      return <Sound name={sound.name || "untitled"} url={sound.url} key={i}/>
-    })
-  }
+      return (
+        <Sound
+          name={sound.name || "untitled"}
+          url={sound.url}
+          key={i}
+          setUpdateSound={setUpdateSound}
+        />
+      );
+    });
+  };
 
   return (
     <ScrollView style={styles.container}>
-      <View
-        style={{
-          flex: 1
-        }}
-      >
-        {userData.sounds && renderSounds(userData.sounds)}
-      </View>
+      {sounds && renderSounds(sounds)}
+      <EditSoundModal modalVisible={modalVisible} setModalVisible={setModalVisible} updateSound={updateSound} />
     </ScrollView>
   );
 };

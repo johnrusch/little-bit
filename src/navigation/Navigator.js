@@ -89,7 +89,7 @@ const Navigator = (props) => {
             </>
           ) : (
             <Stack.Screen name="Home" options={{ headerShown: false }}>
-              <Home {...props} user={user} />
+              {(props) => <Home {...props} user={user} />}
             </Stack.Screen>
           )}
         </Stack.Navigator>

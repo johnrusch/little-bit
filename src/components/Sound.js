@@ -19,7 +19,7 @@ import * as FileSystem from "expo-file-system";
 import { windowWidth } from "../utils/Dimensions";
 import { Player, MediaStates } from "@react-native-community/audio-toolkit";
 
-const Sound = ({ name, url }) => {
+const Sound = ({ name, url, setUpdatedSound }) => {
   const soundObject = React.useRef(new Audio.Sound());
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState();
@@ -80,10 +80,6 @@ const Sound = ({ name, url }) => {
 
     return unloadSound();
   }, []);
-
-
-
-  
 
   return (
     <View style={{ flexDirection: "row", padding: 15, alignItems: "center", backgroundColor: 'rgba(255,255,255,1)' }}>

@@ -38,7 +38,6 @@ const AUTH = {
     isLoggedIn: async () => {
         try {
             const user = await Auth.currentAuthenticatedUser();
-            console.log("User is logged in", user);
             return getUsername(user);
         } catch (error) {
             console.log("Error checking if user is logged in: ", error.message);
