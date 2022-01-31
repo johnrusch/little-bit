@@ -13,7 +13,6 @@ const Sound = ({ name, url, setUpdatedSound, handleLoading, refreshing }) => {
   const [duration, setDuration] = useState();
   const [unableToLoad, setUnableToLoad] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  
 
   const toggleAudioPlayback = () => {
     if (!soundObject.current._loaded) {
@@ -111,13 +110,7 @@ const Sound = ({ name, url, setUpdatedSound, handleLoading, refreshing }) => {
 
   const renderName = () => {
     return (
-      <View
-        style={{
-          flexDirection: "column",
-          alignItems: "flex-start",
-          borderWidth: 1,
-        }}
-      >
+      <>
         <Text style={{ fontSize: 18, fontWeight: "bold" }}>
           {formattedName}
         </Text>
@@ -133,7 +126,7 @@ const Sound = ({ name, url, setUpdatedSound, handleLoading, refreshing }) => {
             Unable to load sound
           </Text>
         )}
-      </View>
+      </>
     );
   };
 
@@ -178,14 +171,25 @@ const Sound = ({ name, url, setUpdatedSound, handleLoading, refreshing }) => {
         backgroundColor: "rgba(255,255,255,1)",
       }}
     >
-      <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start' }}>
+      <View
+        style={{ flex: 1, flexDirection: "row", justifyContent: "flex-start" }}
+      >
         <TouchableOpacity
           style={{ marginRight: 15, flex: 1, alignItems: "flex-start" }}
           onPress={() => toggleAudioPlayback()}
         >
           {renderIcon()}
         </TouchableOpacity>
-        {renderName()}
+        <View
+          style={{
+            flex: 2,
+            flexDirection: "column",
+            alignItems: "flex-start",
+            borderWidth: 1,
+          }}
+        >
+          {renderName()}
+        </View>
       </View>
       <View style={{ flex: 1, alignItems: "flex-end" }}>
         {renderSampleNumber()}

@@ -1,10 +1,12 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import Sound from "../components/Sound";
 import EditSoundModal from "../components/modals/EditSoundModal";
 import { wait } from "../utils/loading";
+import { Audio } from "expo-av";
 
 const Sounds = (props) => {
+  const [playbackObject, setPlaybackObject] = useState(new Audio.Sound());
   const { user, sounds, setLoadingStatus, setSounds, setRefreshing, refreshing } = props;
   const [modalVisible, setModalVisible] = useState(false);
   const [soundToUpdate, setSoundToUpdate] = useState({});

@@ -28,7 +28,7 @@ const getSound = async (model) => {
   }
 };
 
-const SOUNDS = {
+export const SOUNDS = {
   loadUserSounds: async (userID) => {
     try {
       const files = await listUserSounds(userID);
@@ -68,4 +68,4 @@ const SOUNDS = {
   },
 };
 
-export default SOUNDS;
+
