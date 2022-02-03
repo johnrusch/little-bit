@@ -5,86 +5,18 @@ import { faPlay, faPause, faFrown } from "@fortawesome/free-solid-svg-icons";
 import { Audio } from "expo-av";
 import { wait } from "../utils/loading";
 
-const Sound = ({ name, url, setUpdatedSound, handleLoading, refreshing }) => {
-  const soundObject = React.useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [position, setPosition] = useState();
-  const [duration, setDuration] = useState();
-  const [unableToLoad, setUnableToLoad] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  const toggleAudioPlayback = () => {
-    if (!soundObject.current._loaded) {
-      setUnableToLoad(true);
-      return;
-    }
-    !isPlaying
-      ? soundObject.current.playAsync()
-      : soundObject.current.pauseAsync();
-    setIsPlaying(!isPlaying);
-  };
-
-  const onPlaybackStatusUpdate = async (playbackStatus) => {
-    if (!playbackStatus.isLoaded) {
-      await loadSound();
-      if (playbackStatus.error) {
-        console.log(
-          `Encountered a fatal error during playback: ${playbackStatus.error}`
-        );
-        // Send Expo team the error on Slack or the forums so we can help you debug!
-      }
-    } else {
-      setUnableToLoad(false);
-    }
-
-    setPosition(playbackStatus.positionMillis);
-    setDuration(playbackStatus.durationMillis);
-
-    if (playbackStatus.didJustFinish && !playbackStatus.isLooping) {
-      setIsPlaying(false);
-      await soundObject.current.setStatusAsync({
-        shouldPlay: false,
-        positionMillis: 0,
-      });
-    }
-  };
-
-  const loadSound = async (retries = 0) => {
-    if (retries > 5) {
-      setUnableToLoad(true);
-      return;
-    }
-    if (soundObject.current) {
-      try {
-        if (!soundObject.current._loading) {
-          await soundObject.current.loadAsync(
-            { uri: url },
-            { volume: 0.8 },
-            true
-          );
-        }
-        await soundObject.current.setOnPlaybackStatusUpdate(
-          onPlaybackStatusUpdate
-        );
-      } catch (error) {
-        console.log("Unable to load sound: ", error.message);
-        setUnableToLoad(true);
-      }
-
-      const status = await soundObject.current.getStatusAsync();
-      console.log(Object.keys(soundObject.current));
-      if (!status.isLoaded) {
-        wait(1000).then(() => loadSound(retries + 1));
-      } else {
-        setIsLoaded(true);
-      }
-    }
-  };
-
-  const unloadSound = () => {
-    soundObject.current && soundObject.current.unloadAsync().then();
-  };
+const Sound = (props) => {
+  const {
+    setSelectedSound,
+    setSoundToUpdate,
+    selectedSound,
+    sound,
+    isPlaying,
+    loading,
+    unableToLoad
+  } = props;
+  const { name } = sound;
+  const isSelected = selectedSound && selectedSound.id === sound.id;
 
   const formatName = (name) => {
     let formattedName;
@@ -135,14 +67,21 @@ const Sound = ({ name, url, setUpdatedSound, handleLoading, refreshing }) => {
   };
 
   const renderIcon = () => {
-    if (loading) {
+    let icon;
+    if (!isSelected) {
+      icon = faPlay;
+    } else {
+      icon = unableToLoad ? faFrown : isPlaying ? faPause : faPlay;
+    }
+
+    if (loading && isSelected) {
       return (
         <ActivityIndicator size="small" color="#37AD65" animating={loading} />
       );
     } else {
       return (
         <FontAwesomeIcon
-          icon={unableToLoad ? faFrown : !isPlaying ? faPlay : faPause}
+          icon={icon}
           size={30}
           color={unableToLoad ? "#AD2D26" : "black"}
         />
@@ -151,16 +90,9 @@ const Sound = ({ name, url, setUpdatedSound, handleLoading, refreshing }) => {
   };
 
   useEffect(() => {
-    setLoading(true);
-
-    soundObject.current = new Audio.Sound();
-
-    loadSound().then(() => {
-      setLoading(false);
-    });
-
-    return unloadSound();
-  }, [refreshing]);
+    console.log('reloading from sound...');
+  }, [selectedSound, isPlaying, loading, unableToLoad]);
+    
 
   return (
     <View
@@ -176,7 +108,7 @@ const Sound = ({ name, url, setUpdatedSound, handleLoading, refreshing }) => {
       >
         <TouchableOpacity
           style={{ marginRight: 15, flex: 1, alignItems: "flex-start" }}
-          onPress={() => toggleAudioPlayback()}
+          onPress={() => setSelectedSound(sound)}
         >
           {renderIcon()}
         </TouchableOpacity>
@@ -185,7 +117,6 @@ const Sound = ({ name, url, setUpdatedSound, handleLoading, refreshing }) => {
             flex: 2,
             flexDirection: "column",
             alignItems: "flex-start",
-            borderWidth: 1,
           }}
         >
           {renderName()}

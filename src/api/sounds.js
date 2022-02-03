@@ -20,7 +20,7 @@ const getSound = async (model) => {
   const key = file.key.split("/").slice(1).join("/");
   try {
     const url = await Storage.get(key);
-    const soundObj = { ...model, url, isLoaded: false };
+    const soundObj = { ...model, url };
     return soundObj;
   } catch (error) {
     console.log("Error fetching sound", error);
@@ -28,7 +28,7 @@ const getSound = async (model) => {
   }
 };
 
-export const SOUNDS = {
+const SOUNDS = {
   loadUserSounds: async (userID) => {
     try {
       const files = await listUserSounds(userID);
@@ -68,4 +68,4 @@ export const SOUNDS = {
   },
 };
 
-
+export default SOUNDS;
