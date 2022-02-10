@@ -4,10 +4,9 @@ import Sound from "../components/Sound";
 import EditSoundModal from "../components/modals/EditSoundModal";
 import { wait } from "../utils/loading";
 import { Audio } from "expo-av";
+import { PLAYBACK } from "../api";
 
 const Sounds = (props) => {
-  const [playbackObject, setPlaybackObject] = useState(new Audio.Sound());
-  const [selectedSound, setSelectedSound] = useState(null);
   const {
     user,
     sounds,
@@ -18,32 +17,15 @@ const Sounds = (props) => {
   } = props;
   const [modalVisible, setModalVisible] = useState(false);
   const [soundToUpdate, setSoundToUpdate] = useState({});
-  const [unableToLoad, setUnableToLoad] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [playbackObj, setPlaybackObj] = useState(null);
+  const [soundObj, setSoundObj] = useState(null);
+  const [currentAudio, setCurrentAudio] = useState({});
+  const [activeListItem, setActiveListItem] = useState(null);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    wait(1500).then(() => {
-      setRefreshing(false);
-    });
-  }, []);
 
   const onPlaybackStatusUpdate = async (playbackStatus) => {
-    if (!playbackStatus.isLoaded) {
-      await loadSound();
-      if (playbackStatus.error) {
-        console.log(
-          `Encountered a fatal error during playback: ${playbackStatus.error}`
-        );
-        // Send Expo team the error on Slack or the forums so we can help you debug!
-      }
-    } else {
-      setUnableToLoad(false);
-    }
-
     if (playbackStatus.didJustFinish && !playbackStatus.isLooping) {
-      setIsPlaying(false);
       await playbackObject.setStatusAsync({
         shouldPlay: false,
         positionMillis: 0,
@@ -51,35 +33,61 @@ const Sounds = (props) => {
     }
   };
 
-  const loadSound = useCallback(async (sound, retries = 0) => {
-    console.log("loading sound");
-    if (retries > 5) {
-      setUnableToLoad(true);
-      return;
-    }
-    try {
-      if (!playbackObject._loading) {
-        await playbackObject.loadAsync(
-          { uri: sound.url },
-          { volume: 0.8, shouldPlay: true },
-          true
-        );
-      }
-      playbackObject.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
-      setIsPlaying(true);
-    } catch (error) {
-      console.log("Unable to load sound: ", error.message);
-      setUnableToLoad(true);
+  const handleAudioPress = async (audio, index) => {
+    let status;
+    
+    // playing audio for the first time
+    if (soundObj === null) {
+      const playbackObject = new Audio.Sound();
+      playbackObject.onPlaybackStatusUpdate(onPlaybackStatusUpdate);
+      status = await PLAYBACK.play(playbackObject, audio.url);
+      setActiveListItem(index);
+      setCurrentAudio(audio);
+      setPlaybackObj(playbackObject);
     }
 
-    const status = await playbackObject.getStatusAsync();
-    console.log(Object.keys(playbackObject));
-    if (!status.isLoaded) {
-      loadSound(retries + 1);
-    } else {
-      setIsLoaded(true);
+    if (soundObj.isLoaded) {
+      if (currentAudio.id === audio.id) {
+        // pausing and resuming audio
+        if (soundObj.isPlaying) {
+          status = PLAYBACK.pause(playbackObject);
+        } else {
+          status = PLAYBACK.resume(playbackObj);
+        }
+      } else {
+        // playing new audio
+        status = await PLAYBACK.playNext(playbackObj, audio.url);
+        setActiveListItem(index);
+        setCurrentAudio(audio);
+      }
     }
-  }, []);
+
+    // pausing audio
+    // if (soundObj.isLoaded && soundObj.isPlaying && currentAudio.id === audio.id) {
+    //   status = await PLAYBACK.pause(playbackObject);
+    //   return setSoundObj(status);
+    // }
+
+    // resume audio
+    // if (
+    //   soundObj.isLoaded &&
+    //   !soundObj.isPlaying &&
+    //   currentAudio.id === audio.id
+    // ) {
+    //   status = await PLAYBACK.resume(playbackObject);
+    //   return setSoundObj(status);
+    // }
+
+    // playing new audio
+    // if (soundObj.isLoaded && currentAudio.id !== audio.id) {
+    //   status = await PLAYBACK.playNext(playbackObject, audio.url);
+    //   setCurrentAudio(audio);
+    //   return setSoundObj(status);
+    // }
+
+    return setSoundObj(status);
+
+  };
 
   const renderSounds = (sounds) => {
     return sounds.map((sound, i) => {
@@ -87,12 +95,10 @@ const Sounds = (props) => {
       return (
         <Sound
           sound={sound}
-          key={i}
-          isPlaying={isPlaying}
+          key={sound.id}
           loading={loading}
-          unableToLoad={unableToLoad}
-          selectedSound={selectedSound}
-          setSelectedSound={setSelectedSound}
+          active={activeListItem === i}
+          onAudioPress={() => handleAudioPress(sound, i)}
           setSoundToUpdate={setSoundToUpdate}
           refreshing={refreshing}
         />
@@ -101,34 +107,15 @@ const Sounds = (props) => {
   };
 
   useEffect(() => {
-    setLoading(true);
-    if (selectedSound) {
-      console.log('sound selected');
-      if (playbackObject) {
-        console.log('playback object exists');
-        playbackObject.unloadAsync().then(() => {
-          loadSound()
-            .catch((error) => {
-              console.log('error loading sound', error);
-            });
-        });
-      } else {
-        console.log("no playback object");
-        loadSound()
-          .catch((error) => {
-            console.log('error loading sound', error);
-          });
-      }
-    }
-    setLoading(false);
     return () => {
-      playbackObject?.unloadAsync().then(() => {});
+      if (playbackObject && soundObj.isLoaded) {
+        playbackObject?.unloadAsync().then(() => {});
+      }
     };
-  }, [selectedSound]);
+  });
 
   return (
     <ScrollView
-      
       contentContainerStyle={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

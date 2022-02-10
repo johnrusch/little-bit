@@ -7,13 +7,14 @@ import { wait } from "../utils/loading";
 
 const Sound = (props) => {
   const {
-    setSelectedSound,
+    active,
     setSoundToUpdate,
     selectedSound,
     sound,
     isPlaying,
     loading,
-    unableToLoad
+    unableToLoad,
+    onAudioPress
   } = props;
   const { name } = sound;
   const isSelected = selectedSound && selectedSound.id === sound.id;
@@ -108,7 +109,7 @@ const Sound = (props) => {
       >
         <TouchableOpacity
           style={{ marginRight: 15, flex: 1, alignItems: "flex-start" }}
-          onPress={() => setSelectedSound(sound)}
+          onPress={onAudioPress}
         >
           {renderIcon()}
         </TouchableOpacity>
