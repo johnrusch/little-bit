@@ -118,7 +118,7 @@ const Sounds = (props) => {
     <ScrollView
       contentContainerStyle={styles.container}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl refreshing={refreshing} />
       }
     >
       {sounds && renderSounds(sounds)}
