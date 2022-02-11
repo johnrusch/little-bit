@@ -1,0 +1,30 @@
+{
+  "staging": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-littlebit-staging-201310-authRole",
+      "UnauthRoleArn": "arn:aws:iam::691777775550:role/amplify-littlebit-staging-201310-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::691777775550:role/amplify-littlebit-staging-201310-authRole",
+      "Region": "us-west-2",
+      "DeploymentBucketName": "amplify-littlebit-staging-201310-deployment",
+      "UnauthRoleName": "amplify-littlebit-staging-201310-unauthRole",
+      "StackName": "amplify-littlebit-staging-201310",
+      "StackId": "arn:aws:cloudformation:us-west-2:691777775550:stack/amplify-littlebit-staging-201310/8f91b170-763f-11ec-a929-0a7463c52dcb",
+      "AmplifyAppId": "d23r0s3t08jpzs"
+    },
+    "categories": {
+      "function": {
+        "EditandConvertRecordings": {
+          "deploymentBucketName": "amplify-littlebit-staging-201310-deployment",
+          "s3Key": "amplify-builds/EditandConvertRecordings-45704c586753524c6242-build.zip"
+        },
+        "CreateSampleRecord": {
+          "deploymentBucketName": "amplify-littlebit-staging-201310-deployment",
+          "s3Key": "amplify-builds/CreateSampleRecord-6f69626f7952746b3664-build.zip"
+        }
+      },
+      "auth": {
+        "littlebit3ededec2": {}
+      }
+    }
+  }
+}
