@@ -25,8 +25,9 @@ const Sounds = (props) => {
 
 
   const onPlaybackStatusUpdate = async (playbackStatus) => {
+    console.log(playbackStatus, 'BIG HEY');
     if (playbackStatus.didJustFinish && !playbackStatus.isLooping) {
-      await playbackObject.setStatusAsync({
+      await playbackStatus.setStatusAsync({
         shouldPlay: false,
         positionMillis: 0,
       });
@@ -39,7 +40,8 @@ const Sounds = (props) => {
     // playing audio for the first time
     if (soundObj === null) {
       const playbackObject = new Audio.Sound();
-      playbackObject.onPlaybackStatusUpdate(onPlaybackStatusUpdate);
+      playbackObject.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+      console.log(Object.keys(playbackObject));
       status = await PLAYBACK.play(playbackObject, audio.url);
       setActiveListItem(index);
       setCurrentAudio(audio);
@@ -50,7 +52,8 @@ const Sounds = (props) => {
       if (currentAudio.id === audio.id) {
         // pausing and resuming audio
         if (soundObj.isPlaying) {
-          status = PLAYBACK.pause(playbackObject);
+          console.log("pausing");
+          status = PLAYBACK.pause(playbackObj);
         } else {
           status = PLAYBACK.resume(playbackObj);
         }
@@ -106,21 +109,16 @@ const Sounds = (props) => {
     });
   };
 
-  useEffect(() => {
-    return () => {
-      if (playbackObject && soundObj.isLoaded) {
-        playbackObject?.unloadAsync().then(() => {});
-      }
-    };
-  });
+  // useEffect(() => {
+  //   return () => {
+  //     if (playbackObj && soundObj.isLoaded) {
+  //       playbackObj?.unloadAsync().then(() => {});
+  //     }
+  //   };
+  // });
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} />
-      }
-    >
+    <ScrollView>
       {sounds && renderSounds(sounds)}
       <EditSoundModal
         modalVisible={modalVisible}
