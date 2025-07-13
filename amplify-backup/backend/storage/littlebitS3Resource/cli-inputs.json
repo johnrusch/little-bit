@@ -1,0 +1,15 @@
+{
+  "resourceName": "littlebitS3Resource",
+  "policyUUID": "fc773fee",
+  "bucketName": "littlebitbucket",
+  "storageAccess": "authAndGuest",
+  "guestAccess": [
+    "READ"
+  ],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}

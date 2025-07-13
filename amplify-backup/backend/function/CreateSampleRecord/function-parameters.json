@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "api": {
+      "littlebitgraphqlAPI": [
+        "Query",
+        "Mutation"
+      ]
+    }
+  },
+  "lambdaLayers": []
+}
