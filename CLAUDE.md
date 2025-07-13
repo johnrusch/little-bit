@@ -43,6 +43,20 @@ expo start -c
 expo install [package-name]
 ```
 
+### Package Manager Policy
+**This project uses npm exclusively.** Do not use yarn to avoid lockfile conflicts.
+
+```bash
+# ✅ Correct - Use npm
+npm install           # Install dependencies
+npm install package   # Add new dependency
+npm audit fix         # Fix vulnerabilities
+
+# ❌ Avoid - Do not use yarn
+yarn install          # Creates conflicting yarn.lock
+yarn add package      # Mixed package managers
+```
+
 ## Architecture Overview
 
 ### Tech Stack
