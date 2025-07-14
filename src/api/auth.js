@@ -20,11 +20,10 @@ const AUTH = {
                 username: newUser.email,
                 password: newUser.password,
             });
-            console.log(userId);
             return { username: newUser.email, userSub: userId };
         } catch (err) {
             console.log("Error signing up", err);
-            alert("Error creating account:", err.message);
+            // Don't expose detailed error messages to user
             return null;
         }
     },

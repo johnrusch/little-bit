@@ -26,5 +26,41 @@
         "littlebit3ededec2": {}
       }
     }
+  },
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-littlebit-dev-131255-authRole",
+      "UnauthRoleArn": "arn:aws:iam::539825460496:role/amplify-littlebit-dev-131255-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::539825460496:role/amplify-littlebit-dev-131255-authRole",
+      "Region": "us-west-2",
+      "DeploymentBucketName": "amplify-littlebit-dev-131255-deployment",
+      "UnauthRoleName": "amplify-littlebit-dev-131255-unauthRole",
+      "StackName": "amplify-littlebit-dev-131255",
+      "StackId": "arn:aws:cloudformation:us-west-2:539825460496:stack/amplify-littlebit-dev-131255/ef30ef90-60ee-11f0-94da-02e9e3cba25b",
+      "AmplifyAppId": "d21p9ylxhcy67d"
+    },
+    "categories": {
+      "auth": {
+        "littlebit3ededec2": {}
+      },
+      "function": {
+        "EditandConvertRecordings": {
+          "deploymentBucketName": "amplify-littlebit-dev-131255-deployment",
+          "s3Key": "amplify-builds/EditandConvertRecordings-51786a2b4376434c4a4d-build.zip"
+        },
+        "CreateSampleRecord": {
+          "deploymentBucketName": "amplify-littlebit-dev-131255-deployment",
+          "s3Key": "amplify-builds/CreateSampleRecord-6a623449644e5234424d-build.zip"
+        },
+        "littlebitS3Resource": {},
+        "littlebitgraphqlAPI": {}
+      },
+      "api": {
+        "littlebitgraphqlAPI": {}
+      },
+      "storage": {
+        "littlebitS3Resource": {}
+      }
+    }
   }
 }

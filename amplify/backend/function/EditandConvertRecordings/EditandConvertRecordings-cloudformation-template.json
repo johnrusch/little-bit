@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "{\"createdOn\":\"Mac\",\"createdBy\":\"Amplify\",\"createdWith\":\"7.6.3\",\"stackType\":\"function-Lambda\",\"metadata\":{}}",
+  "Description": "{\"createdOn\":\"Mac\",\"createdBy\":\"Amplify\",\"createdWith\":\"12.10.0\",\"stackType\":\"function-Lambda\",\"metadata\":{}}",
   "Parameters": {
     "CloudWatchRule": {
       "Type": "String",
@@ -85,9 +85,9 @@
             "Arn"
           ]
         },
-        "Runtime": "python3.7",
+        "Runtime": "python3.8",
         "Layers": [
-          "arn:aws:lambda:us-west-2:691777775550:layer:pydubLayer:8"
+          "arn:aws:lambda:us-west-2:539825460496:layer:pydubLayer:1"
         ],
         "Timeout": 25
       }
@@ -255,6 +255,14 @@
     "LambdaExecutionRole": {
       "Value": {
         "Ref": "LambdaExecutionRole"
+      }
+    },
+    "LambdaExecutionRoleArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdaExecutionRole",
+          "Arn"
+        ]
       }
     }
   }
