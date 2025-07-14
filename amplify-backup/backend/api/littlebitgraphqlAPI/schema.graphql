@@ -1,0 +1,13 @@
+type Sample @model @auth(rules: [{allow: owner, ownerField: "user_id", provider: userPools}, {allow: public, operations: [create, read, update]}]) {
+  id: ID!
+  name: String!
+  user_id: String
+  file: S3Object
+}
+
+type S3Object {
+  bucket: String!
+  key: String!
+  region: String!
+}
+     
