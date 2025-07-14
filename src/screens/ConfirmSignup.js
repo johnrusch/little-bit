@@ -75,12 +75,22 @@ const ConfirmSignup = (props) => {
       context.setLoading(true)
       try {
         console.log('🟠 Step 1: Calling confirmSignUp...');
-        await confirmSignUp({ username, confirmationCode: codeToConfirm });
-        console.log('✅ Step 1 SUCCESS: confirmSignUp completed');
+        const confirmResult = await Promise.race([
+          confirmSignUp({ username, confirmationCode: codeToConfirm }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('confirmSignUp timeout after 15 seconds')), 15000)
+          )
+        ]);
+        console.log('✅ Step 1 SUCCESS: confirmSignUp completed', confirmResult);
         
         console.log('🟠 Step 2: Calling AUTH.logIn...');
-        await AUTH.logIn(username, password);
-        console.log('✅ Step 2 SUCCESS: AUTH.logIn completed');
+        const loginResult = await AUTH.logIn(username, password);
+        console.log('🔍 Step 2 RESULT: AUTH.logIn returned:', loginResult);
+        
+        if (!loginResult) {
+          throw new Error('Login failed - AUTH.logIn returned null');
+        }
+        console.log('✅ Step 2 SUCCESS: AUTH.logIn completed successfully');
         
         console.log('🟠 Step 3: Clearing loading state...');
         context.setLoading(false);
@@ -91,7 +101,8 @@ const ConfirmSignup = (props) => {
         console.log('✅ Step 4 SUCCESS: Navigation called');
       } catch (error) {
         console.error('❌ ERROR in handleConfirmSignUp:', error);
-        console.error('❌ Error details:', error.message, error.code);
+        console.error('❌ Error details:', error.message, error.code, error.name);
+        console.error('❌ Full error object:', JSON.stringify(error, null, 2));
         context.setLoading(false)
         setDisplayError(true);
         setConfirmationCode({digit1: '', digit2: '', digit3: '', digit4: '', digit5: '', digit6: ''});
