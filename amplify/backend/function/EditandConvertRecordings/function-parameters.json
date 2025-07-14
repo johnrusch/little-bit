@@ -9,10 +9,5 @@
       ]
     }
   },
-  "lambdaLayers": [
-    {
-      "type": "ExternalLayer",
-      "arn": "arn:aws:lambda:us-west-2:691777775550:layer:pydubLayer:8"
-    }
-  ]
+  "lambdaLayers": []
 }

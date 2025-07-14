@@ -11,12 +11,14 @@ export const getSample = /* GraphQL */ `
         bucket
         key
         region
+        __typename
       }
       createdAt
       updatedAt
       _version
       _deleted
       _lastChangedAt
+      __typename
     }
   }
 `;
@@ -31,19 +33,16 @@ export const listSamples = /* GraphQL */ `
         id
         name
         user_id
-        file {
-          bucket
-          key
-          region
-        }
         createdAt
         updatedAt
         _version
         _deleted
         _lastChangedAt
+        __typename
       }
       nextToken
       startedAt
+      __typename
     }
   }
 `;
@@ -64,19 +63,16 @@ export const syncSamples = /* GraphQL */ `
         id
         name
         user_id
-        file {
-          bucket
-          key
-          region
-        }
         createdAt
         updatedAt
         _version
         _deleted
         _lastChangedAt
+        __typename
       }
       nextToken
       startedAt
+      __typename
     }
   }
 `;

@@ -14,12 +14,14 @@ export const createSample = /* GraphQL */ `
         bucket
         key
         region
+        __typename
       }
       createdAt
       updatedAt
       _version
       _deleted
       _lastChangedAt
+      __typename
     }
   }
 `;
@@ -36,12 +38,14 @@ export const updateSample = /* GraphQL */ `
         bucket
         key
         region
+        __typename
       }
       createdAt
       updatedAt
       _version
       _deleted
       _lastChangedAt
+      __typename
     }
   }
 `;
@@ -58,12 +62,14 @@ export const deleteSample = /* GraphQL */ `
         bucket
         key
         region
+        __typename
       }
       createdAt
       updatedAt
       _version
       _deleted
       _lastChangedAt
+      __typename
     }
   }
 `;

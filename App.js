@@ -16,12 +16,12 @@ export default function App() {
         const awsconfig = require('./src/aws-exports').default;
         
         // Validate that we have real config, not placeholder values
-        if (awsconfig.Auth?.Cognito?.userPoolId && 
-            awsconfig.Auth.Cognito.userPoolId !== 'placeholder' &&
-            awsconfig.Storage?.S3?.bucket && 
-            awsconfig.Storage.S3.bucket !== 'placeholder' &&
-            awsconfig.API?.GraphQL?.endpoint &&
-            awsconfig.API.GraphQL.endpoint !== 'placeholder') {
+        if (awsconfig.aws_user_pools_id && 
+            awsconfig.aws_user_pools_id !== 'placeholder' &&
+            awsconfig.aws_user_files_s3_bucket && 
+            awsconfig.aws_user_files_s3_bucket !== 'placeholder' &&
+            awsconfig.aws_appsync_graphqlEndpoint &&
+            awsconfig.aws_appsync_graphqlEndpoint !== 'placeholder') {
           
           Amplify.configure(awsconfig);
           console.log('✅ AWS Amplify configured with real aws-exports.js');

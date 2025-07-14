@@ -21,30 +21,26 @@ const Navigator = (props) => {
     setUser(userID);
   };
 
-  const removeListeners = () => {
-    Hub.remove("auth");
-  };
-
   useEffect(() => {
-
-    Hub.listen("auth", async (data) => {
+    // Store the unsubscribe function returned by Hub.listen
+    const unsubscribe = Hub.listen("auth", async (data) => {
       const { payload } = data;
       // console.log("HUB EVENT", payload);
       switch (payload.event) {
-        case "signIn":
+        case "signedIn":
           const username = await AUTH.getUsername(payload.data);
           setUser(username);
           break;
-        case "signOut":
+        case "signedOut":
           setUser();
-          removeListeners();
           break;
       }
     });
 
     handleUserLoggedIn();
 
-    return removeListeners();
+    // Return the unsubscribe function for cleanup
+    return unsubscribe;
   }, []);
 
   return (
