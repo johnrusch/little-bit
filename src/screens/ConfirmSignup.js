@@ -47,12 +47,14 @@ const ConfirmSignup = (props) => {
       let {digit1, digit2, digit3, digit4, digit5, digit6} = confirmationCode;
   
       if (digit1 && digit2 && digit3 && digit4 && digit5 && digit6) {
+        console.log('🔵 All digits entered, starting confirmation process...');
         handleConfirmSignUp();
       }
     }, [confirmationCode.digit6]);
   
     const navigateUserHome = () => {
       // context.setLoading(false)
+      console.log('🚀 NAVIGATION: Creating reset action for Home screen...');
       const resetAction = CommonActions.reset({
         index: 0,
         routes: [
@@ -61,19 +63,35 @@ const ConfirmSignup = (props) => {
           },
         ],
       });
+      console.log('🚀 NAVIGATION: Dispatching navigation action...');
       props.navigation.dispatch(resetAction);
+      console.log('🚀 NAVIGATION: Navigation dispatch completed');
     }
   
     const handleConfirmSignUp = async () => {
       let {digit1, digit2, digit3, digit4, digit5, digit6} = confirmationCode;
       let codeToConfirm = digit1 + digit2 + digit3 + digit4 + digit5 + digit6;
+      console.log('🟡 Starting confirmation with code:', codeToConfirm, 'username:', username);
       context.setLoading(true)
       try {
+        console.log('🟠 Step 1: Calling confirmSignUp...');
         await confirmSignUp({ username, confirmationCode: codeToConfirm });
+        console.log('✅ Step 1 SUCCESS: confirmSignUp completed');
+        
+        console.log('🟠 Step 2: Calling AUTH.logIn...');
         await AUTH.logIn(username, password);
+        console.log('✅ Step 2 SUCCESS: AUTH.logIn completed');
+        
+        console.log('🟠 Step 3: Clearing loading state...');
         context.setLoading(false);
+        console.log('✅ Step 3 SUCCESS: Loading state cleared');
+        
+        console.log('🟠 Step 4: Navigating to home...');
         navigateUserHome();
+        console.log('✅ Step 4 SUCCESS: Navigation called');
       } catch (error) {
+        console.error('❌ ERROR in handleConfirmSignUp:', error);
+        console.error('❌ Error details:', error.message, error.code);
         context.setLoading(false)
         setDisplayError(true);
         setConfirmationCode({digit1: '', digit2: '', digit3: '', digit4: '', digit5: '', digit6: ''});
@@ -82,11 +100,12 @@ const ConfirmSignup = (props) => {
     };
   
     return (
-      // loading ? 
-      // <View style={{flex: 1, backgroundColor: '#343a40', justifyContent: "center", alignItems: "center" }}>
-      //   <ActivityIndicator size="large" />
-      // </View>
-      // : 
+      context.loading ? 
+      <View style={{flex: 1, backgroundColor: '#343a40', justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#D8D8D8" />
+        <Text style={{color: '#D8D8D8', marginTop: 20}}>Confirming your account...</Text>
+      </View>
+      : 
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={{fontSize: 30, marginLeft: 35, color: '#D8D8D8', fontWeight: '100'}}>Confirmation</Text>
