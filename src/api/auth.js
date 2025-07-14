@@ -1,14 +1,14 @@
-import { Auth } from "aws-amplify";
+import { signIn, signUp, signOut, fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 
-const getUsername = (user) => {
-    return user.attributes.sub;
-  };
+const getUsername = (userId) => {
+    return userId;
+};
 
 const AUTH = {
     logIn: async (username, password) => {
         try {
-            const logIn = await Auth.signIn(username, password);
-            return getUsername(logIn);
+            const { userId } = await signIn({ username, password });
+            return userId;
         } catch (err) {
             console.log(`Error signing in: ${err.message}`, err);
             return null;
@@ -16,12 +16,12 @@ const AUTH = {
     },
     signUp: async (newUser) => {
         try {
-            const { user } = await Auth.signUp({
+            const { userId } = await signUp({
                 username: newUser.email,
                 password: newUser.password,
             });
-            console.log(user);
-            return user;
+            console.log(userId);
+            return { username: newUser.email, userSub: userId };
         } catch (err) {
             console.log("Error signing up", err);
             alert("Error creating account:", err.message);
@@ -30,18 +30,20 @@ const AUTH = {
     },
     logOut: async () => {
         try {
-            await Auth.signOut();
+            await signOut();
+            return true;
         } catch (error) {
             console.log("Error logging out: ", error.message);
+            return false;
         }
     },
     isLoggedIn: async () => {
         try {
-            const user = await Auth.currentAuthenticatedUser();
-            return getUsername(user);
+            const { userId } = await getCurrentUser();
+            return userId;
         } catch (error) {
             console.log("Error checking if user is logged in: ", error.message);
-            return false;
+            return null;
         }
     },
     getUsername

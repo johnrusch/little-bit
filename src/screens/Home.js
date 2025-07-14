@@ -15,7 +15,6 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import { Audio } from "expo-av";
-import { Storage, Auth } from "aws-amplify";
 import NavBar from "../components/NavBar";
 import Recorder from "./Recorder";
 import Sounds from "./Sounds";

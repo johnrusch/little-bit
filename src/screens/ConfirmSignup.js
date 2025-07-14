@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import {Auth} from 'aws-amplify';
+import { confirmSignUp } from 'aws-amplify/auth';
 import { AUTH } from '../api';
 import DigitBox from '../components/DigitBox';
 import {CommonActions} from '@react-navigation/native';
@@ -47,7 +47,7 @@ const ConfirmSignup = (props) => {
       let {digit1, digit2, digit3, digit4, digit5, digit6} = confirmationCode;
   
       if (digit1 && digit2 && digit3 && digit4 && digit5 && digit6) {
-        confirmSignUp();
+        handleConfirmSignUp();
       }
     }, [confirmationCode.digit6]);
   
@@ -64,13 +64,13 @@ const ConfirmSignup = (props) => {
       props.navigation.dispatch(resetAction);
     }
   
-    const confirmSignUp = async () => {
+    const handleConfirmSignUp = async () => {
       let {digit1, digit2, digit3, digit4, digit5, digit6} = confirmationCode;
       let codeToConfirm = digit1 + digit2 + digit3 + digit4 + digit5 + digit6;
       context.setLoading(true)
       try {
-        await Auth.confirmSignUp(username, codeToConfirm);
-        await api.logIn(username, password);
+        await confirmSignUp({ username, confirmationCode: codeToConfirm });
+        await AUTH.logIn(username, password);
         navigateUserHome();
       } catch (error) {
         context.setLoading(false)
@@ -148,7 +148,7 @@ const ConfirmSignup = (props) => {
               }}
               onBack={(event) =>
                 event.nativeEvent.key === 'Backspace'
-                  ? (setCode({...confirmationCode, digit3: ''}),
+                  ? (setConfirmationCode({...confirmationCode, digit3: ''}),
                     digit3Ref.current.focus())
                   : null
               }
@@ -176,7 +176,7 @@ const ConfirmSignup = (props) => {
               digitInput={confirmationCode.digit6}
               setData={(value) => {
                 setConfirmationCode({...confirmationCode, digit6: value});
-                digit5Ref.current.focus();
+                digit6Ref.current.blur();
               }}
               onBack={(event) =>
                 event.nativeEvent.key === 'Backspace'
