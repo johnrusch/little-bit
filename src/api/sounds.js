@@ -1,12 +1,16 @@
-import { Storage, API, graphqlOperation } from "aws-amplify";
+import { getUrl } from "aws-amplify/storage";
+import { generateClient } from "aws-amplify/api";
 import * as subscriptions from "../graphql/subscriptions";
 import * as queries from "../graphql/queries";
 
+const client = generateClient();
+
 const listUserSounds = async (userID) => {
   try {
-    const sounds = await API.graphql(
-      graphqlOperation(queries.listSamples, { user_id: userID })
-    );
+    const sounds = await client.graphql({
+      query: queries.listSamples,
+      variables: { user_id: userID }
+    });
     return sounds.data.listSamples.items;
   } catch (err) {
     console.log("Error fetching user sounds", err);
@@ -19,8 +23,8 @@ const getSound = async (model) => {
   if (!file || model._deleted) return;
   const key = file.key.split("/").slice(1).join("/");
   try {
-    const url = await Storage.get(key);
-    const soundObj = { ...model, url };
+    const result = await getUrl({ key });
+    const soundObj = { ...model, url: result.url.toString() };
     return soundObj;
   } catch (error) {
     console.log("Error fetching sound", error);
@@ -46,16 +50,17 @@ const SOUNDS = {
   getSound,
   subscribeToUserSounds: (userID, setSounds, setLoadingStatus) => {
     try {
-      const subscription = API.graphql(
-        graphqlOperation(subscriptions.onCreateSample, { user_id: userID })
-      ).subscribe({
+      const subscription = client.graphql({
+        query: subscriptions.onCreateSample,
+        variables: { user_id: userID }
+      }).subscribe({
         next: async (update) => {
           setLoadingStatus({ loading: true, processingSound: true });
-          const newSound = update.value.data.onCreateSample;
+          const newSound = update.data.onCreateSample;
           const sound = await getSound(newSound);
           if (!sound) return;
           setSounds((prevSounds) => [...prevSounds, sound]);
-          console.log("SUBSCRIPTION DATA", update.value);
+          console.log("SUBSCRIPTION DATA", update);
           setLoadingStatus({ loading: false, processingSound: false });
         },
         error: (error) => console.log("SOMETHING WRONG", error),

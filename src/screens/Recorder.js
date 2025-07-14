@@ -14,7 +14,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import { Audio } from "expo-av";
-import { Storage, Auth, Hub } from "aws-amplify";
+import { uploadData } from "aws-amplify/storage";
 import NavBar from "../components/NavBar";
 import * as FileSystem from "expo-file-system";
 import UserContext from "../contexts/UserContext";
@@ -73,11 +73,14 @@ const Recorder = (props) => {
 
   const saveRecording = async () => {
     setLoadingStatus({ loading: true, processingSound: true });
-    await Storage.put(`unprocessed/${user}/${text}.${format}`, blob);
+    await uploadData({
+      key: `unprocessed/${user}/${text}.${format}`,
+      data: blob
+    });
     setModalVisible(false);
     setFormat();
     setBlob();
-    setText();
+    setText(`${new Date().toISOString().replace(/(:|\s+)/g, "-")}`);
   };
 
   const handleTextSubmit = () => {
