@@ -23,15 +23,33 @@ const getSound = async (model) => {
   if (!file || model._deleted) return;
   
   // Validate file.key before processing
-  if (!file.key || typeof file.key !== 'string' || !file.key.includes('/')) {
-    console.log("Invalid file key format:", file.key);
+  if (!file.key || typeof file.key !== 'string') {
+    console.log("Invalid file key - not a string:", file.key);
     return null;
   }
   
-  const key = file.key.split("/").slice(1).join("/");
+  // Check for basic S3 key format (should have at least one slash and valid characters)
+  if (!file.key.includes('/') || file.key.length < 3) {
+    console.log("Invalid S3 key format:", file.key);
+    return null;
+  }
+  
+  // Validate key doesn't contain dangerous patterns
+  if (file.key.includes('..') || file.key.startsWith('/') || file.key.endsWith('/')) {
+    console.log("Unsafe S3 key pattern detected:", file.key);
+    return null;
+  }
+  
+  const keyParts = file.key.split("/");
+  if (keyParts.length < 2) {
+    console.log("S3 key must have at least two path segments:", file.key);
+    return null;
+  }
+  
+  const key = keyParts.slice(1).join("/");
   
   // Ensure we have a valid key after processing
-  if (!key) {
+  if (!key || key.trim() === '') {
     console.log("Empty key after processing file.key:", file.key);
     return null;
   }
