@@ -176,7 +176,7 @@ const ConfirmSignup = (props) => {
               digitInput={confirmationCode.digit6}
               setData={(value) => {
                 setConfirmationCode({...confirmationCode, digit6: value});
-                digit5Ref.current.focus();
+                digit6Ref.current.focus();
               }}
               onBack={(event) =>
                 event.nativeEvent.key === 'Backspace'

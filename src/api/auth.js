@@ -31,8 +31,10 @@ const AUTH = {
     logOut: async () => {
         try {
             await signOut();
+            return true;
         } catch (error) {
             console.log("Error logging out: ", error.message);
+            return false;
         }
     },
     isLoggedIn: async () => {
@@ -41,7 +43,7 @@ const AUTH = {
             return userId;
         } catch (error) {
             console.log("Error checking if user is logged in: ", error.message);
-            return false;
+            return null;
         }
     },
     getUsername

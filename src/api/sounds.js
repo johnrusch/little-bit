@@ -21,7 +21,21 @@ const listUserSounds = async (userID) => {
 const getSound = async (model) => {
   const { file } = model;
   if (!file || model._deleted) return;
+  
+  // Validate file.key before processing
+  if (!file.key || typeof file.key !== 'string' || !file.key.includes('/')) {
+    console.log("Invalid file key format:", file.key);
+    return null;
+  }
+  
   const key = file.key.split("/").slice(1).join("/");
+  
+  // Ensure we have a valid key after processing
+  if (!key) {
+    console.log("Empty key after processing file.key:", file.key);
+    return null;
+  }
+  
   try {
     const result = await getUrl({ key });
     const soundObj = { ...model, url: result.url.toString() };
