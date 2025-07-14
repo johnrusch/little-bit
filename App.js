@@ -21,7 +21,9 @@ export default function App() {
             awsconfig.aws_user_files_s3_bucket && 
             awsconfig.aws_user_files_s3_bucket !== 'placeholder' &&
             awsconfig.aws_appsync_graphqlEndpoint &&
-            awsconfig.aws_appsync_graphqlEndpoint !== 'placeholder') {
+            awsconfig.aws_appsync_graphqlEndpoint !== 'placeholder' &&
+            awsconfig.aws_cognito_region &&
+            awsconfig.aws_user_pools_web_client_id) {
           
           Amplify.configure(awsconfig);
           console.log('✅ AWS Amplify configured with real aws-exports.js');

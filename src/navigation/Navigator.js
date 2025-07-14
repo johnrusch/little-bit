@@ -28,8 +28,13 @@ const Navigator = (props) => {
       // console.log("HUB EVENT", payload);
       switch (payload.event) {
         case "signedIn":
-          const username = await AUTH.getUsername(payload.data);
-          setUser(username);
+          try {
+            const username = await AUTH.getUsername(payload.data);
+            setUser(username);
+          } catch (error) {
+            console.log("Error getting username from auth event:", error);
+            setUser(null);
+          }
           break;
         case "signedOut":
           setUser();
