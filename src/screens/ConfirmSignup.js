@@ -71,6 +71,7 @@ const ConfirmSignup = (props) => {
       try {
         await confirmSignUp({ username, confirmationCode: codeToConfirm });
         await AUTH.logIn(username, password);
+        context.setLoading(false);
         navigateUserHome();
       } catch (error) {
         context.setLoading(false)
