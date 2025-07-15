@@ -31,7 +31,7 @@ const Navigator = (props) => {
             const username = await AUTH.getUsername(payload.data);
             setUser(username);
           } catch (error) {
-            setUser(null);
+            setUser(false);
           }
           break;
         case "signedOut":
