@@ -7,10 +7,24 @@ const getUsername = (userId) => {
 const AUTH = {
     logIn: async (username, password) => {
         try {
-            const { userId } = await signIn({ username, password });
-            return userId;
+            console.log('🔑 Attempting signIn with AWS Amplify v6 API...');
+            const { isSignedIn, nextStep } = await signIn({ username, password });
+            console.log('🔑 SignIn result:', { isSignedIn, nextStep });
+            
+            if (isSignedIn) {
+                // User is fully signed in, get user info
+                const user = await getCurrentUser();
+                console.log('✅ Login successful, user:', user);
+                return user.userId || user.username;
+            } else {
+                // Handle multi-step auth if needed
+                console.log('🔄 Additional auth step required:', nextStep);
+                return null;
+            }
         } catch (err) {
-            console.log(`Error signing in: ${err.message}`, err);
+            console.error('❌ Login error:', err);
+            console.error('❌ Error details:', err.message, err.code, err.name);
+            console.error('❌ Full error object:', JSON.stringify(err, null, 2));
             return null;
         }
     },
