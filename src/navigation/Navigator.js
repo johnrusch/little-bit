@@ -25,11 +25,12 @@ const Navigator = (props) => {
     // Store the unsubscribe function returned by Hub.listen
     const unsubscribe = Hub.listen("auth", async (data) => {
       const { payload } = data;
-      // console.log("HUB EVENT", payload);
+      console.log("🔊 HUB EVENT", payload.event, payload);
       switch (payload.event) {
         case "signedIn":
           try {
             const username = await AUTH.getUsername(payload.data);
+            console.log("✅ Hub signedIn event - setting user:", username);
             setUser(username);
           } catch (error) {
             console.log("Error getting username from auth event:", error);
@@ -37,11 +38,13 @@ const Navigator = (props) => {
           }
           break;
         case "signedOut":
+          console.log("👋 Hub signedOut event - clearing user");
           setUser();
           break;
       }
     });
 
+    // Check auth status on app load
     handleUserLoggedIn();
 
     // Return the unsubscribe function for cleanup

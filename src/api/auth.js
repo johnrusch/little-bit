@@ -1,4 +1,5 @@
 import { signIn, signUp, signOut, fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
+import { Hub } from "aws-amplify/utils";
 
 const getUsername = (userId) => {
     return userId;
@@ -8,13 +9,27 @@ const AUTH = {
     logIn: async (username, password) => {
         try {
             console.log('🔑 Attempting signIn with AWS Amplify v6 API...');
-            const { isSignedIn, nextStep } = await signIn({ username, password });
+            const { isSignedIn, nextStep } = await signIn({ 
+                username, 
+                password,
+                options: {
+                    authFlowType: 'USER_PASSWORD_AUTH'
+                }
+            });
             console.log('🔑 SignIn result:', { isSignedIn, nextStep });
             
             if (isSignedIn) {
                 // User is fully signed in, get user info
                 const user = await getCurrentUser();
                 console.log('✅ Login successful, user:', user);
+                
+                // Manually dispatch Hub event for Amplify v6 compatibility
+                Hub.dispatch('auth', {
+                    event: 'signedIn',
+                    data: user
+                });
+                console.log('🔊 Manually dispatched signedIn Hub event');
+                
                 return user.userId || user.username;
             } else {
                 // Handle multi-step auth if needed
@@ -33,6 +48,11 @@ const AUTH = {
             const { userId } = await signUp({
                 username: newUser.email,
                 password: newUser.password,
+                options: {
+                    autoSignIn: {
+                        authFlowType: 'USER_PASSWORD_AUTH'
+                    }
+                }
             });
             return { username: newUser.email, userSub: userId };
         } catch (err) {
@@ -44,6 +64,13 @@ const AUTH = {
     logOut: async () => {
         try {
             await signOut();
+            
+            // Manually dispatch Hub event for Amplify v6 compatibility
+            Hub.dispatch('auth', {
+                event: 'signedOut'
+            });
+            console.log('🔊 Manually dispatched signedOut Hub event');
+            
             return true;
         } catch (error) {
             console.log("Error logging out: ", error.message);
