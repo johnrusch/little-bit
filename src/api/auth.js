@@ -8,7 +8,6 @@ const getUsername = (userId) => {
 const AUTH = {
     logIn: async (username, password) => {
         try {
-            console.log('🔑 Attempting signIn with AWS Amplify v6 API...');
             const { isSignedIn, nextStep } = await signIn({ 
                 username, 
                 password,
@@ -16,30 +15,24 @@ const AUTH = {
                     authFlowType: 'USER_PASSWORD_AUTH'
                 }
             });
-            console.log('🔑 SignIn result:', { isSignedIn, nextStep });
             
             if (isSignedIn) {
                 // User is fully signed in, get user info
                 const user = await getCurrentUser();
-                console.log('✅ Login successful, user:', user);
                 
                 // Manually dispatch Hub event for Amplify v6 compatibility
                 Hub.dispatch('auth', {
                     event: 'signedIn',
                     data: user
                 });
-                console.log('🔊 Manually dispatched signedIn Hub event');
                 
                 return user.userId || user.username;
             } else {
                 // Handle multi-step auth if needed
-                console.log('🔄 Additional auth step required:', nextStep);
                 return null;
             }
         } catch (err) {
-            console.error('❌ Login error:', err);
-            console.error('❌ Error details:', err.message, err.code, err.name);
-            console.error('❌ Full error object:', JSON.stringify(err, null, 2));
+            console.error('Login error:', err.message);
             return null;
         }
     },
@@ -69,11 +62,10 @@ const AUTH = {
             Hub.dispatch('auth', {
                 event: 'signedOut'
             });
-            console.log('🔊 Manually dispatched signedOut Hub event');
             
             return true;
         } catch (error) {
-            console.log("Error logging out: ", error.message);
+            console.error("Error logging out:", error.message);
             return false;
         }
     },
@@ -82,7 +74,7 @@ const AUTH = {
             const { userId } = await getCurrentUser();
             return userId;
         } catch (error) {
-            console.log("Error checking if user is logged in: ", error.message);
+            // User is not logged in
             return null;
         }
     },
