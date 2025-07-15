@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { confirmSignUp } from 'aws-amplify/auth';
 import { AUTH } from '../api';
@@ -52,7 +53,6 @@ const ConfirmSignup = (props) => {
     }, [confirmationCode.digit6]);
   
     const navigateUserHome = () => {
-      // context.setLoading(false)
       const resetAction = CommonActions.reset({
         index: 0,
         routes: [
@@ -63,29 +63,84 @@ const ConfirmSignup = (props) => {
       });
       props.navigation.dispatch(resetAction);
     }
+
+    const showSuccessAndNavigate = () => {
+      setLoading(false);
+      
+      Alert.alert(
+        "Account Confirmed! ✅",
+        "Your account has been successfully verified. Please log in with your credentials.",
+        [
+          { 
+            text: "Continue to Login", 
+            onPress: () => {
+              console.log('🚀 Navigating to Login with params:', { 
+                prefillUsername: username,
+                fromConfirmation: true
+              });
+              props.navigation.navigate('Login', { 
+                prefillUsername: username,
+                fromConfirmation: true
+              });
+            }
+          }
+        ],
+        { cancelable: false }
+      );
+    }
   
     const handleConfirmSignUp = async () => {
       let {digit1, digit2, digit3, digit4, digit5, digit6} = confirmationCode;
       let codeToConfirm = digit1 + digit2 + digit3 + digit4 + digit5 + digit6;
-      context.setLoading(true)
+      
+      setLoading(true);
       try {
-        await confirmSignUp({ username, confirmationCode: codeToConfirm });
-        await AUTH.logIn(username, password);
-        navigateUserHome();
+        const confirmResult = await Promise.race([
+          confirmSignUp({ username, confirmationCode: codeToConfirm }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('confirmSignUp timeout after 10 seconds')), 10000)
+          )
+        ]);
+        
+        // Show success alert and then navigate to login
+        showSuccessAndNavigate();
+        
       } catch (error) {
-        context.setLoading(false)
-        setDisplayError(true);
-        setConfirmationCode({digit1: '', digit2: '', digit3: '', digit4: '', digit5: '', digit6: ''});
-        digit1Ref.current.focus();
+        console.error('❌ ERROR in handleConfirmSignUp:', error);
+        console.error('❌ Error details:', error.message, error.code, error.name);
+        setLoading(false);
+        
+        // Show specific error message based on error type
+        let errorMessage = "Something went wrong. Please try again.";
+        
+        if (error.code === 'CodeMismatchException') {
+          errorMessage = "Invalid confirmation code. Please check and try again.";
+        } else if (error.code === 'ExpiredCodeException') {
+          errorMessage = "Confirmation code has expired. Please request a new one.";
+        } else if (error.code === 'NotAuthorizedException') {
+          errorMessage = "This account has already been confirmed.";
+        } else if (error.message && error.message.includes('timeout')) {
+          errorMessage = "Request timed out. Please check your connection and try again.";
+        }
+        
+        Alert.alert(
+          "Confirmation Failed",
+          errorMessage,
+          [{ text: "OK", onPress: () => {
+            setConfirmationCode({digit1: '', digit2: '', digit3: '', digit4: '', digit5: '', digit6: ''});
+            digit1Ref.current.focus();
+          }}]
+        );
       }
     };
   
     return (
-      // loading ? 
-      // <View style={{flex: 1, backgroundColor: '#343a40', justifyContent: "center", alignItems: "center" }}>
-      //   <ActivityIndicator size="large" />
-      // </View>
-      // : 
+      loading ? 
+      <View style={{flex: 1, backgroundColor: '#343a40', justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#D8D8D8" />
+        <Text style={{color: '#D8D8D8', marginTop: 20}}>Confirming your account...</Text>
+      </View>
+      : 
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={{fontSize: 30, marginLeft: 35, color: '#D8D8D8', fontWeight: '100'}}>Confirmation</Text>
