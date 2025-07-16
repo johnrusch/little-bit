@@ -1,15 +1,20 @@
+// Test the Dimensions utility
 describe('Dimensions Utils', () => {
-  let mockDimensions;
-
+  let Dimensions;
+  
   beforeEach(() => {
+    // Clear all module caches
     jest.resetModules();
-    mockDimensions = {
-      get: jest.fn().mockReturnValue({ width: 375, height: 812 }),
-    };
-
+    
+    // Mock react-native module
     jest.doMock('react-native', () => ({
-      Dimensions: mockDimensions,
+      Dimensions: {
+        get: jest.fn().mockReturnValue({ width: 375, height: 812 }),
+      },
     }));
+    
+    // Get reference to mocked Dimensions
+    Dimensions = require('react-native').Dimensions;
   });
 
   afterEach(() => {
@@ -23,15 +28,17 @@ describe('Dimensions Utils', () => {
   });
 
   test('should call Dimensions.get with window parameter', () => {
+    // Import the module which will trigger Dimensions.get calls
     require('../Dimensions');
-    expect(mockDimensions.get).toHaveBeenCalledWith('window');
+    expect(Dimensions.get).toHaveBeenCalledWith('window');
+    expect(Dimensions.get).toHaveBeenCalledTimes(2); // Called twice for width and height
   });
 
   test('should handle different screen sizes', () => {
     // Mock different screen size
-    mockDimensions.get.mockReturnValue({ width: 414, height: 896 });
+    Dimensions.get.mockReturnValue({ width: 414, height: 896 });
     
-    // Import to get new values
+    // Re-import to get new values
     const { windowWidth: newWidth, windowHeight: newHeight } = require('../Dimensions');
     
     expect(newWidth).toBe(414);

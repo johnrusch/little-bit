@@ -25,10 +25,10 @@ describe('FormButton Component', () => {
 
   test('applies correct styles', () => {
     const { getByTestId } = render(
-      <FormButton buttonTitle="Styled Button" testID="test-button" />
+      <FormButton buttonTitle="Styled Button" testID="styled-button" />
     );
     
-    const button = getByTestId('test-button');
+    const button = getByTestId('styled-button');
     
     expect(button.props.style).toMatchObject({
       backgroundColor: '#69FAA0',

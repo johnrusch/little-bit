@@ -52,6 +52,40 @@ jest.mock('aws-amplify', () => ({
   },
 }));
 
+// Mock AWS Amplify auth module completely
+jest.mock('aws-amplify/auth', () => ({
+  signUp: jest.fn(),
+  signIn: jest.fn(),
+  confirmSignUp: jest.fn(),
+  signOut: jest.fn(),
+  fetchAuthSession: jest.fn(),
+  getCurrentUser: jest.fn(),
+}));
+
+// Mock new Amplify v6 structure for API and Storage services
+jest.mock('aws-amplify/storage', () => ({
+  uploadData: jest.fn(),
+  downloadData: jest.fn(),
+  remove: jest.fn(),
+  list: jest.fn(),
+  getUrl: jest.fn(),
+}));
+
+jest.mock('aws-amplify/api', () => ({
+  generateClient: jest.fn(() => ({
+    graphql: jest.fn(),
+  })),
+}));
+
+// Mock AWS Amplify utils
+jest.mock('aws-amplify/utils', () => ({
+  Hub: {
+    listen: jest.fn(() => jest.fn()), // returns unsubscribe function
+    dispatch: jest.fn(),
+  },
+}));
+
+// Keep legacy mocks for compatibility
 jest.mock('@aws-amplify/auth', () => ({
   signUp: jest.fn(),
   signIn: jest.fn(),
@@ -111,6 +145,9 @@ global.fetch = jest.fn(() =>
   })
 );
 
+// Mock global alert function
+global.alert = jest.fn();
+
 // Suppress console warnings in tests
 const originalWarn = console.warn;
 beforeAll(() => {
@@ -138,3 +175,11 @@ jest.mock('expo/metro-config', () => ({
     server: {},
   })),
 }));
+
+// Mock react-native-vector-icons
+jest.mock('react-native-vector-icons/FontAwesome', () => {
+  const React = require('react');
+  return {
+    Button: ({ children, ...props }) => React.createElement('FontAwesome.Button', props, children),
+  };
+});
