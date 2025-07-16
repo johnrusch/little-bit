@@ -1,5 +1,22 @@
 // Jest setup file
 
+// Global mocks for React Native and Expo
+global.__DEV__ = true;
+
+// Mock Expo import meta registry before any imports
+global.__ExpoImportMetaRegistry = {};
+
+// Mock expo-modules-core before other modules
+jest.mock('expo-modules-core', () => ({
+  NativeModulesProxy: {},
+  EventEmitter: jest.fn(),
+  createWebModule: jest.fn(),
+  requireNativeModule: jest.fn(() => ({})),
+}));
+
+// Mock Expo winter runtime to prevent import errors
+jest.mock('expo/src/winter/runtime.native', () => ({}), { virtual: true });
+
 // Mock Expo modules
 jest.mock('expo-status-bar', () => ({
   StatusBar: 'StatusBar',
@@ -111,3 +128,13 @@ beforeAll(() => {
 afterAll(() => {
   console.warn = originalWarn;
 });
+
+// Mock Metro configuration
+jest.mock('expo/metro-config', () => ({
+  getDefaultConfig: jest.fn(() => ({
+    resolver: {},
+    transformer: {},
+    serializer: {},
+    server: {},
+  })),
+}));

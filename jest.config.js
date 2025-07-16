@@ -23,5 +23,14 @@ module.exports = {
   coverageDirectory: '<rootDir>/coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   clearMocks: true,
-  resetMocks: true
+  resetMocks: true,
+  modulePathIgnorePatterns: [
+    '<rootDir>/amplify/#current-cloud-backend/',
+    '<rootDir>/amplify-backup/',
+    '<rootDir>/amplify/.*/node_modules/',
+    '<rootDir>/amplify-backup/.*/node_modules/'
+  ],
+  globals: {
+    __DEV__: true
+  }
 };
