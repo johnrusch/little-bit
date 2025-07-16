@@ -62,6 +62,30 @@ jest.mock('aws-amplify/auth', () => ({
   getCurrentUser: jest.fn(),
 }));
 
+// Mock new Amplify v6 structure for API and Storage services
+jest.mock('aws-amplify/storage', () => ({
+  uploadData: jest.fn(),
+  downloadData: jest.fn(),
+  remove: jest.fn(),
+  list: jest.fn(),
+  getUrl: jest.fn(),
+}));
+
+jest.mock('aws-amplify/api', () => ({
+  generateClient: jest.fn(() => ({
+    graphql: jest.fn(),
+  })),
+}));
+
+// Mock AWS Amplify utils
+jest.mock('aws-amplify/utils', () => ({
+  Hub: {
+    listen: jest.fn(() => jest.fn()), // returns unsubscribe function
+    dispatch: jest.fn(),
+  },
+}));
+
+// Keep legacy mocks for compatibility
 jest.mock('@aws-amplify/auth', () => ({
   signUp: jest.fn(),
   signIn: jest.fn(),
@@ -83,14 +107,6 @@ jest.mock('@aws-amplify/api', () => ({
   generateClient: jest.fn(() => ({
     graphql: jest.fn(),
   })),
-}));
-
-// Mock AWS Amplify utils
-jest.mock('aws-amplify/utils', () => ({
-  Hub: {
-    listen: jest.fn(() => jest.fn()), // returns unsubscribe function
-    dispatch: jest.fn(),
-  },
 }));
 
 // Mock AsyncStorage

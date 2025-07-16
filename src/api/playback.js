@@ -1,4 +1,9 @@
 const play = async (playbackObj, uri) => {
+  if (!playbackObj) {
+    console.log("Unable to load sound: playback object is null or undefined");
+    return null;
+  }
+  
   try {
     const status = await playbackObj.loadAsync(
       { uri },
@@ -12,9 +17,9 @@ const play = async (playbackObj, uri) => {
   }
 };
 
-const onPlaybackStatusUpdate = async (playbackStatus) => {
-  if (playbackStatus.didJustFinish && !playbackStatus.isLooping) {
-    await playbackObject.setStatusAsync({
+const onPlaybackStatusUpdate = async (playbackStatus, playbackObj) => {
+  if (playbackStatus && playbackStatus.didJustFinish && !playbackStatus.isLooping && playbackObj) {
+    await playbackObj.setStatusAsync({
       shouldPlay: false,
       positionMillis: 0,
     });
@@ -23,7 +28,13 @@ const onPlaybackStatusUpdate = async (playbackStatus) => {
 
 const PLAYBACK = {
   play,
+  onPlaybackStatusUpdate,
   pause: async (playbackObj) => {
+    if (!playbackObj) {
+      console.log("Unable to pause sound: playback object is null or undefined");
+      return null;
+    }
+    
     try {
       const status = await playbackObj.pauseAsync();
       return status;
@@ -33,6 +44,11 @@ const PLAYBACK = {
     }
   },
   resume: async (playbackObj) => {
+    if (!playbackObj) {
+      console.log("Unable to resume sound: playback object is null or undefined");
+      return null;
+    }
+    
     try {
       const status = await playbackObj.playAsync();
       return status;
@@ -42,6 +58,11 @@ const PLAYBACK = {
     }
   },
   playNext: async (playbackObj, uri) => {
+    if (!playbackObj) {
+      console.log("Unable to play next sound: playback object is null or undefined");
+      return null;
+    }
+    
     try {
       await playbackObj.stopAsync();
       await playbackObj.unloadAsync();
