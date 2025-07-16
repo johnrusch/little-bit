@@ -1,27 +1,30 @@
 // Test user data fixtures for integration tests
 
+// Generate random test data to avoid static credentials
+const generateTestUser = (suffix = '') => ({
+  id: `test-user-${Math.random().toString(36).substr(2, 9)}${suffix}`,
+  username: `testuser${Math.random().toString(36).substr(2, 6)}`,
+  email: `test${Math.random().toString(36).substr(2, 6)}@example.com`,
+  password: `TestPass${Math.random().toString(36).substr(2, 8)}!`,
+  confirmationCode: Math.random().toString(10).substr(2, 6),
+});
+
 export const mockUsers = {
-  validUser: {
-    id: 'test-user-123',
-    username: 'testuser',
-    email: 'test@example.com',
-    password: 'TempPassword123!',
-    confirmationCode: '123456',
-  },
-  
-  existingUser: {
-    id: 'existing-user-456',
-    username: 'existinguser',
-    email: 'existing@example.com',
-    password: 'ExistingPassword123!',
-  },
-  
+  validUser: generateTestUser('-valid'),
+  existingUser: generateTestUser('-existing'),
   invalidUser: {
     username: 'invalid',
     email: 'invalid-email',
-    password: '123', // Too weak
+    password: '123', // Intentionally weak for testing
   },
 };
+
+// Generate random tokens to avoid static values
+const generateTokens = () => ({
+  accessToken: `mock-access-${Math.random().toString(36).substr(2, 20)}`,
+  idToken: `mock-id-${Math.random().toString(36).substr(2, 20)}`,
+  refreshToken: `mock-refresh-${Math.random().toString(36).substr(2, 20)}`,
+});
 
 export const mockAuthStates = {
   authenticated: {
@@ -30,11 +33,7 @@ export const mockAuthStates = {
       username: mockUsers.validUser.username,
       email: mockUsers.validUser.email,
     },
-    tokens: {
-      accessToken: 'mock-access-token',
-      idToken: 'mock-id-token',
-      refreshToken: 'mock-refresh-token',
-    },
+    tokens: generateTokens(),
     isAuthenticated: true,
   },
   
@@ -75,9 +74,9 @@ export const mockCognitoResponses = {
   
   signInSuccess: {
     AuthenticationResult: {
-      AccessToken: 'mock-access-token',
-      IdToken: 'mock-id-token',
-      RefreshToken: 'mock-refresh-token',
+      AccessToken: generateTokens().accessToken,
+      IdToken: generateTokens().idToken,
+      RefreshToken: generateTokens().refreshToken,
       ExpiresIn: 3600,
     },
   },

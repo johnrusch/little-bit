@@ -16,6 +16,7 @@ beforeAll(() => {
   
   // Mock console.warn to reduce noise during tests
   const originalWarn = console.warn;
+  console.warn.__original = originalWarn;
   console.warn = (...args) => {
     if (
       typeof args[0] === 'string' &&
@@ -44,8 +45,10 @@ afterAll(() => {
   // Stop MSW server
   server.close();
   
-  // Restore console.warn
-  console.warn = console.warn.__original || console.warn;
+  // Restore console.warn safely
+  if (console.warn.__original) {
+    console.warn = console.warn.__original;
+  }
 });
 
 // Global test configuration

@@ -106,14 +106,28 @@ const graphqlHandlers = [
   // Real-time subscriptions will be tested through component behavior
 ];
 
+// Configuration for mock endpoints
+const mockConfig = {
+  s3: {
+    bucketName: process.env.TEST_S3_BUCKET || 'test-bucket',
+    region: process.env.TEST_AWS_REGION || 'us-east-1',
+  },
+  cognito: {
+    region: process.env.TEST_AWS_REGION || 'us-east-1',
+  },
+};
+
+// Generate S3 URL pattern based on config
+const getS3UrlPattern = () => `https://${mockConfig.s3.bucketName}.s3.${mockConfig.s3.region}.amazonaws.com/*`;
+
 // REST API handlers for S3 and other services
 const restHandlers = [
   // S3 presigned URL operations
-  http.put('https://test-bucket.s3.amazonaws.com/*', () => {
+  http.put(getS3UrlPattern(), () => {
     return new HttpResponse(null, { status: 200 });
   }),
 
-  http.get('https://test-bucket.s3.amazonaws.com/*', () => {
+  http.get(getS3UrlPattern(), () => {
     return new HttpResponse('mock-audio-data', { 
       status: 200,
       headers: {
@@ -122,12 +136,12 @@ const restHandlers = [
     });
   }),
 
-  http.delete('https://test-bucket.s3.amazonaws.com/*', () => {
+  http.delete(getS3UrlPattern(), () => {
     return new HttpResponse(null, { status: 204 });
   }),
 
   // AWS Cognito mock endpoints
-  http.post('https://cognito-idp.us-east-1.amazonaws.com/', ({ request }) => {
+  http.post(`https://cognito-idp.${mockConfig.cognito.region}.amazonaws.com/`, ({ request }) => {
     const target = request.headers.get('X-Amz-Target');
     
     if (target?.includes('SignUp')) {
@@ -172,7 +186,7 @@ export const mockHandlers = {
   // Mock authentication failure
   mockAuthFailure: () => {
     server.use(
-      http.post('https://cognito-idp.us-east-1.amazonaws.com/', ({ request }) => {
+      http.post(`https://cognito-idp.${mockConfig.cognito.region}.amazonaws.com/`, ({ request }) => {
         const target = request.headers.get('X-Amz-Target');
         if (target?.includes('InitiateAuth')) {
           return new HttpResponse(
@@ -216,7 +230,7 @@ export const mockHandlers = {
   // Mock S3 upload failure
   mockS3UploadFailure: () => {
     server.use(
-      http.put('https://test-bucket.s3.amazonaws.com/*', () => {
+      http.put(getS3UrlPattern(), () => {
         return new HttpResponse(null, { status: 500 });
       })
     );
