@@ -1,0 +1,333 @@
+// Mock the modules BEFORE importing the module under test
+jest.mock('aws-amplify/storage');
+jest.mock('aws-amplify/api');
+jest.mock('../../graphql/queries');
+jest.mock('../../graphql/subscriptions');
+
+import SOUNDS from '../sounds';
+import { getUrl } from 'aws-amplify/storage';
+import { generateClient } from 'aws-amplify/api';
+
+// Set up the mocks after imports
+const mockClient = {
+  graphql: jest.fn(),
+};
+
+generateClient.mockReturnValue(mockClient);
+
+describe('SOUNDS Service', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    console.log.mockRestore();
+  });
+
+  describe('getSound', () => {
+    it('should successfully get a sound with valid file key', async () => {
+      const model = {
+        id: 'test-sound',
+        file: { key: 'user123/audio.mp3' },
+        title: 'Test Audio',
+        _deleted: false
+      };
+
+      getUrl.mockResolvedValue({ url: new URL('https://s3.amazonaws.com/audio.mp3') });
+
+      const result = await SOUNDS.getSound(model);
+
+      expect(getUrl).toHaveBeenCalledWith({ key: 'audio.mp3' });
+      expect(result).toEqual({
+        ...model,
+        url: 'https://s3.amazonaws.com/audio.mp3'
+      });
+    });
+
+    it('should return undefined for deleted files', async () => {
+      const model = {
+        id: 'deleted-sound',
+        file: { key: 'user123/audio.mp3' },
+        _deleted: true
+      };
+
+      const result = await SOUNDS.getSound(model);
+
+      expect(getUrl).not.toHaveBeenCalled();
+      expect(result).toBeUndefined();
+    });
+
+    it('should return undefined for missing file', async () => {
+      const model = {
+        id: 'no-file-sound',
+        title: 'No File'
+      };
+
+      const result = await SOUNDS.getSound(model);
+
+      expect(getUrl).not.toHaveBeenCalled();
+      expect(result).toBeUndefined();
+    });
+
+    describe('Security validations', () => {
+      it('should reject non-string file keys', async () => {
+        const model = {
+          id: 'invalid-key',
+          file: { key: 123 },
+          _deleted: false
+        };
+
+        const result = await SOUNDS.getSound(model);
+
+        expect(console.log).toHaveBeenCalledWith('Invalid file key - not a string:', 123);
+        expect(result).toBeNull();
+      });
+
+      it('should reject keys without slashes', async () => {
+        const model = {
+          id: 'no-slash',
+          file: { key: 'noslashthistime' },
+          _deleted: false
+        };
+
+        const result = await SOUNDS.getSound(model);
+
+        expect(console.log).toHaveBeenCalledWith('Invalid S3 key format:', 'noslashthistime');
+        expect(result).toBeNull();
+      });
+
+      it('should reject keys with path traversal attempts', async () => {
+        const model = {
+          id: 'path-traversal',
+          file: { key: 'user/../../../etc/passwd' },
+          _deleted: false
+        };
+
+        const result = await SOUNDS.getSound(model);
+
+        expect(console.log).toHaveBeenCalledWith('Unsafe S3 key pattern detected:', 'user/../../../etc/passwd');
+        expect(result).toBeNull();
+      });
+
+      it('should reject keys starting with slash', async () => {
+        const model = {
+          id: 'starts-with-slash',
+          file: { key: '/absolute/path' },
+          _deleted: false
+        };
+
+        const result = await SOUNDS.getSound(model);
+
+        expect(console.log).toHaveBeenCalledWith('Unsafe S3 key pattern detected:', '/absolute/path');
+        expect(result).toBeNull();
+      });
+
+      it('should reject keys ending with slash', async () => {
+        const model = {
+          id: 'ends-with-slash',
+          file: { key: 'user/directory/' },
+          _deleted: false
+        };
+
+        const result = await SOUNDS.getSound(model);
+
+        expect(console.log).toHaveBeenCalledWith('Unsafe S3 key pattern detected:', 'user/directory/');
+        expect(result).toBeNull();
+      });
+
+      it('should reject keys that result in empty processed key', async () => {
+        const model = {
+          id: 'empty-result',
+          file: { key: 'user/ ' },
+          _deleted: false
+        };
+
+        const result = await SOUNDS.getSound(model);
+
+        expect(console.log).toHaveBeenCalledWith('Empty key after processing file.key:', 'user/ ');
+        expect(result).toBeNull();
+      });
+    });
+
+    it('should handle getUrl errors gracefully', async () => {
+      const model = {
+        id: 'url-error',
+        file: { key: 'user123/audio.mp3' },
+        _deleted: false
+      };
+
+      const error = new Error('S3 access denied');
+      getUrl.mockRejectedValue(error);
+
+      const result = await SOUNDS.getSound(model);
+
+      expect(console.log).toHaveBeenCalledWith('Error fetching sound', error);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('loadUserSounds', () => {
+    it('should successfully load user sounds', async () => {
+      const userID = 'test-user-123';
+      const mockSounds = [
+        {
+          id: '1',
+          file: { key: 'user123/audio1.mp3' },
+          title: 'Test Sound 1',
+          _deleted: false
+        },
+        {
+          id: '2',
+          file: { key: 'user123/audio2.mp3' },
+          title: 'Test Sound 2',
+          _deleted: false
+        }
+      ];
+
+      // Mock GraphQL response for the internal listUserSounds call
+      mockClient.graphql.mockResolvedValue({
+        data: {
+          listSamples: {
+            items: mockSounds
+          }
+        }
+      });
+
+      // Mock getUrl responses
+      getUrl.mockResolvedValueOnce({ url: new URL('https://s3.amazonaws.com/audio1.mp3') });
+      getUrl.mockResolvedValueOnce({ url: new URL('https://s3.amazonaws.com/audio2.mp3') });
+
+      const result = await SOUNDS.loadUserSounds(userID);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        ...mockSounds[0],
+        url: 'https://s3.amazonaws.com/audio1.mp3'
+      });
+      expect(result[1]).toEqual({
+        ...mockSounds[1],
+        url: 'https://s3.amazonaws.com/audio2.mp3'
+      });
+    });
+
+    it('should handle GraphQL errors gracefully', async () => {
+      const userID = 'test-user-123';
+      const error = new Error('GraphQL query failed');
+      mockClient.graphql.mockRejectedValue(error);
+
+      const result = await SOUNDS.loadUserSounds(userID);
+
+      expect(console.log).toHaveBeenCalledWith('Error loading user sounds: ', error);
+      expect(result).toBeUndefined();
+    });
+
+    it('should filter out invalid sounds', async () => {
+      const userID = 'test-user-123';
+      const mockSounds = [
+        {
+          id: '1',
+          file: { key: 'user123/audio1.mp3' },
+          title: 'Valid Sound',
+          _deleted: false
+        },
+        {
+          id: '2',
+          file: { key: '../invalid-path' },
+          title: 'Invalid Sound',
+          _deleted: false
+        }
+      ];
+
+      mockClient.graphql.mockResolvedValue({
+        data: {
+          listSamples: {
+            items: mockSounds
+          }
+        }
+      });
+
+      getUrl.mockResolvedValue({ url: new URL('https://s3.amazonaws.com/audio1.mp3') });
+
+      const result = await SOUNDS.loadUserSounds(userID);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('1');
+    });
+  });
+
+  describe('subscribeToUserSounds', () => {
+    let mockSetSounds;
+    let mockSetLoadingStatus;
+    let mockSubscription;
+
+    beforeEach(() => {
+      mockSetSounds = jest.fn();
+      mockSetLoadingStatus = jest.fn();
+      mockSubscription = {
+        unsubscribe: jest.fn()
+      };
+    });
+
+    it('should successfully set up subscription', () => {
+      const userID = 'test-user-123';
+      
+      mockClient.graphql.mockReturnValue({
+        subscribe: jest.fn().mockReturnValue(mockSubscription)
+      });
+
+      const result = SOUNDS.subscribeToUserSounds(userID, mockSetSounds, mockSetLoadingStatus);
+
+      expect(result).toBe(mockSubscription);
+    });
+
+    it('should handle subscription setup errors', () => {
+      const userID = 'test-user-123';
+      const error = new Error('Setup failed');
+      
+      mockClient.graphql.mockImplementation(() => {
+        throw error;
+      });
+
+      const result = SOUNDS.subscribeToUserSounds(userID, mockSetSounds, mockSetLoadingStatus);
+
+      expect(console.log).toHaveBeenCalledWith('Error subscribing to user sounds: ', error);
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('Integration scenarios', () => {
+    it('should handle complete user sounds workflow', async () => {
+      const userID = 'integration-user';
+      const mockSounds = [
+        {
+          id: '1',
+          file: { key: 'user123/audio1.mp3' },
+          title: 'Sound 1',
+          _deleted: false
+        }
+      ];
+
+      // Mock loading sounds
+      mockClient.graphql.mockResolvedValue({
+        data: {
+          listSamples: {
+            items: mockSounds
+          }
+        }
+      });
+      getUrl.mockResolvedValue({ url: new URL('https://s3.amazonaws.com/audio1.mp3') });
+
+      const loadedSounds = await SOUNDS.loadUserSounds(userID);
+      expect(loadedSounds).toHaveLength(1);
+
+      // Mock subscription
+      mockClient.graphql.mockReturnValue({
+        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+      });
+
+      const subscription = SOUNDS.subscribeToUserSounds(userID, jest.fn(), jest.fn());
+      expect(subscription).toBeDefined();
+    });
+  });
+});
