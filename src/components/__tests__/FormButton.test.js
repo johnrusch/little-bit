@@ -24,11 +24,11 @@ describe('FormButton Component', () => {
   });
 
   test('applies correct styles', () => {
-    const { getByText } = render(
-      <FormButton buttonTitle="Styled Button" />
+    const { getByTestId } = render(
+      <FormButton buttonTitle="Styled Button" testID="styled-button" />
     );
     
-    const button = getByText('Styled Button').parent;
+    const button = getByTestId('styled-button');
     
     expect(button.props.style).toMatchObject({
       backgroundColor: '#69FAA0',
@@ -40,7 +40,7 @@ describe('FormButton Component', () => {
   });
 
   test('passes additional props to TouchableOpacity', () => {
-    const { getByText } = render(
+    const { getByTestId } = render(
       <FormButton 
         buttonTitle="Test Button" 
         testID="form-button"
@@ -49,7 +49,7 @@ describe('FormButton Component', () => {
       />
     );
     
-    const button = getByText('Test Button').parent;
+    const button = getByTestId('form-button');
     
     expect(button.props.testID).toBe('form-button');
     expect(button.props.accessible).toBe(true);
