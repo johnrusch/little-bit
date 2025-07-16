@@ -16,6 +16,7 @@ module.exports = {
   ],
   testMatch: [
     '**/__tests__/**/*.(js|jsx)',
+    '**/__integration-tests__/**/*.test.(js|jsx)',
     '**/?(*.)+(spec|test).(js|jsx)'
   ],
   moduleDirectories: ['node_modules', 'src'],
