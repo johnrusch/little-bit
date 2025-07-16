@@ -14,6 +14,9 @@ const originalConsole = {
   log: console.log,
 };
 
+// Detect CI environment
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+
 // Validate test environment variables
 const validateTestEnvironment = () => {
   // Check for production environment variables that shouldn't be present in tests
@@ -94,9 +97,6 @@ afterAll(() => {
     if (!console.log) console.log = originalConsole.log || ((...args) => process.stdout.write(args.join(' ') + '\n'));
   }
 });
-
-// Detect CI environment
-const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
 // Global test configuration
 export const integrationTestConfig = {
