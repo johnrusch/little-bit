@@ -129,3 +129,146 @@ The app heavily relies on AWS Amplify for backend services:
    - UserContext provides global auth state
    - Local component state for UI interactions
    - No Redux or MobX - keep state management simple
+
+### Testing and Code Quality
+
+**Current Status**: 
+- Jest and React Native Testing Library configured for unit and component testing
+- Test coverage reporting with CodeCov integration
+- GitHub Actions workflow for automated testing on PRs
+- No linting rules beyond basic `.eslintignore`
+- No TypeScript setup
+
+**Testing Commands**:
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run tests for CI/CD
+npm run test:ci
+```
+
+**Testing Structure**:
+- Tests are located in `__tests__` directories adjacent to the code they test
+- Test files should follow the naming convention: `*.test.js` or `*.spec.js`
+- Jest configuration is in `jest.config.js`
+- Test setup and mocks are in `jest.setup.js`
+
+**Writing Tests**:
+```javascript
+// Example component test
+import { render, fireEvent } from '@testing-library/react-native';
+import MyComponent from '../MyComponent';
+
+test('should handle user interaction', () => {
+  const { getByText } = render(<MyComponent />);
+  fireEvent.press(getByText('Button'));
+  expect(getByText('Result')).toBeTruthy();
+});
+```
+
+**Mocking Guidelines**:
+- AWS Amplify services are pre-mocked in `jest.setup.js`
+- Expo AV (audio) modules are mocked for testing
+- React Navigation hooks are mocked
+- Use `jest.mock()` for additional module mocking as needed
+
+**Coverage Goals**:
+- Target 80%+ code coverage for new features
+- Coverage reports are generated in `/coverage` directory
+- View HTML coverage report: `open coverage/lcov-report/index.html`
+
+### Troubleshooting Guide
+
+#### Common Development Issues
+
+1. **Metro Bundler Problems**:
+   ```bash
+   # Clear all caches
+   npx expo start -c
+   
+   # Reset everything
+   rm -rf node_modules
+   npm install
+   npx expo start -c
+   ```
+
+2. **AWS Amplify Sync Issues**:
+   ```bash
+   # Pull latest backend config
+   amplify pull --restore
+   
+   # Check backend status
+   amplify status
+   
+   # View function logs
+   amplify logs
+   ```
+
+3. **Audio Recording Issues**:
+   - iOS: Check Settings > Privacy > Microphone
+   - Android: Verify permissions in app settings
+   - Web: HTTPS required for microphone access
+
+### Security Considerations
+
+- **Vulnerabilities**: Check `/docs/dependency-vulnerabilities.md` for known issues
+- **AWS Credentials**: Never commit credentials - use `aws-exports.js` (auto-generated)
+- **Environment Variables**: Currently not used, but would go in `.env` files
+
+### Project Structure Details
+
+#### Key Configuration Files
+- `/metro.config.js` - Excludes Amplify cloud backend from bundling
+- `/babel.config.js` - Uses Expo preset
+- `/src/amplifyconfiguration.json` - Amplify service configuration
+- `/ISSUE_TEMPLATE.md` - Template for bug reports
+
+#### CI/CD Workflows
+- `.github/workflows/claude.yml` - Claude Code AI assistant
+- `.github/workflows/claude-code-review.yml` - Automated PR reviews
+- `.github/workflows/test.yml` - Automated test suite runs on PRs and pushes
+
+### Expo-Specific Tips
+
+```bash
+# Run on specific port
+npx expo start --port 8081
+
+# Open developer menu
+# iOS Simulator: Cmd + D
+# Android Emulator: Cmd + M
+
+# Install Expo-compatible versions
+expo install [package-name]  # Ensures compatibility
+```
+
+### Version Requirements
+
+- **Node.js**: 14+ (recommend 18+ LTS)
+- **Expo SDK**: 53 (latest)
+- **React Native**: 0.79.5
+- **AWS Amplify**: v6 (migrated from v4)
+
+### Development Best Practices
+
+1. **Before Committing**:
+   - Run `npm audit` for security checks
+   - Ensure no AWS credentials in code
+   - Test on both iOS and Android if possible
+
+2. **When Adding Dependencies**:
+   - Use `npm install` (not yarn)
+   - Use `expo install` for Expo-compatible packages
+   - Update `package-lock.json`
+
+3. **GraphQL Schema Changes**:
+   - Edit schema in `amplify/backend/api/littlebit/schema.graphql`
+   - Run `amplify push` to deploy changes
+   - This regenerates TypeScript models in `src/models/`
