@@ -226,4 +226,91 @@ describe('PLAYBACK Service', () => {
       );
     });
   });
+
+  describe('onPlaybackStatusUpdate', () => {
+    it('should reset playback when audio finishes and not looping', async () => {
+      const playbackStatus = {
+        didJustFinish: true,
+        isLooping: false
+      };
+
+      await PLAYBACK.onPlaybackStatusUpdate(playbackStatus, mockPlaybackObj);
+
+      expect(mockPlaybackObj.setStatusAsync).toHaveBeenCalledWith({
+        shouldPlay: false,
+        positionMillis: 0
+      });
+    });
+
+    it('should not reset playback when audio is looping', async () => {
+      const playbackStatus = {
+        didJustFinish: true,
+        isLooping: true
+      };
+
+      await PLAYBACK.onPlaybackStatusUpdate(playbackStatus, mockPlaybackObj);
+
+      expect(mockPlaybackObj.setStatusAsync).not.toHaveBeenCalled();
+    });
+
+    it('should not reset playback when audio has not finished', async () => {
+      const playbackStatus = {
+        didJustFinish: false,
+        isLooping: false
+      };
+
+      await PLAYBACK.onPlaybackStatusUpdate(playbackStatus, mockPlaybackObj);
+
+      expect(mockPlaybackObj.setStatusAsync).not.toHaveBeenCalled();
+    });
+
+    it('should handle null playback object gracefully', async () => {
+      const playbackStatus = {
+        didJustFinish: true,
+        isLooping: false
+      };
+
+      // Should not throw error
+      await PLAYBACK.onPlaybackStatusUpdate(playbackStatus, null);
+
+      expect(mockPlaybackObj.setStatusAsync).not.toHaveBeenCalled();
+    });
+
+    it('should handle missing playback status gracefully', async () => {
+      // Should not throw error
+      await PLAYBACK.onPlaybackStatusUpdate(null, mockPlaybackObj);
+
+      expect(mockPlaybackObj.setStatusAsync).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Input validation', () => {
+    it('should handle null playback object in play function', async () => {
+      const result = await PLAYBACK.play(null, 'test-uri');
+
+      expect(console.log).toHaveBeenCalledWith('Unable to load sound: playback object is null or undefined');
+      expect(result).toBeNull();
+    });
+
+    it('should handle null playback object in pause function', async () => {
+      const result = await PLAYBACK.pause(null);
+
+      expect(console.log).toHaveBeenCalledWith('Unable to pause sound: playback object is null or undefined');
+      expect(result).toBeNull();
+    });
+
+    it('should handle null playback object in resume function', async () => {
+      const result = await PLAYBACK.resume(null);
+
+      expect(console.log).toHaveBeenCalledWith('Unable to resume sound: playback object is null or undefined');
+      expect(result).toBeNull();
+    });
+
+    it('should handle null playback object in playNext function', async () => {
+      const result = await PLAYBACK.playNext(null, 'test-uri');
+
+      expect(console.log).toHaveBeenCalledWith('Unable to play next sound: playback object is null or undefined');
+      expect(result).toBeNull();
+    });
+  });
 });

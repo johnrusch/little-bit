@@ -77,6 +77,7 @@ const SOUNDS = {
       return sounds;
     } catch (error) {
       console.log("Error loading user sounds: ", error);
+      return [];
     }
   },
   getSound,
