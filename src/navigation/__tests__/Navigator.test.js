@@ -125,22 +125,21 @@ describe('Navigator', () => {
   describe('Hub event handling', () => {
     it('should update state when user signs in', async () => {
       AUTH.isLoggedIn.mockResolvedValue(null);
+      AUTH.getUsername.mockReturnValue('new-user-123');
 
-      const { getByText, getByTestId, rerender } = render(<Navigator />);
+      const { getByText, getByTestId } = render(<Navigator />);
 
       // Initially show login
       await waitFor(() => {
         expect(getByText('Login')).toBeTruthy();
       });
 
-      // Simulate sign in event
+      // Simulate sign in event and wait for state update
       await act(async () => {
         triggerHubEvent('auth', 'signedIn', { userId: 'new-user-123' });
       });
 
-      // Force rerender to see the update
-      rerender(<Navigator />);
-
+      // Wait for the state change to take effect
       await waitFor(() => {
         expect(getByTestId('home-screen')).toBeTruthy();
       });
@@ -163,7 +162,7 @@ describe('Navigator', () => {
         triggerHubEvent('auth', 'signedIn', { userId: 'error-user' });
       });
 
-      // Should remain on login screen
+      // Should remain on login screen due to error
       await waitFor(() => {
         expect(getByText('Login')).toBeTruthy();
       });
@@ -172,7 +171,7 @@ describe('Navigator', () => {
     it('should update state when user signs out', async () => {
       AUTH.isLoggedIn.mockResolvedValue('user-123');
 
-      const { getByTestId, getByText, rerender } = render(<Navigator />);
+      const { getByTestId, getByText } = render(<Navigator />);
 
       // Initially show home
       await waitFor(() => {
@@ -184,9 +183,7 @@ describe('Navigator', () => {
         triggerHubEvent('auth', 'signedOut', {});
       });
 
-      // Force rerender to see the update
-      rerender(<Navigator />);
-
+      // Should show login screen after sign out
       await waitFor(() => {
         expect(getByText('Login')).toBeTruthy();
       });
