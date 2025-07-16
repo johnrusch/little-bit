@@ -97,7 +97,7 @@ The app heavily relies on AWS Amplify for backend services:
 ### Critical Files and Patterns
 
 - **API Services** (`src/api/`): Encapsulate Amplify operations
-  - `auth.js`: Cognito authentication wrapper (comprehensive test coverage: 18/18 tests)
+  - `auth.js`: Cognito authentication wrapper
   - `playback.js`: Audio playback management
   - `sounds.js`: CRUD operations for audio samples
 
