@@ -7,7 +7,7 @@ import { simulateAudioPlayback } from '../helpers/testUtils';
 import { mockAudioSamples, mockPlaybackStates } from '../fixtures/audioData';
 import '../helpers/integrationSetup';
 
-// Mock the mockPlayback API
+// Define mock object outside jest.mock to ensure consistency
 const mockPlayback = {
   play: jest.fn(),
   pause: jest.fn(),
@@ -15,6 +15,7 @@ const mockPlayback = {
   playNext: jest.fn(),
 };
 
+// Mock the playback API module
 jest.mock('../../api/playback', () => ({
   default: mockPlayback,
 }));

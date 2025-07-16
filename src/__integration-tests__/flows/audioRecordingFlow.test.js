@@ -9,32 +9,45 @@ import { simulateAudioRecording, simulateStorageOperations } from '../helpers/te
 import { mockAudioPermissions, mockRecordingStates } from '../fixtures/audioData';
 import '../helpers/integrationSetup';
 
-// Mock Alert
-jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-
 // Mock uploadData from AWS Amplify
 jest.mock('aws-amplify/storage', () => ({
   uploadData: jest.fn(),
 }));
 
-// Mock fetch for blob creation
-const mockFetch = jest.fn(() => {
-  const mockBlob = new Blob(['mock audio data'], { type: 'audio/m4a' });
-  return Promise.resolve({
-    blob: () => Promise.resolve(mockBlob),
-    clone: () => ({
-      blob: () => Promise.resolve(mockBlob),
-    }),
-  });
-});
-global.fetch = mockFetch;
-
 describe('Audio Recording Flow Integration Tests', () => {
+  // Store original Alert.alert
+  let originalAlert;
+
+  beforeAll(() => {
+    // Store original Alert implementation
+    originalAlert = Alert.alert;
+    // Mock Alert
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  });
   let mockRecording;
   let mockStorage;
+  let originalFetch;
+  let mockFetch;
+
+  beforeAll(() => {
+    // Store original fetch
+    originalFetch = global.fetch;
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Mock fetch for blob creation
+    mockFetch = jest.fn(() => {
+      const mockBlob = new Blob(['mock audio data'], { type: 'audio/m4a' });
+      return Promise.resolve({
+        blob: () => Promise.resolve(mockBlob),
+        clone: () => ({
+          blob: () => Promise.resolve(mockBlob),
+        }),
+      });
+    });
+    global.fetch = mockFetch;
     
     mockRecording = simulateAudioRecording();
     mockStorage = simulateStorageOperations();
@@ -50,6 +63,27 @@ describe('Audio Recording Flow Integration Tests', () => {
 
     // Mock uploadData
     uploadData.mockImplementation(mockStorage.uploadData);
+  });
+
+  afterEach(() => {
+    // Clean up mocks
+    jest.clearAllMocks();
+    
+    // Restore fetch if it was modified
+    if (global.fetch === mockFetch) {
+      global.fetch = originalFetch;
+    }
+  });
+
+  afterAll(() => {
+    // Final cleanup - restore original fetch
+    global.fetch = originalFetch;
+    
+    // Restore Alert.alert
+    Alert.alert = originalAlert;
+    
+    // Restore all mocks
+    jest.restoreAllMocks();
   });
 
   describe('Audio Permissions Integration', () => {

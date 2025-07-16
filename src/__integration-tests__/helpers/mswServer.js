@@ -161,9 +161,9 @@ const restHandlers = [
     if (target?.includes('InitiateAuth')) {
       return HttpResponse.json({
         AuthenticationResult: {
-          AccessToken: 'mock-access-token',
-          IdToken: 'mock-id-token',
-          RefreshToken: 'mock-refresh-token',
+          AccessToken: `mock-access-${Math.random().toString(36).substr(2, 20)}`,
+          IdToken: `mock-id-${Math.random().toString(36).substr(2, 20)}`,
+          RefreshToken: `mock-refresh-${Math.random().toString(36).substr(2, 20)}`,
           ExpiresIn: 3600,
         },
       });
