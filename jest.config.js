@@ -19,7 +19,7 @@ module.exports = {
     '**/?(*.)+(spec|test).(js|jsx)'
   ],
   moduleDirectories: ['node_modules', 'src'],
-  testPathIgnorePatterns: ['/node_modules/', '/amplify/', '/amplify-backup/'],
+  testPathIgnorePatterns: ['/node_modules/', '/amplify/', '/amplify-backup/', '/worktrees/'],
   coverageDirectory: '<rootDir>/coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   clearMocks: true,
@@ -28,7 +28,8 @@ module.exports = {
     '<rootDir>/amplify/#current-cloud-backend/',
     '<rootDir>/amplify-backup/',
     '<rootDir>/amplify/.*/node_modules/',
-    '<rootDir>/amplify-backup/.*/node_modules/'
+    '<rootDir>/amplify-backup/.*/node_modules/',
+    '<rootDir>/worktrees/'
   ],
   globals: {
     __DEV__: true
