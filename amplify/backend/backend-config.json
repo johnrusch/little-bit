@@ -123,7 +123,17 @@
   },
   "storage": {
     "littlebitS3Resource": {
-      "dependsOn": [],
+      "dependsOn": [
+        {
+          "attributes": [
+            "Name",
+            "Arn",
+            "LambdaExecutionRole"
+          ],
+          "category": "function",
+          "resourceName": "CreateSampleRecord"
+        }
+      ],
       "providerPlugin": "awscloudformation",
       "service": "S3"
     }

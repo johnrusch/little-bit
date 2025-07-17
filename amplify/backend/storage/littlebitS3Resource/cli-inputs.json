@@ -10,6 +10,6 @@
     "CREATE_AND_UPDATE",
     "READ"
   ],
-  "triggerFunction": "NONE",
+  "triggerFunction": "CreateSampleRecord",
   "groupAccess": {}
 }

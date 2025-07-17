@@ -50,7 +50,7 @@
         },
         "CreateSampleRecord": {
           "deploymentBucketName": "amplify-littlebit-dev-131255-deployment",
-          "s3Key": "amplify-builds/CreateSampleRecord-6a623449644e5234424d-build.zip"
+          "s3Key": "amplify-builds/CreateSampleRecord-6c69324f747859792b32-build.zip"
         },
         "littlebitS3Resource": {},
         "littlebitgraphqlAPI": {}
