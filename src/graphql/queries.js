@@ -33,12 +33,6 @@ export const listSamples = /* GraphQL */ `
         id
         name
         user_id
-        file {
-          bucket
-          key
-          region
-          __typename
-        }
         createdAt
         updatedAt
         _version
@@ -69,12 +63,6 @@ export const syncSamples = /* GraphQL */ `
         id
         name
         user_id
-        file {
-          bucket
-          key
-          region
-          __typename
-        }
         createdAt
         updatedAt
         _version
