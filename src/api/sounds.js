@@ -7,9 +7,26 @@ const client = generateClient();
 
 const listUserSounds = async (userID) => {
   try {
+    // Validate userID parameter
+    if (!userID || typeof userID !== 'string' || userID.trim() === '') {
+      console.log("Invalid userID provided:", userID);
+      return [];
+    }
+    
+    // Basic UUID format validation (AWS Cognito user IDs are UUIDs)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userID)) {
+      console.log("Invalid userID format:", userID);
+      return [];
+    }
+
     const sounds = await client.graphql({
       query: queries.listSamples,
-      variables: { user_id: userID }
+      variables: {
+        filter: {
+          user_id: { eq: userID }
+        }
+      }
     });
     return sounds.data.listSamples.items;
   } catch (err) {
@@ -83,6 +100,19 @@ const SOUNDS = {
   getSound,
   subscribeToUserSounds: (userID, setSounds, setLoadingStatus) => {
     try {
+      // Validate userID parameter
+      if (!userID || typeof userID !== 'string' || userID.trim() === '') {
+        console.log("Invalid userID provided for subscription:", userID);
+        return null;
+      }
+      
+      // Basic UUID format validation (AWS Cognito user IDs are UUIDs)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(userID)) {
+        console.log("Invalid userID format for subscription:", userID);
+        return null;
+      }
+
       const subscription = client.graphql({
         query: subscriptions.onCreateSample,
         variables: { user_id: userID }

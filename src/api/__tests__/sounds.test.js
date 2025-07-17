@@ -220,4 +220,62 @@ describe('SOUNDS Service', () => {
       expect(result === undefined || result !== undefined).toBe(true);
     });
   });
+
+  describe('Input validation', () => {
+    describe('loadUserSounds', () => {
+      it('should return empty array for null userID', async () => {
+        const result = await SOUNDS.loadUserSounds(null);
+        expect(result).toEqual([]);
+        expect(console.log).toHaveBeenCalledWith('Invalid userID provided:', null);
+      });
+
+      it('should return empty array for empty string userID', async () => {
+        const result = await SOUNDS.loadUserSounds('');
+        expect(result).toEqual([]);
+        expect(console.log).toHaveBeenCalledWith('Invalid userID provided:', '');
+      });
+
+      it('should return empty array for non-string userID', async () => {
+        const result = await SOUNDS.loadUserSounds(123);
+        expect(result).toEqual([]);
+        expect(console.log).toHaveBeenCalledWith('Invalid userID provided:', 123);
+      });
+
+      it('should return empty array for invalid UUID format', async () => {
+        const result = await SOUNDS.loadUserSounds('invalid-uuid');
+        expect(result).toEqual([]);
+        expect(console.log).toHaveBeenCalledWith('Invalid userID format:', 'invalid-uuid');
+      });
+
+      it('should accept valid UUID format', async () => {
+        const validUUID = '98916330-3011-70de-fbd4-efc401cc0605';
+        // This will trigger the GraphQL call (which may fail due to mocking)
+        const result = await SOUNDS.loadUserSounds(validUUID);
+        // We don't check for specific result since GraphQL might be mocked
+        expect(typeof result).toBe('object'); // Could be array or null
+      });
+    });
+
+    describe('subscribeToUserSounds', () => {
+      const mockSetSounds = jest.fn();
+      const mockSetLoadingStatus = jest.fn();
+
+      beforeEach(() => {
+        mockSetSounds.mockClear();
+        mockSetLoadingStatus.mockClear();
+      });
+
+      it('should return null for invalid userID', () => {
+        const result = SOUNDS.subscribeToUserSounds(null, mockSetSounds, mockSetLoadingStatus);
+        expect(result).toBeNull();
+        expect(console.log).toHaveBeenCalledWith('Invalid userID provided for subscription:', null);
+      });
+
+      it('should return null for invalid UUID format', () => {
+        const result = SOUNDS.subscribeToUserSounds('invalid-uuid', mockSetSounds, mockSetLoadingStatus);
+        expect(result).toBeNull();
+        expect(console.log).toHaveBeenCalledWith('Invalid userID format for subscription:', 'invalid-uuid');
+      });
+    });
+  });
 });

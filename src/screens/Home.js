@@ -100,7 +100,7 @@ const Home = (props) => {
     setLoadingStatus({ loading: true, processingSound: false });
     SOUNDS.loadUserSounds(user)
       .then((sounds) => {
-        setSounds(sounds);
+        setSounds(sounds || []);
       })
       .then(() => {
         console.log(sounds.length, "sounds length");
