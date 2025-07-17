@@ -59,64 +59,102 @@ const Sounds = (props) => {
   const handleAudioPress = async (audio, index) => {
     let status;
     
+    // Input validation
+    if (!audio || !audio.url || typeof index !== 'number') {
+      console.error('Invalid audio parameters:', { audio, index });
+      return;
+    }
     
     // playing audio for the first time
     if (soundObj === null) {
-      const playbackObject = new Audio.Sound();
-      playbackObject.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
-      status = await PLAYBACK.play(playbackObject, audio.url);
-      setActiveListItem(index);
-      setCurrentAudio(audio);
-      setPlaybackObj(playbackObject);
-      playbackObjRef.current = playbackObject; // Store in ref for callback access
-    } else if (soundObj && soundObj.isLoaded) {
-      // Fallback detection: check if audio has actually finished but state wasn't updated
-      const currentStatus = await playbackObj.getStatusAsync();
-      const actuallyFinished = isAudioFinished(currentStatus);
-      
-      if (actuallyFinished && !isAudioFinished(soundObj)) {
-        setSoundObj(currentStatus);
-      }
-      
-      if (currentAudio.id === audio.id) {
-        // Handle different audio states (use current status for more accurate detection)
-        if (isAudioFinished(currentStatus)) {
-          // Audio finished, restart from beginning
-          // Optimistic update: immediately show as playing/buffering
-          setSoundObj({
-            ...soundObj,
-            isPlaying: false,
-            isBuffering: true,
-            shouldPlay: true,
-            positionMillis: 0,
-            didJustFinish: false
-          });
-          await playbackObj.setStatusAsync({ positionMillis: 0 });
-          status = await PLAYBACK.resume(playbackObj);
-        } else if (currentStatus.isPlaying) {
-          // Audio is playing, pause it
-          // Optimistic update: immediately show as paused
-          setSoundObj({
-            ...soundObj,
-            isPlaying: false,
-            shouldPlay: false
-          });
-          status = await PLAYBACK.pause(playbackObj);
-        } else {
-          // Audio is paused, resume it
-          // Optimistic update: immediately show as playing
-          setSoundObj({
-            ...soundObj,
-            isPlaying: true,
-            shouldPlay: true
-          });
-          status = await PLAYBACK.resume(playbackObj);
-        }
-      } else {
-        // playing new audio
-        status = await PLAYBACK.playNext(playbackObj, audio.url);
+      try {
+        const playbackObject = new Audio.Sound();
+        playbackObject.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+        status = await PLAYBACK.play(playbackObject, audio.url);
         setActiveListItem(index);
         setCurrentAudio(audio);
+        setPlaybackObj(playbackObject);
+        playbackObjRef.current = playbackObject; // Store in ref for callback access
+      } catch (error) {
+        console.error('Error playing audio:', error);
+        return;
+      }
+    } else if (soundObj && soundObj.isLoaded) {
+      try {
+        // Fallback detection: check if audio has actually finished but state wasn't updated
+        const currentStatus = await playbackObj.getStatusAsync();
+        const actuallyFinished = isAudioFinished(currentStatus);
+        
+        // Only update if state is actually different to avoid unnecessary renders
+        if (actuallyFinished && !isAudioFinished(soundObj)) {
+          setSoundObj(currentStatus);
+        }
+        
+        if (currentAudio.id === audio.id) {
+          // Handle different audio states (use current status for more accurate detection)
+          if (isAudioFinished(currentStatus)) {
+            // Audio finished, restart from beginning
+            const optimisticState = {
+              ...soundObj,
+              isPlaying: false,
+              isBuffering: true,
+              shouldPlay: true,
+              positionMillis: 0,
+              didJustFinish: false
+            };
+            setSoundObj(optimisticState);
+            
+            try {
+              await playbackObj.setStatusAsync({ positionMillis: 0 });
+              status = await PLAYBACK.resume(playbackObj);
+            } catch (error) {
+              console.error('Error restarting audio:', error);
+              // Revert optimistic update on error
+              setSoundObj(currentStatus);
+              return;
+            }
+          } else if (currentStatus.isPlaying) {
+            // Audio is playing, pause it
+            const optimisticState = {
+              ...soundObj,
+              isPlaying: false,
+              shouldPlay: false
+            };
+            setSoundObj(optimisticState);
+            
+            try {
+              status = await PLAYBACK.pause(playbackObj);
+            } catch (error) {
+              console.error('Error pausing audio:', error);
+              setSoundObj(currentStatus);
+              return;
+            }
+          } else {
+            // Audio is paused, resume it
+            const optimisticState = {
+              ...soundObj,
+              isPlaying: true,
+              shouldPlay: true
+            };
+            setSoundObj(optimisticState);
+            
+            try {
+              status = await PLAYBACK.resume(playbackObj);
+            } catch (error) {
+              console.error('Error resuming audio:', error);
+              setSoundObj(currentStatus);
+              return;
+            }
+          }
+        } else {
+          // playing new audio
+          status = await PLAYBACK.playNext(playbackObj, audio.url);
+          setActiveListItem(index);
+          setCurrentAudio(audio);
+        }
+      } catch (error) {
+        console.error('Error in audio playback operation:', error);
+        return;
       }
     }
 
@@ -129,7 +167,7 @@ const Sounds = (props) => {
 
   const renderSounds = (sounds) => {
     return sounds.map((sound, i) => {
-      if (!sound) return;
+      if (!sound) return null;
       return (
         <Sound
           sound={sound}
@@ -147,13 +185,6 @@ const Sounds = (props) => {
     });
   };
 
-  // useEffect(() => {
-  //   return () => {
-  //     if (playbackObj && soundObj.isLoaded) {
-  //       playbackObj?.unloadAsync().then(() => {});
-  //     }
-  //   };
-  // });
 
   return (
     <ScrollView>
