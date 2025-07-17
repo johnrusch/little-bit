@@ -25,7 +25,6 @@ exports.handler = async (event) => {
         _version
         _deleted
         _lastChangedAt
-        owner
       }
     }
   `
@@ -35,9 +34,33 @@ exports.handler = async (event) => {
     console.log("USER IDENTITY", event.Records[0].userIdentity)
     const sourceS3 = event.Records[0].s3;
     const sourceBucket = sourceS3.bucket.name;
-    const sourceKey = sourceS3.object.key;
-    const userID = sourceKey.split("/")[2];
-    const destinationName = sourceKey.split("/")[3].split(".")[0];
+    const sourceKey = decodeURIComponent(sourceS3.object.key.replace(/\+/g, ' '));
+    
+    console.log(`Processing S3 key: ${sourceKey}`);
+    
+    // Parse the key format: "public/unprocessed/{userID}/{filename}.{extension}"
+    // or "unprocessed/{userID}/{filename}.{extension}"
+    const keyParts = sourceKey.split("/");
+    
+    // Handle both "public/unprocessed/..." and "unprocessed/..." formats
+    let startIndex = 0;
+    if (keyParts[0] === "public" && keyParts[1] === "unprocessed") {
+      startIndex = 2;
+    } else if (keyParts[0] === "unprocessed") {
+      startIndex = 1;
+    } else {
+      throw new Error(`Invalid S3 key format: ${sourceKey}. Expected format: [public/]unprocessed/{userID}/{filename}`);
+    }
+    
+    if (keyParts.length < startIndex + 2) {
+      throw new Error(`Invalid S3 key format: ${sourceKey}. Not enough path segments.`);
+    }
+    
+    const userID = keyParts[startIndex];
+    const fileNameWithExt = keyParts[startIndex + 1];
+    const destinationName = fileNameWithExt.split(".")[0];
+    
+    console.log(`Parsed - UserID: ${userID}, Filename: ${destinationName}`);
     
     try {
       console.log("ok trying")
@@ -62,9 +85,17 @@ exports.handler = async (event) => {
           }
         }
       });
-      console.log(graphqlData.data.errors, 'ERRORS', graphqlData.data.errors[0].locations);
+      // Check for GraphQL errors
+      if (graphqlData.data.errors) {
+        console.error('GraphQL errors:', graphqlData.data.errors);
+        throw new Error('GraphQL mutation failed: ' + JSON.stringify(graphqlData.data.errors));
+      }
+      
+      console.log('Sample created successfully:', graphqlData.data.data.createSample);
+      
       const body = {
-        message: "successfully created sample!"
+        message: "successfully created sample!",
+        sample: graphqlData.data.data.createSample
       }
       return {
         statusCode: 200,
@@ -74,7 +105,17 @@ exports.handler = async (event) => {
         }
       }
     } catch (err) {
-      console.log('error creating sample: ', err);
+      console.error('error creating sample: ', err);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          message: "Failed to create sample",
+          error: err.message
+        }),
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+        }
+      }
     } 
   }
   

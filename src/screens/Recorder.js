@@ -73,14 +73,32 @@ const Recorder = (props) => {
 
   const saveRecording = async () => {
     setLoadingStatus({ loading: true, processingSound: true });
-    await uploadData({
-      key: `unprocessed/${user}/${text}.${format}`,
-      data: blob
-    });
-    setModalVisible(false);
-    setFormat();
-    setBlob();
-    setText(`${new Date().toISOString().replace(/(:|\s+)/g, "-")}`);
+    
+    try {
+      await uploadData({
+        key: `unprocessed/${user}/${text}.${format}`,
+        data: blob
+      });
+      
+      // Set a timeout to clear loading state if subscription doesn't trigger
+      // This prevents indefinite loading if Lambda fails
+      const loadingTimeout = setTimeout(() => {
+        setLoadingStatus({ loading: false, processingSound: false });
+        console.warn("Recording uploaded but processing may have failed");
+      }, 15000); // 15 second timeout
+      
+      // Store timeout ID to clear it if subscription triggers
+      window.loadingTimeout = loadingTimeout;
+      
+      setModalVisible(false);
+      setFormat();
+      setBlob();
+      setText(`${new Date().toISOString().replace(/(:|\s+)/g, "-")}`);
+    } catch (error) {
+      console.error("Failed to upload recording:", error);
+      setLoadingStatus({ loading: false, processingSound: false });
+      // You might want to show an error message to the user here
+    }
   };
 
   const handleTextSubmit = () => {

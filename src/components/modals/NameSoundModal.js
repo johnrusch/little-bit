@@ -78,11 +78,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   modalView: {
-    flex: 1,
-    top: windowHeight / 2 - 150,
-    left: windowWidth / 2 - 150,
-    right: windowWidth / 2 - 150,
-    position: "absolute",
     backgroundColor: "white",
     borderRadius: 20,
     padding: 35,
@@ -95,11 +90,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+    width: '90%',
+    maxWidth: 400,
   },
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
-    margin: "auto",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   button: {
     borderRadius: 20,
@@ -123,7 +121,11 @@ const styles = StyleSheet.create({
     height: 40,
     padding: 12,
     margin: 12,
-    backgroundColor: "transparent",
+    backgroundColor: "#f0f0f0",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 5,
+    width: '100%',
   },
 });
 

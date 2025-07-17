@@ -94,6 +94,13 @@ const SOUNDS = {
           if (!sound) return;
           setSounds((prevSounds) => [...prevSounds, sound]);
           console.log("SUBSCRIPTION DATA", update);
+          
+          // Clear the loading timeout if it exists
+          if (window.loadingTimeout) {
+            clearTimeout(window.loadingTimeout);
+            window.loadingTimeout = null;
+          }
+          
           setLoadingStatus({ loading: false, processingSound: false });
         },
         error: (error) => console.log("SOMETHING WRONG", error),
