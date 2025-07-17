@@ -9,7 +9,11 @@ const listUserSounds = async (userID) => {
   try {
     const sounds = await client.graphql({
       query: queries.listSamples,
-      variables: { user_id: userID }
+      variables: {
+        filter: {
+          user_id: { eq: userID }
+        }
+      }
     });
     return sounds.data.listSamples.items;
   } catch (err) {
