@@ -60,6 +60,22 @@ exports.handler = async (event) => {
     const fileNameWithExt = keyParts[startIndex + 1];
     const destinationName = fileNameWithExt.split(".")[0];
     
+    // Security: Validate userID and filename to prevent path traversal
+    const userIdRegex = /^[a-zA-Z0-9\-_]+$/;
+    const filenameRegex = /^[a-zA-Z0-9\-_\.\s]+$/;
+    
+    if (!userIdRegex.test(userID)) {
+      throw new Error(`Invalid userID format: ${userID}. Only alphanumeric, hyphens, and underscores allowed.`);
+    }
+    
+    if (!filenameRegex.test(fileNameWithExt)) {
+      throw new Error(`Invalid filename format: ${fileNameWithExt}. Only alphanumeric, hyphens, underscores, dots, and spaces allowed.`);
+    }
+    
+    if (userID.includes('..') || fileNameWithExt.includes('..')) {
+      throw new Error(`Path traversal detected in userID or filename.`);
+    }
+    
     console.log(`Parsed - UserID: ${userID}, Filename: ${destinationName}`);
     
     try {
