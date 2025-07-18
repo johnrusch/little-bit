@@ -44,34 +44,37 @@ const Recorder = (props) => {
       });
       console.log("Starting recording..");
       
-      // High fidelity recording preset for improved audio quality
-      const HIGH_FIDELITY_PRESET = {
+      // Device-level quality recording preset using uncompressed formats
+      // iOS AAC bitrate is limited to 64kbps, so use linear PCM for true high quality
+      const DEVICE_QUALITY_PRESET = {
         isMeteringEnabled: true,
         android: {
-          extension: '.m4a',
-          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
-          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-          sampleRate: 48000,  // Increased from 44100 for better quality
+          extension: '.wav',
+          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_DEFAULT,
+          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_DEFAULT,
+          sampleRate: 48000,  // Professional sample rate
           numberOfChannels: 2,
-          bitRate: 256000,    // Increased from 128000 for better quality
+          bitRate: 1536000,   // 48kHz * 16-bit * 2 channels = 1536kbps uncompressed
         },
         ios: {
-          extension: '.m4a',
-          outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
+          extension: '.wav',
+          outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_LINEARPCM,
           audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MAX,
-          sampleRate: 48000,  // Increased from 44100 for better quality
+          sampleRate: 48000,  // Professional sample rate
           numberOfChannels: 2,
-          bitRate: 256000,    // Increased from 128000 for better quality
-          linearPCMBitDepth: 24, // Increased from 16 for better quality
+          bitRate: 1536000,   // 48kHz * 16-bit * 2 channels = 1536kbps uncompressed
+          linearPCMBitDepth: 16, // 16-bit for compatibility
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
         },
         web: {
           mimeType: 'audio/webm;codecs=opus',
-          bitsPerSecond: 256000, // Increased from 128000 for better quality
+          bitsPerSecond: 320000, // High quality Opus encoding
         }
       };
       
       const { recording } = await Audio.Recording.createAsync(
-        HIGH_FIDELITY_PRESET
+        DEVICE_QUALITY_PRESET
       );
       setRecording(recording);
       // console.log("Recording starteds", recording);
