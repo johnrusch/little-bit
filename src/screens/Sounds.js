@@ -32,13 +32,19 @@ const Sounds = (props) => {
       if (playbackObjRef.current) {
         try {
           // Stop any playing audio and unload to free memory
-          playbackObjRef.current.stopAsync();
-          playbackObjRef.current.unloadAsync();
+          // Handle async operations properly to avoid race conditions
+          playbackObjRef.current.stopAsync().catch(console.error);
+          playbackObjRef.current.unloadAsync().catch(console.error);
           playbackObjRef.current = null;
         } catch (error) {
           console.log('Error during audio cleanup:', error);
         }
       }
+      // Reset component state to prevent inconsistencies
+      setPlaybackObj(null);
+      setSoundObj(null);
+      setCurrentAudio({});
+      setActiveListItem(null);
     };
   }, []);
 
