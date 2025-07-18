@@ -73,16 +73,19 @@ The app heavily relies on AWS Amplify for backend services:
 - **Storage**: S3 for audio files (configured in `amplify/backend/storage/`)
 - **Database**: DynamoDB (managed through GraphQL)
 - **Functions**: Lambda functions in `amplify/backend/function/`
-  - `CreateSampleRecord` (Node.js): Creates database records
-  - `EditandConvertRecordings` (Python 3.8): Processes audio files
+  - `CreateSampleRecord` (Node.js): Creates database records + triggers audio processing
+  - `EditandConvertRecordings` (Python 3.8): Processes audio files (currently minimal processing with security hardening)
 
 ### Key Application Flows
 
 1. **Audio Recording Flow**:
    - User initiates recording in `RecorderScreen`
    - Audio captured using Expo AV APIs
-   - Recording saved to S3 via Amplify Storage
-   - Metadata stored in DynamoDB via GraphQL mutation
+   - Recording saved to S3 `public/unprocessed/{userID}/` via Amplify Storage
+   - S3 trigger → `CreateSampleRecord` Lambda (creates database record)
+   - `CreateSampleRecord` → invokes `EditandConvertRecordings` Lambda (processes audio)
+   - Processed files saved to S3 `public/processed/{userID}/`
+   - Debug files created in S3 `debug/` directories for quality tracking
 
 2. **Authentication Flow**:
    - Managed by `UserContext` using AWS Cognito
@@ -308,3 +311,46 @@ expo install [package-name]  # Ensures compatibility
 - **Issue #42**: Add component unmount cleanup for audio objects (memory leak prevention)
 
 **PR Reference**: #40 - Comprehensive audio playback state management fix
+
+### Recent Improvements (2025-07-18)
+
+#### Audio Processing Pipeline Implementation
+**Issue Resolved**: #48 - Fix audio processing pipeline Lambda function chaining and quality verification
+
+**Problem Solved**: 
+The audio processing pipeline was completely broken - uploaded audio files remained unprocessed in S3 because the Lambda function chaining wasn't working.
+
+**Key Fixes Implemented**:
+- **Lambda Function Chaining**: Fixed `CreateSampleRecord` → `EditandConvertRecordings` invocation
+- **Missing Dependencies**: Added `aws-sdk` dependency to `CreateSampleRecord` (Node.js 18.x runtime doesn't include it)
+- **Environment Variables**: Added `FUNCTION_EDITANDCONVERTRECORDINGS_NAME` for proper function resolution
+- **Security Hardening**: Comprehensive input validation, path traversal protection, and error handling
+- **Future Architecture**: Simplified Lambda processing with clear ECS migration path
+
+**Pipeline Flow (Now Working)**:
+1. User uploads audio → `public/unprocessed/{userID}/{filename}`
+2. S3 trigger → `CreateSampleRecord` (creates database record)
+3. `CreateSampleRecord` → invokes `EditandConvertRecordings` (processes audio)
+4. `EditandConvertRecordings` → creates processed files in `public/processed/{userID}/`
+5. Debug files created in `debug/` directories for quality tracking
+
+**Technical Implementation**:
+- **File**: `amplify/backend/function/CreateSampleRecord/src/index.js` - Added Lambda invocation logic
+- **File**: `amplify/backend/function/EditandConvertRecordings/src/index.py` - Security-hardened minimal processing
+- **Security Features**: UUID-based session IDs, input validation, retry logic, resource cleanup
+- **Architecture Decision**: Minimal Lambda processing (file copying) to establish pipeline foundation
+
+**Security Improvements Added**:
+- Path traversal protection (`..` detection in S3 keys)
+- Username/filename regex validation with length limits
+- S3 operation retry logic with exponential backoff
+- Disk space monitoring (100MB minimum requirement)
+- Structured error responses (400 vs 500 status codes)
+- Automatic cleanup of temporary files
+
+**Future Migration Path**: 
+The current implementation provides a foundation for migrating to ECS/Fargate for advanced audio processing (compression, effects, etc.). The `EditandConvertRecordings` function can be updated to trigger ECS tasks for complex operations.
+
+**Testing**: All 184 tests pass + comprehensive error handling validation
+
+**PR Reference**: #49 - Complete audio processing pipeline with Lambda function chaining and security improvements
