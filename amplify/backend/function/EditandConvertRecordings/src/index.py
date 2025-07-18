@@ -57,11 +57,21 @@ def handler(event, context):
     download_file_s3(s3_client, s3_source_bucket, s3_source_key, local_file_name)
     
 
-    # Define a function to normalize a chunk to a target amplitude.
+    # Define a function to gently normalize a chunk to a target amplitude.
     def match_target_amplitude(aChunk, target_dBFS):
-        ''' Normalize given audio chunk '''
-        change_in_dBFS = target_dBFS - aChunk.dBFS
-        return aChunk.apply_gain(change_in_dBFS)
+        ''' Gently normalize given audio chunk only if needed '''
+        # Only normalize if audio is significantly quiet (below -35dBFS) or loud (above -5dBFS)
+        if aChunk.dBFS < -35:
+            # Boost quiet audio to target level
+            change_in_dBFS = target_dBFS - aChunk.dBFS
+            return aChunk.apply_gain(change_in_dBFS)
+        elif aChunk.dBFS > -5:
+            # Reduce loud audio to prevent clipping
+            change_in_dBFS = target_dBFS - aChunk.dBFS
+            return aChunk.apply_gain(change_in_dBFS)
+        else:
+            # Audio is at good level, don't normalize
+            return aChunk
         
 
     print(local_file_name, 'LOCAL FILE')
@@ -72,14 +82,14 @@ def handler(event, context):
     
     # Split track where the silence is 2 seconds or more and get chunks using 
     # the imported function.
+    # Optimized parameters for better speech quality preservation
     chunks = split_on_silence (
         # Use the loaded audio.
         sound, 
-        # Specify that a silent chunk must be at least 2 seconds or 2000 ms long.
-        min_silence_len = 1250,
-        # Consider a chunk silent if it's quieter than -16 dBFS.
-        # (You may want to adjust this parameter.)
-        silence_thresh = -30
+        # Allow natural pauses - increased from 1250ms to 2000ms
+        min_silence_len = 2000,
+        # Preserve quiet speech - decreased from -30dBFS to -40dBFS
+        silence_thresh = -40
     )
     
     print(chunks)

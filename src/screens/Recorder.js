@@ -43,8 +43,35 @@ const Recorder = (props) => {
         playsInSilentModeIOS: true,
       });
       console.log("Starting recording..");
+      
+      // High fidelity recording preset for improved audio quality
+      const HIGH_FIDELITY_PRESET = {
+        isMeteringEnabled: true,
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+          sampleRate: 48000,  // Increased from 44100 for better quality
+          numberOfChannels: 2,
+          bitRate: 256000,    // Increased from 128000 for better quality
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
+          audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MAX,
+          sampleRate: 48000,  // Increased from 44100 for better quality
+          numberOfChannels: 2,
+          bitRate: 256000,    // Increased from 128000 for better quality
+          linearPCMBitDepth: 24, // Increased from 16 for better quality
+        },
+        web: {
+          mimeType: 'audio/webm;codecs=opus',
+          bitsPerSecond: 256000, // Increased from 128000 for better quality
+        }
+      };
+      
       const { recording } = await Audio.Recording.createAsync(
-        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
+        HIGH_FIDELITY_PRESET
       );
       setRecording(recording);
       // console.log("Recording starteds", recording);
