@@ -90,6 +90,24 @@
             },
             "API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIKEYOUTPUT": {
               "Ref": "apilittlebitgraphqlAPIGraphQLAPIKeyOutput"
+            },
+            "FUNCTION_EDITANDCONVERTRECORDINGS_NAME": {
+              "Fn::If": [
+                "ShouldNotCreateEnvResources",
+                "EditandConvertRecordings",
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "EditandConvertRecordings",
+                      "-",
+                      {
+                        "Ref": "env"
+                      }
+                    ]
+                  ]
+                }
+              ]
             }
           }
         },

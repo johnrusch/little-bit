@@ -86,9 +86,7 @@
           ]
         },
         "Runtime": "python3.8",
-        "Layers": [
-          "arn:aws:lambda:us-west-2:539825460496:layer:pydubLayer:1"
-        ],
+        "Layers": [],
         "Timeout": 25
       }
     },

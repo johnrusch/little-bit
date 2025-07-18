@@ -46,11 +46,11 @@
       "function": {
         "EditandConvertRecordings": {
           "deploymentBucketName": "amplify-littlebit-dev-131255-deployment",
-          "s3Key": "amplify-builds/EditandConvertRecordings-3778493842656c334555-build.zip"
+          "s3Key": "amplify-builds/EditandConvertRecordings-643542677668764d5334-build.zip"
         },
         "CreateSampleRecord": {
           "deploymentBucketName": "amplify-littlebit-dev-131255-deployment",
-          "s3Key": "amplify-builds/CreateSampleRecord-6c69324f747859792b32-build.zip"
+          "s3Key": "amplify-builds/CreateSampleRecord-742f596f65484f35714b-build.zip"
         },
         "littlebitS3Resource": {},
         "littlebitgraphqlAPI": {}
