@@ -26,6 +26,28 @@ const Sounds = (props) => {
   // Use ref to store playbackObj for stable callback access
   const playbackObjRef = useRef(null);
 
+  // Cleanup audio objects when component unmounts
+  useEffect(() => {
+    return () => {
+      if (playbackObjRef.current) {
+        try {
+          // Stop any playing audio and unload to free memory
+          // Handle async operations properly to avoid race conditions
+          playbackObjRef.current.stopAsync().catch(console.error);
+          playbackObjRef.current.unloadAsync().catch(console.error);
+          playbackObjRef.current = null;
+        } catch (error) {
+          console.log('Error during audio cleanup:', error);
+        }
+      }
+      // Reset component state to prevent inconsistencies
+      setPlaybackObj(null);
+      setSoundObj(null);
+      setCurrentAudio({});
+      setActiveListItem(null);
+    };
+  }, []);
+
   const onPlaybackStatusUpdate = useCallback(async (playbackStatus) => {
     if (playbackStatus.didJustFinish && !playbackStatus.isLooping && playbackObjRef.current) {
       try {
