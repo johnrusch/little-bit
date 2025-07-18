@@ -1,221 +1,312 @@
 import json
 import os
 import boto3
-from pydub import AudioSegment
-from pydub.silence import split_on_silence
 import time
-import logging
+import shutil
+import re
 import uuid
+from urllib.parse import unquote_plus
 
 SIGNED_URL_TIMEOUT = 60
 
-l = logging.getLogger("pydub.converter")
-l.setLevel(logging.DEBUG)
-l.addHandler(logging.StreamHandler())
-
 def handler(event, context):
+    """
+    Simplified audio processing function for Lambda.
     
-    print(event, 'THIS THE EVENT', context)
-    # print([os.curdir] + os.environ["PATH"].split(os.pathsep), 'OTHER PATH')
-    # print(os.environ["PATH"].split(os.pathsep), 'PATH')
-
-    s3_source_bucket = event['Records'][0]['s3']['bucket']['name']
-    s3_source_key = event['Records'][0]['s3']['object']['key']
-    folder = os.path.split(os.path.dirname(s3_source_key))[0]
-    username = os.path.split(os.path.dirname(s3_source_key))[1]
-    s3_source_filename = os.path.basename(s3_source_key)
-    s3_source_format = os.path.splitext(s3_source_key)[1][1:]
-
-
-    s3_source_basename = os.path.splitext(os.path.basename(s3_source_key))[0]
-    s3_destination_filename = s3_source_basename + ".wav"
-    print(s3_source_key, 'SOURCE KEY')
-    print(folder, 'FOLDER')
-    print(username, 'USERNAME')
-
-    s3_client = boto3.client('s3')
-    # ddb_client = boto3.client('dynamodb')
-    local_file_name = f'/tmp/{s3_source_filename}'
+    This is a minimal implementation that establishes the processing pipeline
+    without complex audio manipulation. For advanced audio processing 
+    (compression, effects, etc.), migrate to ECS/Fargate in the future.
+    """
     
-    def download_file_s3(client,bucket,s3_path,local_path,retries = 10):
-        i = 0
-        sleep = 2
-        while(i <= retries):
-            try:
-                client.download_file(bucket,s3_path,local_path)
-                break
-            except Exception as e:            
-                print("404 file not found !!!")
-                i = i+1
-                if i>retries:
-                    raise Exception(traceback.format_exc())
-                time.sleep(sleep)
-                sleep = sleep*2
-                print("retry: "+str(i))
+    try:
+        print(f"Processing event: {json.dumps(event, default=str)}")
+        
+        # Validate event structure
+        if not validate_event_structure(event):
+            raise ValueError("Invalid event structure - missing required S3 event data")
+        
+        # Extract and validate S3 event data
+        s3_record = event['Records'][0]['s3']
+        s3_source_bucket = s3_record['bucket']['name']
+        s3_source_key = unquote_plus(s3_record['object']['key'])
+        
+        # Parse and validate S3 key components
+        key_parts = parse_s3_key(s3_source_key)
+        username = key_parts['username']
+        s3_source_filename = key_parts['filename']
+        s3_source_format = key_parts['format']
+        s3_source_basename = key_parts['basename']
+        
+        print(f"Validated inputs - Bucket: {s3_source_bucket}, Key: {s3_source_key}")
+        print(f"Parsed - Username: {username}, Filename: {s3_source_basename}")
+
+        # Initialize S3 client with error handling
+        s3_client = boto3.client('s3')
+        
+        # Check available disk space in /tmp
+        check_disk_space()
+        
+        # Generate secure local file paths
+        secure_session_id = str(uuid.uuid4())[:8]
+        local_file_name = f'/tmp/{secure_session_id}_{s3_source_basename}.{s3_source_format}'
+        
+        # Download the audio file from S3 with retry logic
+        download_file_s3_secure(s3_client, s3_source_bucket, s3_source_key, local_file_name)
+        
+        # Generate secure debug filenames with session ID
+        debug_raw_filename = f"debug_01_raw_{secure_session_id}_{s3_source_basename}.{s3_source_format}"
+        print(f"DEBUG: Saving raw uploaded file to debug/raw/{username}/{debug_raw_filename}")
+        upload_file_s3_secure(s3_client, local_file_name, s3_source_bucket, f"debug/raw/{username}/{debug_raw_filename}")
+        
+        # MINIMAL PROCESSING: For now, simply copy the file to processed directory
+        # This establishes the pipeline structure for future ECS-based processing
+        processed_filename = f"{s3_source_basename}_processed_{secure_session_id}.{s3_source_format}"
+        processed_local_path = f"/tmp/{secure_session_id}_processed_{s3_source_basename}.{s3_source_format}"
+        
+        print(f"PROCESSING: Creating processed version (currently just a copy)")
+        # Copy the file (placeholder for future audio processing)
+        shutil.copy2(local_file_name, processed_local_path)
+        
+        # Upload to processed directory
+        processed_s3_key = f"public/processed/{username}/{processed_filename}"
+        print(f"UPLOAD: Saving processed file to {processed_s3_key}")
+        upload_file_s3_secure(s3_client, processed_local_path, s3_source_bucket, processed_s3_key)
+        
+        # DEBUG: Save a copy to final debug directory
+        debug_final_filename = f"debug_02_final_processed_{secure_session_id}_{s3_source_basename}.{s3_source_format}"
+        print(f"DEBUG: Saving final processed file to debug/final/{username}/{debug_final_filename}")
+        upload_file_s3_secure(s3_client, processed_local_path, s3_source_bucket, f"debug/final/{username}/{debug_final_filename}")
+        
+        # Clean up local files
+        cleanup_local_files([local_file_name, processed_local_path])
+        
+        print("SUCCESS: Basic audio processing pipeline completed")
+        print(f"- Original file: {s3_source_key}")
+        print(f"- Processed file: {processed_s3_key}")
+        print(f"- Debug files created in debug/ directories")
+        print("NOTE: This is a minimal implementation. Migrate to ECS for advanced audio processing.")
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'message': 'Audio processing completed successfully',
+                'original_file': s3_source_key,
+                'processed_file': processed_s3_key,
+                'processing_type': 'basic_copy',
+                'session_id': secure_session_id,
+                'note': 'Minimal processing implementation - upgrade to ECS for advanced features'
+            })
+        }
+        
+    except ValueError as e:
+        # Input validation errors
+        print(f"VALIDATION ERROR: {str(e)}")
+        return {
+            'statusCode': 400,
+            'body': json.dumps({
+                'error': 'Invalid input',
+                'message': str(e)
+            })
+        }
+        
+    except Exception as e:
+        # General processing errors
+        print(f"PROCESSING ERROR: Audio processing failed: {str(e)}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': 'Audio processing failed',
+                'message': 'Internal processing error occurred'
+            })
+        }
+
+def validate_event_structure(event):
+    """Validate that the event has the required S3 structure."""
+    try:
+        if not isinstance(event, dict) or 'Records' not in event:
+            return False
+        
+        records = event['Records']
+        if not isinstance(records, list) or len(records) == 0:
+            return False
             
-    # s3_client.download_file(s3_source_bucket, s3_source_key, f'/tmp/{s3_source_filename}')
-    download_file_s3(s3_client, s3_source_bucket, s3_source_key, local_file_name)
-    
-    # DEBUG: Save raw uploaded file to debug directory for quality comparison
-    debug_raw_filename = f"debug_01_raw_{s3_source_filename}"
-    print(f"DEBUG: Saving raw uploaded file to debug/raw/{username}/{debug_raw_filename}")
-    s3_client.upload_file(local_file_name, s3_source_bucket, f"debug/raw/{username}/{debug_raw_filename}")
-    
+        record = records[0]
+        if not isinstance(record, dict):
+            return False
+            
+        # Check for required S3 event structure
+        required_keys = ['s3']
+        if not all(key in record for key in required_keys):
+            return False
+            
+        s3_data = record['s3']
+        if not isinstance(s3_data, dict):
+            return False
+            
+        # Check for required S3 nested structure
+        s3_required = ['bucket', 'object']
+        if not all(key in s3_data for key in s3_required):
+            return False
+            
+        bucket = s3_data['bucket']
+        obj = s3_data['object']
+        
+        if not isinstance(bucket, dict) or 'name' not in bucket:
+            return False
+            
+        if not isinstance(obj, dict) or 'key' not in obj:
+            return False
+            
+        return True
+        
+    except Exception as e:
+        print(f"Event validation error: {str(e)}")
+        return False
 
-    # Define a function to gently normalize a chunk to a target amplitude.
-    def match_target_amplitude(aChunk, target_dBFS):
-        ''' Gently normalize given audio chunk only if needed '''
-        # Only normalize if audio is significantly quiet (below -35dBFS) or loud (above -5dBFS)
-        if aChunk.dBFS < -35:
-            # Boost quiet audio to target level
-            change_in_dBFS = target_dBFS - aChunk.dBFS
-            return aChunk.apply_gain(change_in_dBFS)
-        elif aChunk.dBFS > -5:
-            # Reduce loud audio to prevent clipping
-            change_in_dBFS = target_dBFS - aChunk.dBFS
-            return aChunk.apply_gain(change_in_dBFS)
+def parse_s3_key(s3_key):
+    """Parse and validate S3 key format with security checks."""
+    try:
+        # Decode URL-encoded characters
+        decoded_key = unquote_plus(s3_key)
+        
+        # Security: Check for path traversal attempts
+        if '..' in decoded_key or decoded_key.startswith('/'):
+            raise ValueError(f"Path traversal detected in S3 key: {decoded_key}")
+        
+        # Parse the key format: "public/unprocessed/{userID}/{filename}.{extension}"
+        # or "unprocessed/{userID}/{filename}.{extension}"
+        key_parts = decoded_key.split("/")
+        
+        # Handle both "public/unprocessed/..." and "unprocessed/..." formats
+        start_index = 0
+        if len(key_parts) >= 3 and key_parts[0] == "public" and key_parts[1] == "unprocessed":
+            start_index = 2
+        elif len(key_parts) >= 2 and key_parts[0] == "unprocessed":
+            start_index = 1
         else:
-            # Audio is at good level, don't normalize
-            return aChunk
+            raise ValueError(f"Invalid S3 key format: {decoded_key}. Expected format: [public/]unprocessed/{{userID}}/{{filename}}")
         
+        if len(key_parts) < start_index + 2:
+            raise ValueError(f"Invalid S3 key format: {decoded_key}. Not enough path segments.")
+        
+        username = key_parts[start_index]
+        filename_with_ext = key_parts[start_index + 1]
+        
+        # Security: Validate username and filename formats
+        if not validate_username(username):
+            raise ValueError(f"Invalid username format: {username}")
+        
+        if not validate_filename(filename_with_ext):
+            raise ValueError(f"Invalid filename format: {filename_with_ext}")
+        
+        # Extract file extension
+        basename, ext = os.path.splitext(filename_with_ext)
+        file_format = ext[1:] if ext else ''  # Remove the dot
+        
+        return {
+            'username': username,
+            'filename': filename_with_ext,
+            'basename': basename,
+            'format': file_format,
+            'full_key': decoded_key
+        }
+        
+    except Exception as e:
+        print(f"S3 key parsing error: {str(e)}")
+        raise
 
-    print(local_file_name, 'LOCAL FILE')
-    # Load your audio.
-    sound = AudioSegment.from_file(local_file_name, format=s3_source_format)
+def validate_username(username):
+    """Validate username format for security."""
+    if not username or len(username) > 128:
+        return False
     
-    print(sound.duration_seconds, sound.dBFS)
-    
-    # DEBUG: Save post-loading file to debug directory (after pydub loads/parses)
-    debug_loaded_filename = f"debug_02_loaded_{s3_source_basename}.wav"
-    debug_loaded_path = f"/tmp/{debug_loaded_filename}"
-    print(f"DEBUG: Saving post-loading file to debug/loaded/{username}/{debug_loaded_filename}")
-    sound.export(
-        debug_loaded_path,
-        format="wav",
-        parameters=[
-            "-acodec", "pcm_s24le",  # 24-bit PCM for maximum quality
-            "-ar", str(sound.frame_rate),  # Preserve original sample rate
-            "-ac", str(sound.channels)     # Preserve original channels
-        ]
-    )
-    s3_client.upload_file(debug_loaded_path, s3_source_bucket, f"debug/loaded/{username}/{debug_loaded_filename}")
-    
-    # Split track where the silence is 2 seconds or more and get chunks using 
-    # the imported function.
-    # Optimized parameters for better speech quality preservation
-    chunks = split_on_silence (
-        # Use the loaded audio.
-        sound, 
-        # Allow natural pauses - increased from 1250ms to 2000ms
-        min_silence_len = 2000,
-        # Preserve quiet speech - decreased from -30dBFS to -40dBFS
-        silence_thresh = -40
-    )
-    
-    print(chunks)
-    
-    
-    # Process each chunk with your parameters
-    for i, chunk in enumerate(chunks):
-        # DEBUG: Save raw chunk before processing
-        debug_raw_chunk_filename = f"debug_03_raw_chunk_{s3_source_basename}-{i}.wav"
-        debug_raw_chunk_path = f"/tmp/{debug_raw_chunk_filename}"
-        print(f"DEBUG: Saving raw chunk {i} to debug/raw_chunks/{username}/{debug_raw_chunk_filename}")
-        chunk.export(
-            debug_raw_chunk_path,
-            format="wav",
-            parameters=[
-                "-acodec", "pcm_s24le",  # 24-bit PCM for maximum quality
-                "-ar", str(chunk.frame_rate),  # Preserve original sample rate
-                "-ac", str(chunk.channels)     # Preserve original channels
-            ]
-        )
-        s3_client.upload_file(debug_raw_chunk_path, s3_source_bucket, f"debug/raw_chunks/{username}/{debug_raw_chunk_filename}")
-        
-        # Create a silence chunk that's 0.5 seconds (or 500 ms) long for padding.
-        beginning_chunk = AudioSegment.silent(duration=250)
-        ending_chunk = AudioSegment.silent(duration=750)
-        print(i)
-        # Add the padding chunk to beginning and end of the entire chunk.
-        audio_chunk = beginning_chunk + chunk + ending_chunk
-    
-        # DEBUG: Save chunk with padding before normalization
-        debug_padded_chunk_filename = f"debug_04_padded_chunk_{s3_source_basename}-{i}.wav"
-        debug_padded_chunk_path = f"/tmp/{debug_padded_chunk_filename}"
-        print(f"DEBUG: Saving padded chunk {i} to debug/padded_chunks/{username}/{debug_padded_chunk_filename}")
-        audio_chunk.export(
-            debug_padded_chunk_path,
-            format="wav",
-            parameters=[
-                "-acodec", "pcm_s24le",  # 24-bit PCM for maximum quality
-                "-ar", str(audio_chunk.frame_rate),  # Preserve original sample rate
-                "-ac", str(audio_chunk.channels)     # Preserve original channels
-            ]
-        )
-        s3_client.upload_file(debug_padded_chunk_path, s3_source_bucket, f"debug/padded_chunks/{username}/{debug_padded_chunk_filename}")
-    
-        # Normalize the entire chunk.
-        normalized_chunk = match_target_amplitude(audio_chunk, -20.0)
-        
-        # DEBUG: Save normalized chunk
-        debug_normalized_chunk_filename = f"debug_05_normalized_chunk_{s3_source_basename}-{i}.wav"
-        debug_normalized_chunk_path = f"/tmp/{debug_normalized_chunk_filename}"
-        print(f"DEBUG: Saving normalized chunk {i} to debug/normalized_chunks/{username}/{debug_normalized_chunk_filename}")
-        normalized_chunk.export(
-            debug_normalized_chunk_path,
-            format="wav",
-            parameters=[
-                "-acodec", "pcm_s24le",  # 24-bit PCM for maximum quality
-                "-ar", str(normalized_chunk.frame_rate),  # Preserve original sample rate
-                "-ac", str(normalized_chunk.channels)     # Preserve original channels
-            ]
-        )
-        s3_client.upload_file(debug_normalized_chunk_path, s3_source_bucket, f"debug/normalized_chunks/{username}/{debug_normalized_chunk_filename}")
-    
-        # Export the audio chunk with high quality settings
-        filename = "{}-{}.wav".format(s3_source_filename, i)
-        normalized_chunk.export(
-            "/tmp/{}".format(filename),
-            format = "wav",
-            parameters=[
-                "-acodec", "pcm_s16le",  # 16-bit PCM
-                "-ar", "48000",          # 48kHz sample rate
-                "-ac", "2"               # 2 channels (stereo)
-            ]
-        )
-        new_filename = "{}-{}.wav".format(s3_source_basename, i)
-        print("Exporting chunk{0}.mp3.".format(i), "/tmp/{}".format(filename), s3_source_bucket, "/{}/{}".format(username, filename))
-        s3_client.upload_file("/tmp/{}".format(filename), s3_source_bucket, "public/processed/{}/{}".format(username, new_filename))
-        
-        # DEBUG: Save final processed chunk to debug directory
-        debug_final_chunk_filename = f"debug_06_final_chunk_{s3_source_basename}-{i}.wav"
-        print(f"DEBUG: Saving final processed chunk {i} to debug/final_chunks/{username}/{debug_final_chunk_filename}")
-        s3_client.upload_file(f"/tmp/{filename}", s3_source_bucket, f"debug/final_chunks/{username}/{debug_final_chunk_filename}")
-        
+    # Allow alphanumeric, hyphens, underscores, and standard UUID format
+    username_pattern = r'^[a-zA-Z0-9\-_]+$'
+    return bool(re.match(username_pattern, username))
 
-    # new_id = uuid.uuid4()
-    # item_id = str(new_id)
-    # print(item_id)
-    # try:
-    #     response = ddb_client.put_item(
-    #         TableName='Sample-eqdn4ioae5cddgqrvsc73yvkze-staging',
-    #         Item={
-    #             'id': {
-    #                 'S': item_id
-    #             },
-    #             'username': {
-    #                 'S': username
-    #             },
-    #             'sampleName': {
-    #                 'S': new_filename
-    #             }
-    #         }
-    #         )
-    #     print("a rollicking success: ", response)
-    # except:
-    #     print("Unable to save item to Dynamo DB")
+def validate_filename(filename):
+    """Validate filename format for security."""
+    if not filename or len(filename) > 255:
+        return False
+    
+    # Allow alphanumeric, hyphens, underscores, dots, and common timestamp formats
+    # This pattern covers typical audio file naming conventions
+    filename_pattern = r'^[a-zA-Z0-9\-_\.\sT:Z]+\.[a-zA-Z0-9]+$'
+    return bool(re.match(filename_pattern, filename))
 
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Processing complete successfully')
-    }
+def check_disk_space():
+    """Check available disk space in /tmp directory."""
+    try:
+        statvfs = os.statvfs('/tmp')
+        available_bytes = statvfs.f_frsize * statvfs.f_bavail
+        available_mb = available_bytes / (1024 * 1024)
+        
+        # Require at least 100MB free space for audio processing
+        if available_mb < 100:
+            raise RuntimeError(f"Insufficient disk space: {available_mb:.1f}MB available, need at least 100MB")
+        
+        print(f"Disk space check: {available_mb:.1f}MB available")
+        
+    except Exception as e:
+        print(f"Warning: Could not check disk space: {str(e)}")
+
+def download_file_s3_secure(client, bucket, s3_path, local_path, retries=3):
+    """Download file from S3 with secure error handling and retry logic."""
+    for attempt in range(retries + 1):
+        try:
+            print(f"Downloading {s3_path} (attempt {attempt + 1}/{retries + 1})")
+            client.download_file(bucket, s3_path, local_path)
+            
+            # Verify file was downloaded successfully
+            if not os.path.exists(local_path) or os.path.getsize(local_path) == 0:
+                raise RuntimeError("Downloaded file is empty or does not exist")
+            
+            print(f"Successfully downloaded {s3_path} ({os.path.getsize(local_path)} bytes)")
+            return
+            
+        except Exception as e:
+            print(f"Download attempt {attempt + 1} failed: {str(e)}")
+            
+            if attempt < retries:
+                sleep_time = 2 ** attempt  # Exponential backoff
+                print(f"Retrying in {sleep_time} seconds...")
+                time.sleep(sleep_time)
+            else:
+                raise RuntimeError(f"Failed to download {s3_path} after {retries + 1} attempts: {str(e)}")
+
+def upload_file_s3_secure(client, local_path, bucket, s3_path, retries=3):
+    """Upload file to S3 with secure error handling and retry logic."""
+    for attempt in range(retries + 1):
+        try:
+            # Verify local file exists before upload
+            if not os.path.exists(local_path):
+                raise RuntimeError(f"Local file does not exist: {local_path}")
+            
+            file_size = os.path.getsize(local_path)
+            if file_size == 0:
+                raise RuntimeError(f"Local file is empty: {local_path}")
+            
+            print(f"Uploading {local_path} to {s3_path} (attempt {attempt + 1}/{retries + 1}, {file_size} bytes)")
+            client.upload_file(local_path, bucket, s3_path)
+            print(f"Successfully uploaded to {s3_path}")
+            return
+            
+        except Exception as e:
+            print(f"Upload attempt {attempt + 1} failed: {str(e)}")
+            
+            if attempt < retries:
+                sleep_time = 2 ** attempt  # Exponential backoff
+                print(f"Retrying in {sleep_time} seconds...")
+                time.sleep(sleep_time)
+            else:
+                raise RuntimeError(f"Failed to upload to {s3_path} after {retries + 1} attempts: {str(e)}")
+
+def cleanup_local_files(file_paths):
+    """Safely clean up local temporary files."""
+    for file_path in file_paths:
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"Cleaned up temporary file: {file_path}")
+        except Exception as e:
+            print(f"Warning: Could not clean up file {file_path}: {str(e)}")
