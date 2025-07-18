@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import Sound from "../components/Sound";
 import EditSoundModal from "../components/modals/EditSoundModal";
 import { wait } from "../utils/loading";
-import { Audio } from "expo-av";
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
 import { PLAYBACK } from "../api";
 
 const Sounds = (props) => {
@@ -90,6 +90,17 @@ const Sounds = (props) => {
     // playing audio for the first time
     if (soundObj === null) {
       try {
+        // Set high-quality audio mode for playback
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+          shouldDuckAndroid: true,
+          interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+          playThroughEarpieceAndroid: false,
+          staysActiveInBackground: false,
+        });
+        
         const playbackObject = new Audio.Sound();
         playbackObject.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
         status = await PLAYBACK.play(playbackObject, audio.url);

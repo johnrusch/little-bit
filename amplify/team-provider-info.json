@@ -46,7 +46,7 @@
       "function": {
         "EditandConvertRecordings": {
           "deploymentBucketName": "amplify-littlebit-dev-131255-deployment",
-          "s3Key": "amplify-builds/EditandConvertRecordings-51786a2b4376434c4a4d-build.zip"
+          "s3Key": "amplify-builds/EditandConvertRecordings-3778493842656c334555-build.zip"
         },
         "CreateSampleRecord": {
           "deploymentBucketName": "amplify-littlebit-dev-131255-deployment",

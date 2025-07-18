@@ -60,6 +60,22 @@ exports.handler = async (event) => {
     const fileNameWithExt = keyParts[startIndex + 1];
     const destinationName = fileNameWithExt.split(".")[0];
     
+    // Security: Validate userID and filename to prevent path traversal
+    const userIdRegex = /^[a-zA-Z0-9\-_]+$/;
+    const filenameRegex = /^[a-zA-Z0-9\-_\.\s]+$/;
+    
+    if (!userIdRegex.test(userID)) {
+      throw new Error(`Invalid userID format: ${userID}. Only alphanumeric, hyphens, and underscores allowed.`);
+    }
+    
+    if (!filenameRegex.test(fileNameWithExt)) {
+      throw new Error(`Invalid filename format: ${fileNameWithExt}. Only alphanumeric, hyphens, underscores, dots, and spaces allowed.`);
+    }
+    
+    if (userID.includes('..') || fileNameWithExt.includes('..')) {
+      throw new Error(`Path traversal detected in userID or filename.`);
+    }
+    
     console.log(`Parsed - UserID: ${userID}, Filename: ${destinationName}`);
     
     try {
@@ -93,8 +109,28 @@ exports.handler = async (event) => {
       
       console.log('Sample created successfully:', graphqlData.data.data.createSample);
       
+      // Now trigger the audio processing function
+      const AWS = require('aws-sdk');
+      const lambda = new AWS.Lambda();
+      
+      console.log('Triggering EditandConvertRecordings function for audio processing...');
+      
+      try {
+        const invokeParams = {
+          FunctionName: process.env.FUNCTION_EDITANDCONVERTRECORDINGS_NAME || 'EditandConvertRecordings',
+          InvocationType: 'Event', // Asynchronous invocation
+          Payload: JSON.stringify(event) // Pass the original S3 event
+        };
+        
+        const result = await lambda.invoke(invokeParams).promise();
+        console.log('EditandConvertRecordings function triggered successfully:', result);
+      } catch (invocationError) {
+        console.error('Error triggering EditandConvertRecordings function:', invocationError);
+        // Don't fail the whole operation - the database record was created successfully
+      }
+      
       const body = {
-        message: "successfully created sample!",
+        message: "successfully created sample and triggered audio processing!",
         sample: graphqlData.data.data.createSample
       }
       return {
