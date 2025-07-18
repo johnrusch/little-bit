@@ -93,8 +93,28 @@ exports.handler = async (event) => {
       
       console.log('Sample created successfully:', graphqlData.data.data.createSample);
       
+      // Now trigger the audio processing function
+      const AWS = require('aws-sdk');
+      const lambda = new AWS.Lambda();
+      
+      console.log('Triggering EditandConvertRecordings function for audio processing...');
+      
+      try {
+        const invokeParams = {
+          FunctionName: process.env.FUNCTION_EDITANDCONVERTRECORDINGS_NAME || 'EditandConvertRecordings',
+          InvocationType: 'Event', // Asynchronous invocation
+          Payload: JSON.stringify(event) // Pass the original S3 event
+        };
+        
+        const result = await lambda.invoke(invokeParams).promise();
+        console.log('EditandConvertRecordings function triggered successfully:', result);
+      } catch (invocationError) {
+        console.error('Error triggering EditandConvertRecordings function:', invocationError);
+        // Don't fail the whole operation - the database record was created successfully
+      }
+      
       const body = {
-        message: "successfully created sample!",
+        message: "successfully created sample and triggered audio processing!",
         sample: graphqlData.data.data.createSample
       }
       return {

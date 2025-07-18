@@ -56,6 +56,11 @@ def handler(event, context):
     # s3_client.download_file(s3_source_bucket, s3_source_key, f'/tmp/{s3_source_filename}')
     download_file_s3(s3_client, s3_source_bucket, s3_source_key, local_file_name)
     
+    # DEBUG: Save raw uploaded file to debug directory for quality comparison
+    debug_raw_filename = f"debug_01_raw_{s3_source_filename}"
+    print(f"DEBUG: Saving raw uploaded file to debug/raw/{username}/{debug_raw_filename}")
+    s3_client.upload_file(local_file_name, s3_source_bucket, f"debug/raw/{username}/{debug_raw_filename}")
+    
 
     # Define a function to gently normalize a chunk to a target amplitude.
     def match_target_amplitude(aChunk, target_dBFS):
@@ -80,6 +85,21 @@ def handler(event, context):
     
     print(sound.duration_seconds, sound.dBFS)
     
+    # DEBUG: Save post-loading file to debug directory (after pydub loads/parses)
+    debug_loaded_filename = f"debug_02_loaded_{s3_source_basename}.wav"
+    debug_loaded_path = f"/tmp/{debug_loaded_filename}"
+    print(f"DEBUG: Saving post-loading file to debug/loaded/{username}/{debug_loaded_filename}")
+    sound.export(
+        debug_loaded_path,
+        format="wav",
+        parameters=[
+            "-acodec", "pcm_s24le",  # 24-bit PCM for maximum quality
+            "-ar", str(sound.frame_rate),  # Preserve original sample rate
+            "-ac", str(sound.channels)     # Preserve original channels
+        ]
+    )
+    s3_client.upload_file(debug_loaded_path, s3_source_bucket, f"debug/loaded/{username}/{debug_loaded_filename}")
+    
     # Split track where the silence is 2 seconds or more and get chunks using 
     # the imported function.
     # Optimized parameters for better speech quality preservation
@@ -97,6 +117,21 @@ def handler(event, context):
     
     # Process each chunk with your parameters
     for i, chunk in enumerate(chunks):
+        # DEBUG: Save raw chunk before processing
+        debug_raw_chunk_filename = f"debug_03_raw_chunk_{s3_source_basename}-{i}.wav"
+        debug_raw_chunk_path = f"/tmp/{debug_raw_chunk_filename}"
+        print(f"DEBUG: Saving raw chunk {i} to debug/raw_chunks/{username}/{debug_raw_chunk_filename}")
+        chunk.export(
+            debug_raw_chunk_path,
+            format="wav",
+            parameters=[
+                "-acodec", "pcm_s24le",  # 24-bit PCM for maximum quality
+                "-ar", str(chunk.frame_rate),  # Preserve original sample rate
+                "-ac", str(chunk.channels)     # Preserve original channels
+            ]
+        )
+        s3_client.upload_file(debug_raw_chunk_path, s3_source_bucket, f"debug/raw_chunks/{username}/{debug_raw_chunk_filename}")
+        
         # Create a silence chunk that's 0.5 seconds (or 500 ms) long for padding.
         beginning_chunk = AudioSegment.silent(duration=250)
         ending_chunk = AudioSegment.silent(duration=750)
@@ -104,18 +139,58 @@ def handler(event, context):
         # Add the padding chunk to beginning and end of the entire chunk.
         audio_chunk = beginning_chunk + chunk + ending_chunk
     
+        # DEBUG: Save chunk with padding before normalization
+        debug_padded_chunk_filename = f"debug_04_padded_chunk_{s3_source_basename}-{i}.wav"
+        debug_padded_chunk_path = f"/tmp/{debug_padded_chunk_filename}"
+        print(f"DEBUG: Saving padded chunk {i} to debug/padded_chunks/{username}/{debug_padded_chunk_filename}")
+        audio_chunk.export(
+            debug_padded_chunk_path,
+            format="wav",
+            parameters=[
+                "-acodec", "pcm_s24le",  # 24-bit PCM for maximum quality
+                "-ar", str(audio_chunk.frame_rate),  # Preserve original sample rate
+                "-ac", str(audio_chunk.channels)     # Preserve original channels
+            ]
+        )
+        s3_client.upload_file(debug_padded_chunk_path, s3_source_bucket, f"debug/padded_chunks/{username}/{debug_padded_chunk_filename}")
+    
         # Normalize the entire chunk.
         normalized_chunk = match_target_amplitude(audio_chunk, -20.0)
+        
+        # DEBUG: Save normalized chunk
+        debug_normalized_chunk_filename = f"debug_05_normalized_chunk_{s3_source_basename}-{i}.wav"
+        debug_normalized_chunk_path = f"/tmp/{debug_normalized_chunk_filename}"
+        print(f"DEBUG: Saving normalized chunk {i} to debug/normalized_chunks/{username}/{debug_normalized_chunk_filename}")
+        normalized_chunk.export(
+            debug_normalized_chunk_path,
+            format="wav",
+            parameters=[
+                "-acodec", "pcm_s24le",  # 24-bit PCM for maximum quality
+                "-ar", str(normalized_chunk.frame_rate),  # Preserve original sample rate
+                "-ac", str(normalized_chunk.channels)     # Preserve original channels
+            ]
+        )
+        s3_client.upload_file(debug_normalized_chunk_path, s3_source_bucket, f"debug/normalized_chunks/{username}/{debug_normalized_chunk_filename}")
     
-        # Export the audio chunk with new bitrate.
+        # Export the audio chunk with high quality settings
         filename = "{}-{}.wav".format(s3_source_filename, i)
         normalized_chunk.export(
             "/tmp/{}".format(filename),
-            format = "wav"
+            format = "wav",
+            parameters=[
+                "-acodec", "pcm_s16le",  # 16-bit PCM
+                "-ar", "48000",          # 48kHz sample rate
+                "-ac", "2"               # 2 channels (stereo)
+            ]
         )
         new_filename = "{}-{}.wav".format(s3_source_basename, i)
         print("Exporting chunk{0}.mp3.".format(i), "/tmp/{}".format(filename), s3_source_bucket, "/{}/{}".format(username, filename))
         s3_client.upload_file("/tmp/{}".format(filename), s3_source_bucket, "public/processed/{}/{}".format(username, new_filename))
+        
+        # DEBUG: Save final processed chunk to debug directory
+        debug_final_chunk_filename = f"debug_06_final_chunk_{s3_source_basename}-{i}.wav"
+        print(f"DEBUG: Saving final processed chunk {i} to debug/final_chunks/{username}/{debug_final_chunk_filename}")
+        s3_client.upload_file(f"/tmp/{filename}", s3_source_bucket, f"debug/final_chunks/{username}/{debug_final_chunk_filename}")
         
 
     # new_id = uuid.uuid4()

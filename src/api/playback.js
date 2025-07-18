@@ -7,7 +7,13 @@ const play = async (playbackObj, uri) => {
   try {
     const status = await playbackObj.loadAsync(
       { uri },
-      { volume: 0.8, shouldPlay: true },
+      { 
+        volume: 0.8, 
+        shouldPlay: true,
+        // High-quality playback settings
+        rate: 1.0,
+        shouldCorrectPitch: true,
+      },
       true
     );
     return status;

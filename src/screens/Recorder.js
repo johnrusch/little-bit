@@ -44,6 +44,34 @@ const Recorder = (props) => {
       });
       console.log("Starting recording..");
       
+      // Use the exact structure from Expo docs that we know works
+      const CONSERVATIVE_HIGH_QUALITY = {
+        isMeteringEnabled: true,
+        android: {
+          extension: '.m4a',
+          outputFormat: 2,  // MPEG_4
+          audioEncoder: 3,  // AAC
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 256000,  // 2x the default 128kbps
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: 'mpeg4AAC',
+          audioQuality: 0x60,  // MAX quality
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 256000,  // 2x the default 128kbps
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/webm',
+          bitsPerSecond: 256000,
+        }
+      };
+      
       // Device-level quality recording preset using uncompressed formats
       // iOS AAC bitrate is limited to 64kbps, so use linear PCM for true high quality
       const DEVICE_QUALITY_PRESET = {
@@ -73,9 +101,21 @@ const Recorder = (props) => {
         }
       };
       
+      // Try conservative first, fallback to built-in preset if it fails
+      let recordingPreset = CONSERVATIVE_HIGH_QUALITY;
+      
       const { recording } = await Audio.Recording.createAsync(
-        DEVICE_QUALITY_PRESET
+        recordingPreset
       );
+      
+      // DEBUG: Log actual recording status to verify settings
+      console.log("=== RECORDING DEBUG INFO ===");
+      console.log("Recording preset used:", CONSERVATIVE_HIGH_QUALITY);
+      
+      // Check recording status to see actual parameters
+      const recordingStatus = await recording.getStatusAsync();
+      console.log("Recording status:", recordingStatus);
+      
       setRecording(recording);
       // console.log("Recording starteds", recording);
     } catch (err) {
@@ -88,10 +128,22 @@ const Recorder = (props) => {
     setRecording(undefined);
     const rec = await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
-    console.log(uri.split(".").slice(-1)[0]);
+    
+    // DEBUG: Log final recording info
+    console.log("=== FINAL RECORDING DEBUG INFO ===");
+    console.log("Recording URI:", uri);
+    console.log("File extension:", uri.split(".").slice(-1)[0]);
+    console.log("Recording result:", rec);
+    
     setFormat(uri.split(".").slice(-1)[0]);
     const resp = await fetch(uri);
-    setBlob(await resp.blob());
+    const blob = await resp.blob();
+    
+    // DEBUG: Log blob info
+    console.log("Blob size:", blob.size, "bytes");
+    console.log("Blob type:", blob.type);
+    
+    setBlob(blob);
     // console.log("Recording stopped and stored at", uri);
     setModalVisible(true);
   };

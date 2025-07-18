@@ -1,4 +1,5 @@
 import PLAYBACK from '../playback';
+import { Audio } from 'expo-av';
 
 describe('PLAYBACK Service', () => {
   let mockPlaybackObj;
@@ -33,7 +34,12 @@ describe('PLAYBACK Service', () => {
 
       expect(mockPlaybackObj.loadAsync).toHaveBeenCalledWith(
         { uri },
-        { volume: 0.8, shouldPlay: true },
+        { 
+          volume: 0.8, 
+          shouldPlay: true,
+          rate: 1.0,
+          shouldCorrectPitch: true,
+        },
         true
       );
       expect(result).toEqual(mockStatus);
@@ -61,7 +67,12 @@ describe('PLAYBACK Service', () => {
 
       expect(mockPlaybackObj.loadAsync).toHaveBeenCalledWith(
         { uri: null },
-        { volume: 0.8, shouldPlay: true },
+        { 
+          volume: 0.8, 
+          shouldPlay: true,
+          rate: 1.0,
+          shouldCorrectPitch: true,
+        },
         true
       );
     });
@@ -138,7 +149,12 @@ describe('PLAYBACK Service', () => {
       expect(mockPlaybackObj.unloadAsync).toHaveBeenCalled();
       expect(mockPlaybackObj.loadAsync).toHaveBeenCalledWith(
         { uri },
-        { volume: 0.8, shouldPlay: true },
+        { 
+          volume: 0.8, 
+          shouldPlay: true,
+          rate: 1.0,
+          shouldCorrectPitch: true,
+        },
         true
       );
       expect(result).toEqual(mockStatus);
@@ -221,7 +237,12 @@ describe('PLAYBACK Service', () => {
 
       expect(mockPlaybackObj.loadAsync).toHaveBeenCalledWith(
         expect.any(Object),
-        { volume: 0.8, shouldPlay: true },
+        { 
+          volume: 0.8, 
+          shouldPlay: true,
+          rate: 1.0,
+          shouldCorrectPitch: true,
+        },
         true
       );
     });
