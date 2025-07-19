@@ -20,6 +20,7 @@ python-dotenv==1.0.1
 # torch==2.3.1
 # torchaudio==2.3.1
 
-# Development and testing (remove in production)
+# Development and testing (remove in production build)
 pytest==8.2.2
 pytest-cov==5.0.0
+unittest-xml-reporting==3.2.0
