@@ -39,26 +39,29 @@ amplify/backend/custom/ecs/
   - S3 Storage (`storage/littlebitS3Resource`)
   - Authentication (`auth/littlebit3ededec2`)
 
-### Manual Deployment (Phase 1)
-Since this is custom infrastructure, deployment requires manual steps:
+### Deployment Status (Phase 1 Complete)
+✅ **Core infrastructure deployed and tested in dev environment:**
 
-1. **Upload CloudFormation templates to S3**:
-   ```bash
-   aws s3 cp ecs-cluster.yml s3://your-amplify-deployment-bucket/amplify-backend/
-   aws s3 cp iam-roles.yml s3://your-amplify-deployment-bucket/amplify-backend/
-   ```
+1. **IAM Roles Stack**: `little-bit-ecs-iam-dev`
+   - ECS Task Execution Role: `LittleBitECSTaskExecutionRole-dev`
+   - ECS Task Role: `LittleBitECSTaskRole-dev`
+   - Lambda ECS Role: `LittleBitLambdaECSRole-dev`
 
-2. **Deploy via AWS Console** (recommended for Phase 1):
-   - Go to CloudFormation in AWS Console
-   - Create stack using `ecs-cluster.yml`
-   - Create stack using `iam-roles.yml`
-   - Note the output values for Phase 2
+2. **ECR Repository Stack**: `little-bit-ecr-repository-dev`
+   - Repository URI: `539825460496.dkr.ecr.us-west-2.amazonaws.com/little-bit/audio-processing-dev`
+   - Image scanning enabled, lifecycle policies configured
 
-3. **Verify deployment**:
-   ```bash
-   aws ecs list-clusters
-   aws ecr describe-repositories --repository-names little-bit/audio-processing-dev
-   ```
+3. **Current Resources Ready For**:
+   - Phase 2: Container development and ECR image deployment
+   - Phase 3: Lambda integration using existing IAM roles
+   - Phase 4: Full end-to-end testing
+
+**Verification Commands**:
+```bash
+aws ecs list-clusters --region us-west-2
+aws ecr describe-repositories --region us-west-2
+aws iam list-roles --path-prefix '/LittleBit' --region us-west-2
+```
 
 ### Future Amplify Integration
 In Phase 3, this will be integrated with Amplify custom resources for automated deployment via `amplify push`.
