@@ -7,6 +7,7 @@ Handles secure S3 download/upload operations with retry logic and error handling
 import os
 import time
 import logging
+import random
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 from typing import Optional, Dict, Any
@@ -55,8 +56,18 @@ class S3Operations:
             raise S3OperationError("Missing required parameters for S3 download")
         
         # Validate and sanitize the S3 key to prevent path traversal
-        if '..' in key or key.startswith('/'):
-            raise S3OperationError("Invalid S3 key: path traversal detected")
+        normalized_key = os.path.normpath(key).replace('\\', '/')
+        if (
+            '..' in normalized_key or 
+            normalized_key.startswith('/') or 
+            normalized_key.startswith('../') or
+            '/..' in normalized_key or
+            '%2e%2e' in key.lower() or
+            '%2f' in key.lower() or
+            key != normalized_key or
+            len(key) > 1024  # Reasonable key length limit
+        ):
+            raise S3OperationError(f"Invalid S3 key: path traversal or invalid characters detected: {key[:100]}...")
         
         logger.info(f"Starting download: s3://{bucket}/{key} -> {local_path}")
         
@@ -92,10 +103,13 @@ class S3Operations:
             except Exception as e:
                 logger.warning(f"Download attempt {attempt + 1} failed: {str(e)}")
             
-            # Exponential backoff for retries
+            # Exponential backoff with jitter for retries
             if attempt < max_retries:
-                sleep_time = 2 ** attempt
-                logger.info(f"Retrying download in {sleep_time} seconds...")
+                base_sleep = 2 ** attempt
+                # Add random jitter (0-25% of base sleep time) to prevent thundering herd
+                jitter = base_sleep * 0.25 * (0.5 - random.random())
+                sleep_time = base_sleep + jitter
+                logger.info(f"Retrying download in {sleep_time:.2f} seconds...")
                 time.sleep(sleep_time)
         
         raise S3OperationError(f"Failed to download after {max_retries + 1} attempts")
@@ -126,19 +140,34 @@ class S3Operations:
             raise S3OperationError("Cannot upload empty file")
         
         # Validate and sanitize the S3 key
-        if '..' in key or key.startswith('/'):
-            raise S3OperationError("Invalid S3 key: path traversal detected")
+        normalized_key = os.path.normpath(key).replace('\\', '/')
+        if (
+            '..' in normalized_key or 
+            normalized_key.startswith('/') or 
+            normalized_key.startswith('../') or
+            '/..' in normalized_key or
+            '%2e%2e' in key.lower() or
+            '%2f' in key.lower() or
+            key != normalized_key or
+            len(key) > 1024  # Reasonable key length limit
+        ):
+            raise S3OperationError(f"Invalid S3 key: path traversal or invalid characters detected: {key[:100]}...")
         
         logger.info(f"Starting upload: {local_path} -> s3://{bucket}/{key}")
         
         try:
             extra_args = {}
             if metadata:
-                # Sanitize metadata keys and values
+                # Sanitize metadata keys and values with strict validation
                 sanitized_metadata = {}
                 for k, v in metadata.items():
                     if isinstance(k, str) and isinstance(v, str) and len(k) <= 100 and len(v) <= 1000:
-                        sanitized_metadata[k.replace(' ', '-')] = v[:1000]  # Truncate long values
+                        # Strict sanitization for metadata keys (alphanumeric, hyphens, underscores only)
+                        clean_key = ''.join(c for c in k if c.isalnum() or c in '-_').lower()
+                        # Strict sanitization for metadata values (remove control characters and special chars)
+                        clean_value = ''.join(c for c in v if c.isprintable() and c not in '<>"&\\').strip()[:1000]
+                        if clean_key and clean_value and len(clean_key) <= 50:
+                            sanitized_metadata[clean_key] = clean_value
                 extra_args['Metadata'] = sanitized_metadata
             
             # Upload the file

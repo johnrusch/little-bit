@@ -244,27 +244,34 @@ class ErrorRecovery:
     @staticmethod
     def validate_environment() -> None:
         """Validate required environment variables and configurations."""
-        import os
-        
-        required_vars = [
-            'S3_BUCKET',
-            'S3_KEY',
-            'USER_ID',
-            'AWS_DEFAULT_REGION'
-        ]
-        
-        missing_vars = []
-        for var in required_vars:
-            if not os.environ.get(var):
-                missing_vars.append(var)
-        
-        if missing_vars:
-            raise ConfigurationError(
-                f"Missing required environment variables: {', '.join(missing_vars)}",
-                details={'missing_variables': missing_vars}
-            )
-        
-        logger.info("Environment validation passed")
+        try:
+            from .input_validation import InputValidator
+            # Use comprehensive input validation
+            InputValidator.validate_environment_variables()
+            logger.info("Environment validation passed")
+        except ImportError:
+            # Fallback to basic validation if input_validation not available
+            import os
+            
+            required_vars = [
+                'S3_BUCKET',
+                'S3_KEY',
+                'USER_ID',
+                'AWS_DEFAULT_REGION'
+            ]
+            
+            missing_vars = []
+            for var in required_vars:
+                if not os.environ.get(var):
+                    missing_vars.append(var)
+            
+            if missing_vars:
+                raise ConfigurationError(
+                    f"Missing required environment variables: {', '.join(missing_vars)}",
+                    details={'missing_variables': missing_vars}
+                )
+            
+            logger.info("Environment validation passed (basic)")
 
 def create_error_response(error: ProcessingError, session_id: str = None) -> Dict[str, Any]:
     """

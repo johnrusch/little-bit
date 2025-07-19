@@ -14,6 +14,7 @@ import time
 import uuid
 import tempfile
 import shutil
+import threading
 from typing import Dict, Any, List
 from pathlib import Path
 
@@ -28,6 +29,7 @@ try:
         retry_with_exponential_backoff, safe_execute
     )
     from utils.audio_utils import AudioProcessor, create_processing_config
+    from utils.input_validation import InputValidator
     # Import PyDub components for audio processing
     from pydub import AudioSegment
     from pydub.silence import split_on_silence
@@ -50,6 +52,8 @@ class AudioProcessingService:
         self.temp_files = []
         self.s3_ops = None
         self.audio_processor = None
+        self._cleanup_done = False
+        self._cleanup_lock = threading.Lock()
         
     def initialize(self) -> None:
         """Initialize service components with error handling."""
@@ -226,24 +230,34 @@ class AudioProcessingService:
                 raise StorageError(f"Upload process failed: {str(e)}")
     
     def cleanup(self) -> None:
-        """Clean up temporary files and resources."""
-        if self.temp_files:
-            logger.info(f"Cleaning up {len(self.temp_files)} temporary files")
-            ErrorRecovery.cleanup_temp_files(self.temp_files)
-            self.temp_files.clear()
+        """Clean up temporary files and resources with race condition protection."""
+        with self._cleanup_lock:
+            if self._cleanup_done:
+                logger.debug("Cleanup already completed, skipping")
+                return
+            
+            if self.temp_files:
+                logger.info(f"Cleaning up {len(self.temp_files)} temporary files")
+                ErrorRecovery.cleanup_temp_files(self.temp_files)
+                self.temp_files.clear()
+            
+            self._cleanup_done = True
+            logger.debug("Cleanup completed successfully")
     
     def process_request(self) -> Dict[str, Any]:
         """Main processing workflow for a single request."""
         start_time = time.time()
         
         try:
-            # Extract parameters from environment
-            bucket = os.environ['S3_BUCKET']
-            source_key = os.environ['S3_KEY']
-            user_id = os.environ['USER_ID']
+            # Validate and extract parameters from environment
+            env_vars = InputValidator.validate_environment_variables()
+            bucket = env_vars['S3_BUCKET']
+            source_key = env_vars['S3_KEY']
+            user_id = env_vars['USER_ID']
             
-            # Extract original filename
+            # Extract and validate original filename
             original_filename = os.path.basename(source_key)
+            original_filename = InputValidator.validate_audio_filename(original_filename)
             
             logger.info(f"Processing request started", extra={
                 'session_id': self.session_id,
