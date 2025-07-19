@@ -1,0 +1,322 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Amplify custom resources for Little Bit ECS audio processing infrastructure",
+  "Parameters": {
+    "env": {
+      "Type": "String",
+      "Description": "Environment name"
+    },
+    "S3DeploymentBucket": {
+      "Type": "String",
+      "Description": "S3 bucket for Amplify deployments"
+    },
+    "S3DeploymentRootKey": {
+      "Type": "String",
+      "Description": "S3 key prefix for deployments"
+    },
+    "AuthCognitoUserPoolId": {
+      "Type": "String",
+      "Description": "Cognito User Pool ID from auth module"
+    },
+    "StorageS3BucketName": {
+      "Type": "String",
+      "Description": "S3 bucket name from storage module"
+    },
+    "ApiLittlebitGraphqlApiGraphQLAPIIdOutput": {
+      "Type": "String",
+      "Description": "GraphQL API ID from API module"
+    },
+    "ApiLittlebitGraphqlApiGraphQLAPIKeyOutput": {
+      "Type": "String",
+      "Description": "GraphQL API Key from API module",
+      "NoEcho": true
+    }
+  },
+  "Resources": {
+    "ECSClusterStack": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": {
+          "Fn::Sub": [
+            "https://${S3DeploymentBucket}.s3.amazonaws.com/${S3DeploymentRootKey}/ecs-cluster.yml",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "Parameters": {
+          "env": {
+            "Ref": "env"
+          },
+          "AppSyncApiId": {
+            "Ref": "ApiLittlebitGraphqlApiGraphQLAPIIdOutput"
+          },
+          "AppSyncApiKey": {
+            "Ref": "ApiLittlebitGraphqlApiGraphQLAPIKeyOutput"
+          },
+          "S3BucketName": {
+            "Ref": "StorageS3BucketName"
+          }
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          },
+          {
+            "Key": "Service",
+            "Value": "ecs-cluster"
+          }
+        ]
+      }
+    },
+    "IAMRolesStack": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": {
+          "Fn::Sub": [
+            "https://${S3DeploymentBucket}.s3.amazonaws.com/${S3DeploymentRootKey}/iam-roles.yml",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "Parameters": {
+          "env": {
+            "Ref": "env"
+          },
+          "S3BucketName": {
+            "Ref": "StorageS3BucketName"
+          },
+          "AppSyncApiId": {
+            "Ref": "ApiLittlebitGraphqlApiGraphQLAPIIdOutput"
+          }
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          },
+          {
+            "Key": "Service",
+            "Value": "iam-roles"
+          }
+        ]
+      }
+    },
+    "ECSTaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "DependsOn": [
+        "ECSClusterStack",
+        "IAMRolesStack"
+      ],
+      "Properties": {
+        "Family": {
+          "Fn::Sub": "little-bit-audio-processing-${env}"
+        },
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "Cpu": "1024",
+        "Memory": "2048",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "IAMRolesStack",
+            "Outputs.ECSTaskExecutionRoleArn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "IAMRolesStack",
+            "Outputs.ECSTaskRoleArn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "audio-processor",
+            "Image": {
+              "Fn::Sub": [
+                "${ECRRepository}:latest",
+                {
+                  "ECRRepository": {
+                    "Fn::GetAtt": [
+                      "ECSClusterStack",
+                      "Outputs.ECRRepository"
+                    ]
+                  }
+                }
+              ]
+            },
+            "Essential": true,
+            "Environment": [
+              {
+                "Name": "AWS_DEFAULT_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "LOG_LEVEL",
+                "Value": "INFO"
+              }
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Fn::GetAtt": [
+                    "ECSClusterStack",
+                    "Outputs.LogGroupName"
+                  ]
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "audio-processor"
+              }
+            },
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "python3 -c 'import boto3; print(\"Health check passed\")' || exit 1"
+              ],
+              "Interval": 30,
+              "Timeout": 5,
+              "Retries": 3,
+              "StartPeriod": 10
+            },
+            "StopTimeout": 120
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          },
+          {
+            "Key": "Service",
+            "Value": "audio-processing"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "ECSClusterName": {
+      "Description": "Name of the ECS cluster",
+      "Value": {
+        "Fn::GetAtt": [
+          "ECSClusterStack",
+          "Outputs.ClusterName"
+        ]
+      }
+    },
+    "ECSClusterArn": {
+      "Description": "ARN of the ECS cluster",
+      "Value": {
+        "Fn::GetAtt": [
+          "ECSClusterStack",
+          "Outputs.ClusterArn"
+        ]
+      }
+    },
+    "ECSTaskDefinitionArn": {
+      "Description": "ARN of the ECS task definition",
+      "Value": {
+        "Ref": "ECSTaskDefinition"
+      }
+    },
+    "ECRRepositoryUri": {
+      "Description": "ECR repository URI for container images",
+      "Value": {
+        "Fn::GetAtt": [
+          "ECSClusterStack",
+          "Outputs.ECRRepository"
+        ]
+      }
+    },
+    "ECSTaskExecutionRoleArn": {
+      "Description": "ARN of the ECS task execution role",
+      "Value": {
+        "Fn::GetAtt": [
+          "IAMRolesStack",
+          "Outputs.ECSTaskExecutionRoleArn"
+        ]
+      }
+    },
+    "ECSTaskRoleArn": {
+      "Description": "ARN of the ECS task role",
+      "Value": {
+        "Fn::GetAtt": [
+          "IAMRolesStack",
+          "Outputs.ECSTaskRoleArn"
+        ]
+      }
+    },
+    "VPCId": {
+      "Description": "VPC ID for ECS tasks",
+      "Value": {
+        "Fn::GetAtt": [
+          "ECSClusterStack",
+          "Outputs.VPCId"
+        ]
+      }
+    },
+    "PrivateSubnet1Id": {
+      "Description": "Private subnet 1 ID",
+      "Value": {
+        "Fn::GetAtt": [
+          "ECSClusterStack",
+          "Outputs.PrivateSubnet1Id"
+        ]
+      }
+    },
+    "PrivateSubnet2Id": {
+      "Description": "Private subnet 2 ID",
+      "Value": {
+        "Fn::GetAtt": [
+          "ECSClusterStack",
+          "Outputs.PrivateSubnet2Id"
+        ]
+      }
+    },
+    "SecurityGroupId": {
+      "Description": "Security group ID for ECS tasks",
+      "Value": {
+        "Fn::GetAtt": [
+          "ECSClusterStack",
+          "Outputs.SecurityGroupId"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,318 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECS Fargate cluster for Little Bit audio processing service'
+
+Parameters:
+  env:
+    Type: String
+    Description: Environment name (dev, staging, prod)
+  AppSyncApiId:
+    Type: String
+    Description: AppSync API ID for GraphQL operations
+  AppSyncApiKey:
+    Type: String
+    Description: AppSync API Key for authentication
+    NoEcho: true
+  S3BucketName:
+    Type: String
+    Description: S3 bucket name for audio files
+  
+Resources:
+  # ECS Cluster
+  AudioProcessingCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub 'little-bit-audio-processing-${env}'
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 4
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-audio-processing-${env}'
+        - Key: Environment
+          Value: !Ref env
+        - Key: Project
+          Value: little-bit
+        - Key: Service
+          Value: audio-processing
+
+  # ECR Repository for container images
+  AudioProcessingRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub 'little-bit/audio-processing-${env}'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 tagged images",
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": ["v", "latest"],
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              },
+              {
+                "rulePriority": 2,
+                "description": "Delete untagged images older than 1 day",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 1
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-audio-processing-${env}'
+        - Key: Environment
+          Value: !Ref env
+        - Key: Project
+          Value: little-bit
+
+  # Dedicated VPC for ECS tasks with private subnets for security
+  
+  # Security Group for ECS tasks
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for audio processing ECS tasks
+      GroupName: !Sub 'little-bit-ecs-audio-processing-${env}'
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic for S3, ECR, and CloudWatch
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-ecs-audio-processing-${env}'
+        - Key: Environment
+          Value: !Ref env
+        - Key: Project
+          Value: little-bit
+
+  # Get default VPC (temporary solution)
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-vpc-${env}'
+        - Key: Environment
+          Value: !Ref env
+
+  # Private subnets for ECS tasks
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-private-subnet-1-${env}'
+        - Key: Environment
+          Value: !Ref env
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-private-subnet-2-${env}'
+        - Key: Environment
+          Value: !Ref env
+
+  # Internet Gateway for NAT Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-igw-${env}'
+        - Key: Environment
+          Value: !Ref env
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  # Public subnet for NAT Gateway
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-public-subnet-${env}'
+        - Key: Environment
+          Value: !Ref env
+
+  # NAT Gateway for private subnet internet access
+  NatGatewayEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-nat-eip-${env}'
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-nat-gateway-${env}'
+        - Key: Environment
+          Value: !Ref env
+
+  # Route tables
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-public-rt-${env}'
+        - Key: Environment
+          Value: !Ref env
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-private-rt-${env}'
+        - Key: Environment
+          Value: !Ref env
+
+  DefaultPrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet2
+
+  # CloudWatch Log Group for ECS tasks
+  AudioProcessingLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/ecs/little-bit-audio-processing-${env}'
+      RetentionInDays: 30
+      Tags:
+        - Key: Name
+          Value: !Sub 'little-bit-audio-processing-logs-${env}'
+        - Key: Environment
+          Value: !Ref env
+        - Key: Project
+          Value: little-bit
+
+Outputs:
+  ClusterName:
+    Description: Name of the ECS cluster
+    Value: !Ref AudioProcessingCluster
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterName'
+
+  ClusterArn:
+    Description: ARN of the ECS cluster
+    Value: !GetAtt AudioProcessingCluster.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterArn'
+
+  ECRRepository:
+    Description: ECR repository URI
+    Value: !GetAtt AudioProcessingRepository.RepositoryUri
+    Export:
+      Name: !Sub '${AWS::StackName}-ECRRepository'
+
+  VPCId:
+    Description: VPC ID for ECS tasks
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCId'
+
+  PrivateSubnet1Id:
+    Description: Private subnet 1 ID
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateSubnet1Id'
+
+  PrivateSubnet2Id:
+    Description: Private subnet 2 ID
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateSubnet2Id'
+
+  SecurityGroupId:
+    Description: Security group ID for ECS tasks
+    Value: !Ref ECSSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'
+
+  LogGroupName:
+    Description: CloudWatch log group name
+    Value: !Ref AudioProcessingLogGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-LogGroupName'
