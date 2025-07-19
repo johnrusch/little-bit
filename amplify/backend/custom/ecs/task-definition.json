@@ -1,0 +1,77 @@
+{
+  "family": "little-bit-audio-processing",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "${ECSTaskExecutionRoleArn}",
+  "taskRoleArn": "${ECSTaskRoleArn}",
+  "containerDefinitions": [
+    {
+      "name": "audio-processor",
+      "image": "${ECRRepositoryUri}:latest",
+      "essential": true,
+      "environment": [
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "${AWS::Region}"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "INFO"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${LogGroupName}",
+          "awslogs-region": "${AWS::Region}",
+          "awslogs-stream-prefix": "audio-processor"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "python3 -c 'import boto3; print(\"Health check passed\")' || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      },
+      "stopTimeout": 120,
+      "ulimits": [
+        {
+          "name": "nofile",
+          "softLimit": 65536,
+          "hardLimit": 65536
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "portMappings": [],
+      "resourceRequirements": [
+        {
+          "type": "InferenceAccelerator",
+          "value": "device1"
+        }
+      ]
+    }
+  ],
+  "volumes": [],
+  "placementConstraints": [],
+  "tags": [
+    {
+      "key": "Project",
+      "value": "little-bit"
+    },
+    {
+      "key": "Service",
+      "value": "audio-processing"
+    },
+    {
+      "key": "Environment",
+      "value": "${env}"
+    }
+  ]
+}
