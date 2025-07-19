@@ -35,10 +35,13 @@ Resources:
               - Effect: Allow
                 Action:
                   - ecr:GetAuthorizationToken
+                Resource: '*'
+              - Effect: Allow
+                Action:
                   - ecr:BatchCheckLayerAvailability
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
-                Resource: '*'
+                Resource: !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/little-bit/audio-processing-${env}'
         - PolicyName: CloudWatchLogsPolicy
           PolicyDocument:
             Version: '2012-10-17'

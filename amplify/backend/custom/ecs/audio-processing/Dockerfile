@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Create non-root user for security
+RUN groupadd -r audioprocess && useradd -r -g audioprocess audioprocess
+
 # Set working directory
 WORKDIR /app
 
@@ -20,8 +23,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY audio_processor.py .
 COPY entrypoint.sh .
 
-# Make entrypoint executable
-RUN chmod +x entrypoint.sh
+# Make entrypoint executable and set proper ownership
+RUN chmod +x entrypoint.sh && chown -R audioprocess:audioprocess /app
+
+# Switch to non-root user
+USER audioprocess
 
 # Set the entrypoint
 ENTRYPOINT ["./entrypoint.sh"]

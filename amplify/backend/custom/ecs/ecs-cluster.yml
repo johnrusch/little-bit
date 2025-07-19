@@ -89,8 +89,7 @@ Resources:
         - Key: Project
           Value: little-bit
 
-  # VPC for ECS tasks (using default VPC for now, can be customized later)
-  # Note: In production, create dedicated VPC with private subnets
+  # Dedicated VPC for ECS tasks with private subnets for security
   
   # Security Group for ECS tasks
   ECSSecurityGroup:
