@@ -15,11 +15,21 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import { Audio } from "expo-av";
 import { uploadData } from "aws-amplify/storage";
+import { generateClient } from "aws-amplify/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { onUpdateSample } from "../graphql/subscriptions";
 import NavBar from "../components/NavBar";
 import * as FileSystem from "expo-file-system";
 import UserContext from "../contexts/UserContext";
 import NameSoundModal from "../components/modals/NameSoundModal";
+import ProcessingSettingsPanel from "../components/ProcessingSettingsPanel";
+import ProcessingStatusIndicator from "../components/ProcessingStatusIndicator";
 import { windowHeight } from "../utils/Dimensions";
+import { 
+  DEFAULT_PROCESSING_SETTINGS, 
+  validateProcessingSettings, 
+  formatProcessingMetadata 
+} from "../utils/processingDefaults";
 
 const Recorder = (props) => {
   const { user, setLoadingStatus } = props;
@@ -32,7 +42,90 @@ const Recorder = (props) => {
     `${new Date().toISOString().replace(/(:|\s+)/g, "-")}`
   );
 
+  const [processingSettings, setProcessingSettings] = useState(DEFAULT_PROCESSING_SETTINGS);
+  const [showSettings, setShowSettings] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState('idle');
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [processingError, setProcessingError] = useState(null);
+
   const userData = useContext(UserContext);
+  const client = generateClient();
+
+  useEffect(() => {
+    loadProcessingSettings();
+  }, []);
+
+  useEffect(() => {
+    saveProcessingSettings();
+  }, [processingSettings]);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const subscription = client.graphql({
+      query: onUpdateSample,
+      variables: { user_id: user }
+    }).subscribe({
+      next: ({ data }) => {
+        const updatedSample = data.onUpdateSample;
+        if (updatedSample && updatedSample.user_id === user) {
+          const status = updatedSample.processing_status;
+          
+          setProcessingStatus(status ? status.toLowerCase() : 'idle');
+          
+          if (status === 'PROCESSING') {
+            setProcessingProgress(25);
+          } else if (status === 'COMPLETED') {
+            setProcessingProgress(100);
+            setTimeout(() => {
+              setLoadingStatus({ loading: false, processingSound: false });
+              setProcessingStatus('idle');
+              setProcessingProgress(0);
+              if (window.loadingTimeout) {
+                clearTimeout(window.loadingTimeout);
+                delete window.loadingTimeout;
+              }
+            }, 2000);
+          } else if (status === 'FAILED') {
+            setProcessingError(updatedSample.processing_error || 'Processing failed');
+            setLoadingStatus({ loading: false, processingSound: false });
+            if (window.loadingTimeout) {
+              clearTimeout(window.loadingTimeout);
+              delete window.loadingTimeout;
+            }
+          }
+        }
+      },
+      error: (error) => {
+        console.warn('Processing status subscription error:', error);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user, client, setLoadingStatus]);
+
+  const loadProcessingSettings = async () => {
+    try {
+      const savedSettings = await AsyncStorage.getItem('processingSettings');
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        const validatedSettings = validateProcessingSettings(parsedSettings);
+        setProcessingSettings(validatedSettings);
+      }
+    } catch (error) {
+      console.warn('Failed to load processing settings:', error);
+    }
+  };
+
+  const saveProcessingSettings = async () => {
+    try {
+      await AsyncStorage.setItem('processingSettings', JSON.stringify(processingSettings));
+    } catch (error) {
+      console.warn('Failed to save processing settings:', error);
+    }
+  };
 
   const startRecording = async () => {
     try {
@@ -155,19 +248,30 @@ const Recorder = (props) => {
 
   const saveRecording = async () => {
     setLoadingStatus({ loading: true, processingSound: true });
+    setProcessingStatus('uploading');
+    setProcessingError(null);
     
     try {
+      const metadata = formatProcessingMetadata(processingSettings);
+      
       await uploadData({
         key: `unprocessed/${user}/${text}.${format}`,
-        data: blob
+        data: blob,
+        options: {
+          metadata: metadata
+        }
       });
+      
+      setProcessingStatus('uploaded');
       
       // Set a timeout to clear loading state if subscription doesn't trigger
       // This prevents indefinite loading if Lambda fails
       const loadingTimeout = setTimeout(() => {
         setLoadingStatus({ loading: false, processingSound: false });
+        setProcessingStatus('failed');
+        setProcessingError("Processing timeout - please try again");
         console.warn("Recording uploaded but processing may have failed");
-      }, 15000); // 15 second timeout
+      }, 30000); // 30 second timeout for ECS processing
       
       // Store timeout ID to clear it if subscription triggers
       window.loadingTimeout = loadingTimeout;
@@ -179,7 +283,8 @@ const Recorder = (props) => {
     } catch (error) {
       console.error("Failed to upload recording:", error);
       setLoadingStatus({ loading: false, processingSound: false });
-      // You might want to show an error message to the user here
+      setProcessingStatus('failed');
+      setProcessingError(error.message || "Upload failed");
     }
   };
 
@@ -201,13 +306,23 @@ const Recorder = (props) => {
 
   return (
     <View style={styles.container}>
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-        }}
-      >
+      <View style={styles.contentContainer}>
         {renderModal()}
+
+        <ProcessingSettingsPanel
+          settings={processingSettings}
+          onSettingsChange={setProcessingSettings}
+          visible={showSettings}
+          onToggleVisibility={() => setShowSettings(!showSettings)}
+          style={styles.settingsPanel}
+        />
+
+        <ProcessingStatusIndicator
+          status={processingStatus}
+          progress={processingProgress}
+          error={processingError}
+          style={styles.statusIndicator}
+        />
 
         <TouchableOpacity onPress={recording ? stopRecording : startRecording}>
           <FontAwesomeIcon
@@ -228,6 +343,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "rgba(255,255,255,1)",
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  settingsPanel: {
+    marginBottom: 16,
+  },
+  statusIndicator: {
+    marginBottom: 24,
   },
   recordButton: {
     alignSelf: "center",
