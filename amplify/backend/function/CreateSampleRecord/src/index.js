@@ -7,6 +7,63 @@ exports.handler = async (event) => {
     const graphql = require('graphql');
     const { print } = graphql;
     
+    // Helper function to validate ECS configuration
+    const validateEcsConfig = () => {
+      const required = ['ECS_CLUSTER_NAME', 'ECS_TASK_DEFINITION'];
+      for (const env of required) {
+        if (!process.env[env]) {
+          throw new Error(`Missing required ECS configuration: ${env}`);
+        }
+        if (process.env[env].includes('placeholder')) {
+          throw new Error(`Invalid ECS configuration (contains placeholder): ${env}`);
+        }
+      }
+    };
+    
+    // Helper function to update processing status
+    const updateProcessingStatus = async (sampleId, status, startedAt = null, completedAt = null, error = null) => {
+      const updateSample = gql`
+        mutation UpdateSample(
+          $input: UpdateSampleInput!
+        ) {
+          updateSample(input: $input) {
+            id
+            processing_status
+            processing_started_at
+            processing_completed_at
+            processing_error
+          }
+        }
+      `;
+      
+      const updateInput = {
+        id: sampleId,
+        processing_status: status
+      };
+      
+      if (startedAt) updateInput.processing_started_at = startedAt;
+      if (completedAt) updateInput.processing_completed_at = completedAt;
+      if (error) updateInput.processing_error = error;
+      
+      try {
+        await axios({
+          url: process.env.API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIENDPOINTOUTPUT,
+          method: 'post',
+          headers: {
+            'x-api-key': process.env.API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIKEYOUTPUT
+          },
+          data: {
+            query: print(updateSample),
+            variables: { input: updateInput }
+          }
+        });
+        console.log(`Processing status updated to ${status} for sample ${sampleId}`);
+      } catch (updateError) {
+        console.error('Error updating processing status:', updateError);
+        throw updateError;
+      }
+    };
+    
     const createSample = gql`
     mutation CreateSample(
       $input: CreateSampleInput!
@@ -20,6 +77,11 @@ exports.handler = async (event) => {
           key
           region
         }
+        processing_status
+        processing_started_at
+        processing_completed_at
+        processing_error
+        processing_params
         createdAt
         updatedAt
         _version
@@ -96,7 +158,16 @@ exports.handler = async (event) => {
                 bucket: sourceBucket,
                 key: sourceKey,
                 region: process.env.REGION
-              }
+              },
+              processing_status: 'PENDING',
+              processing_params: JSON.stringify({
+                createOneShot: true,
+                silenceThreshold: -30,
+                minSilenceDuration: 750,
+                preserveOriginal: true,
+                outputFormat: 'original',
+                processingVersion: '1.0'
+              })
             }
           }
         }
@@ -109,32 +180,78 @@ exports.handler = async (event) => {
       
       console.log('Sample created successfully:', graphqlData.data.data.createSample);
       
-      // Now trigger the audio processing function
-      const AWS = require('aws-sdk');
-      const lambda = new AWS.Lambda();
+      const sampleId = graphqlData.data.data.createSample.id;
       
-      console.log('Triggering EditandConvertRecordings function for audio processing...');
+      // Now trigger the ECS audio processing task
+      const AWS = require('aws-sdk');
+      const ecs = new AWS.ECS({ region: process.env.REGION });
+      
+      console.log('Triggering ECS audio processing task...');
       
       try {
-        const invokeParams = {
-          FunctionName: process.env.FUNCTION_EDITANDCONVERTRECORDINGS_NAME || 'EditandConvertRecordings',
-          InvocationType: 'Event', // Asynchronous invocation
-          Payload: JSON.stringify(event) // Pass the original S3 event
+        // Validate ECS configuration before proceeding
+        validateEcsConfig();
+        
+        // Parse processing parameters from default or S3 metadata (future enhancement)
+        const processingParams = {
+          createOneShot: true,
+          silenceThreshold: -30,
+          minSilenceDuration: 750,
+          preserveOriginal: true,
+          outputFormat: 'original',
+          processingVersion: '1.0'
         };
         
-        const result = await lambda.invoke(invokeParams).promise();
-        console.log('EditandConvertRecordings function triggered successfully:', result);
-      } catch (invocationError) {
-        console.error('Error triggering EditandConvertRecordings function:', invocationError);
+        const ecsTaskParams = {
+          cluster: process.env.ECS_CLUSTER_NAME,
+          taskDefinition: process.env.ECS_TASK_DEFINITION,
+          launchType: 'FARGATE',
+          overrides: {
+            containerOverrides: [{
+              name: 'audio-processor',
+              environment: [
+                { name: 'S3_BUCKET', value: sourceBucket },
+                { name: 'S3_KEY', value: sourceKey },
+                { name: 'USER_ID', value: userID },
+                { name: 'SAMPLE_ID', value: sampleId },
+                { name: 'PROCESSING_PARAMS', value: JSON.stringify(processingParams) },
+                { name: 'DATABASE_TABLE', value: process.env.API_LITTLEBITGRAPHQLAPI_SAMPLETABLE_NAME },
+                { name: 'REGION', value: process.env.REGION }
+              ]
+            }]
+          }
+        };
+        
+        const result = await ecs.runTask(ecsTaskParams).promise();
+        console.log('ECS audio processing task triggered successfully:', result);
+        
+        if (result.failures && result.failures.length > 0) {
+          throw new Error(`ECS task failures: ${JSON.stringify(result.failures)}`);
+        }
+        
+        // Update processing status to PROCESSING only after successful task launch
+        await updateProcessingStatus(sampleId, 'PROCESSING', new Date().toISOString());
+        
+      } catch (ecsError) {
+        console.error('Error triggering ECS audio processing task:', ecsError);
+        
+        // Update processing status to FAILED
+        try {
+          await updateProcessingStatus(sampleId, 'FAILED', null, null, ecsError.message);
+        } catch (updateError) {
+          console.error('Error updating processing status to FAILED:', updateError);
+        }
+        
         // Don't fail the whole operation - the database record was created successfully
       }
       
       const body = {
-        message: "successfully created sample and triggered audio processing!",
-        sample: graphqlData.data.data.createSample
+        message: "successfully created sample and triggered ECS audio processing!",
+        sample: graphqlData.data.data.createSample,
+        processing_status: "PROCESSING"
       }
       return {
-        statusCode: 200,
+        statusCode: 202, // Accepted - processing started but not complete
         body: JSON.stringify(body),
         headers: {
             "Access-Control-Allow-Origin": "*",

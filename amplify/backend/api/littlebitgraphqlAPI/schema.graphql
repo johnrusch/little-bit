@@ -3,6 +3,18 @@ type Sample @model @auth(rules: [{allow: owner, ownerField: "user_id", provider:
   name: String!
   user_id: String
   file: S3Object
+  processing_status: ProcessingStatus
+  processing_started_at: AWSDateTime
+  processing_completed_at: AWSDateTime
+  processing_error: String
+  processing_params: AWSJSON
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 type S3Object {

@@ -33,6 +33,43 @@ export const schema = {
                     "isRequired": false,
                     "attributes": []
                 },
+                "processing_status": {
+                    "name": "processing_status",
+                    "isArray": false,
+                    "type": {
+                        "enum": "ProcessingStatus"
+                    },
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "processing_started_at": {
+                    "name": "processing_started_at",
+                    "isArray": false,
+                    "type": "AWSDateTime",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "processing_completed_at": {
+                    "name": "processing_completed_at",
+                    "isArray": false,
+                    "type": "AWSDateTime",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "processing_error": {
+                    "name": "processing_error",
+                    "isArray": false,
+                    "type": "String",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "processing_params": {
+                    "name": "processing_params",
+                    "isArray": false,
+                    "type": "AWSJSON",
+                    "isRequired": false,
+                    "attributes": []
+                },
                 "createdAt": {
                     "name": "createdAt",
                     "isArray": false,
@@ -87,7 +124,17 @@ export const schema = {
             ]
         }
     },
-    "enums": {},
+    "enums": {
+        "ProcessingStatus": {
+            "name": "ProcessingStatus",
+            "values": [
+                "PENDING",
+                "PROCESSING",
+                "COMPLETED",
+                "FAILED"
+            ]
+        }
+    },
     "nonModels": {
         "S3Object": {
             "name": "S3Object",
@@ -117,5 +164,5 @@ export const schema = {
         }
     },
     "codegenVersion": "3.4.4",
-    "version": "2618641f9412218e25f008ccfeb52157"
+    "version": "79435de5d9ed8f37c361c24b0e5cc691"
 };

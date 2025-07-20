@@ -16,6 +16,11 @@ export const createSample = /* GraphQL */ `
         region
         __typename
       }
+      processing_status
+      processing_started_at
+      processing_completed_at
+      processing_error
+      processing_params
       createdAt
       updatedAt
       _version
@@ -40,6 +45,11 @@ export const updateSample = /* GraphQL */ `
         region
         __typename
       }
+      processing_status
+      processing_started_at
+      processing_completed_at
+      processing_error
+      processing_params
       createdAt
       updatedAt
       _version
@@ -64,6 +74,11 @@ export const deleteSample = /* GraphQL */ `
         region
         __typename
       }
+      processing_status
+      processing_started_at
+      processing_completed_at
+      processing_error
+      processing_params
       createdAt
       updatedAt
       _version

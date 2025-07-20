@@ -13,6 +13,11 @@ export const getSample = /* GraphQL */ `
         region
         __typename
       }
+      processing_status
+      processing_started_at
+      processing_completed_at
+      processing_error
+      processing_params
       createdAt
       updatedAt
       _version
@@ -33,12 +38,11 @@ export const listSamples = /* GraphQL */ `
         id
         name
         user_id
-        file {
-          bucket
-          key
-          region
-          __typename
-        }
+        processing_status
+        processing_started_at
+        processing_completed_at
+        processing_error
+        processing_params
         createdAt
         updatedAt
         _version
@@ -69,12 +73,11 @@ export const syncSamples = /* GraphQL */ `
         id
         name
         user_id
-        file {
-          bucket
-          key
-          region
-          __typename
-        }
+        processing_status
+        processing_started_at
+        processing_completed_at
+        processing_error
+        processing_params
         createdAt
         updatedAt
         _version
