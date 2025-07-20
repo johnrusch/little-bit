@@ -8,10 +8,19 @@ export const DEFAULT_PROCESSING_SETTINGS = {
 };
 
 export const validateProcessingSettings = (settings) => {
+  // Validate and sanitize numeric inputs
+  const silenceThreshold = typeof settings.silenceThreshold === 'number' && !isNaN(settings.silenceThreshold) 
+    ? settings.silenceThreshold 
+    : DEFAULT_PROCESSING_SETTINGS.silenceThreshold;
+    
+  const minSilenceDuration = typeof settings.minSilenceDuration === 'number' && !isNaN(settings.minSilenceDuration)
+    ? settings.minSilenceDuration
+    : DEFAULT_PROCESSING_SETTINGS.minSilenceDuration;
+  
   return {
     ...settings,
-    silenceThreshold: Math.max(-50, Math.min(-20, settings.silenceThreshold)),
-    minSilenceDuration: Math.max(500, Math.min(2000, settings.minSilenceDuration)),
+    silenceThreshold: Math.max(-50, Math.min(-20, silenceThreshold)),
+    minSilenceDuration: Math.max(500, Math.min(2000, minSilenceDuration)),
   };
 };
 

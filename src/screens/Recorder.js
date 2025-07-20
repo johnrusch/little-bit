@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   View,
   StatusBar,
@@ -31,6 +31,9 @@ import {
   formatProcessingMetadata 
 } from "../utils/processingDefaults";
 
+const PROCESSING_TIMEOUT_MS = 30000; // 30 seconds for ECS processing
+const SUCCESS_DISPLAY_DELAY_MS = 2000; // 2 seconds to show completion
+
 const Recorder = (props) => {
   const { user, setLoadingStatus } = props;
   const [recording, setRecording] = useState();
@@ -50,6 +53,7 @@ const Recorder = (props) => {
 
   const userData = useContext(UserContext);
   const client = generateClient();
+  const loadingTimeoutRef = useRef(null);
 
   useEffect(() => {
     loadProcessingSettings();
@@ -62,11 +66,15 @@ const Recorder = (props) => {
   useEffect(() => {
     if (!user) return;
     
+    let isMounted = true;
+    
     const subscription = client.graphql({
       query: onUpdateSample,
       variables: { user_id: user }
     }).subscribe({
       next: ({ data }) => {
+        if (!isMounted) return;
+        
         const updatedSample = data.onUpdateSample;
         if (updatedSample && updatedSample.user_id === user) {
           const status = updatedSample.processing_status;
@@ -78,20 +86,21 @@ const Recorder = (props) => {
           } else if (status === 'COMPLETED') {
             setProcessingProgress(100);
             setTimeout(() => {
+              if (!isMounted) return;
               setLoadingStatus({ loading: false, processingSound: false });
               setProcessingStatus('idle');
               setProcessingProgress(0);
-              if (window.loadingTimeout) {
-                clearTimeout(window.loadingTimeout);
-                delete window.loadingTimeout;
+              if (loadingTimeoutRef.current) {
+                clearTimeout(loadingTimeoutRef.current);
+                loadingTimeoutRef.current = null;
               }
-            }, 2000);
+            }, SUCCESS_DISPLAY_DELAY_MS);
           } else if (status === 'FAILED') {
             setProcessingError(updatedSample.processing_error || 'Processing failed');
             setLoadingStatus({ loading: false, processingSound: false });
-            if (window.loadingTimeout) {
-              clearTimeout(window.loadingTimeout);
-              delete window.loadingTimeout;
+            if (loadingTimeoutRef.current) {
+              clearTimeout(loadingTimeoutRef.current);
+              loadingTimeoutRef.current = null;
             }
           }
         }
@@ -102,7 +111,12 @@ const Recorder = (props) => {
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
     };
   }, [user, client, setLoadingStatus]);
 
@@ -265,16 +279,17 @@ const Recorder = (props) => {
       setProcessingStatus('uploaded');
       
       // Set a timeout to clear loading state if subscription doesn't trigger
-      // This prevents indefinite loading if Lambda fails
-      const loadingTimeout = setTimeout(() => {
+      // This prevents indefinite loading if ECS processing fails
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      
+      loadingTimeoutRef.current = setTimeout(() => {
         setLoadingStatus({ loading: false, processingSound: false });
         setProcessingStatus('failed');
         setProcessingError("Processing timeout - please try again");
         console.warn("Recording uploaded but processing may have failed");
-      }, 30000); // 30 second timeout for ECS processing
-      
-      // Store timeout ID to clear it if subscription triggers
-      window.loadingTimeout = loadingTimeout;
+      }, PROCESSING_TIMEOUT_MS);
       
       setModalVisible(false);
       setFormat();
