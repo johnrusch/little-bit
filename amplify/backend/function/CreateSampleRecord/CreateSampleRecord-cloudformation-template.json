@@ -110,9 +110,7 @@
               ]
             },
             "ECS_CLUSTER_NAME": "little-bit-audio-processing",
-            "ECS_TASK_DEFINITION": "audio-processing-task",
-            "ECS_SUBNETS": "subnet-placeholder1,subnet-placeholder2",
-            "ECS_SECURITY_GROUP": "sg-placeholder"
+            "ECS_TASK_DEFINITION": "audio-processing-task"
           }
         },
         "Role": {
@@ -227,10 +225,53 @@
               "Effect": "Allow",
               "Action": [
                 "ecs:RunTask",
-                "ecs:DescribeTasks",
-                "ecs:DescribeTaskDefinition"
+                "ecs:DescribeTasks"
               ],
-              "Resource": "*"
+              "Resource": [
+                {
+                  "Fn::Sub": [
+                    "arn:aws:ecs:${region}:${account}:cluster/little-bit-audio-processing",
+                    {
+                      "region": {
+                        "Ref": "AWS::Region"
+                      },
+                      "account": {
+                        "Ref": "AWS::AccountId"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "Fn::Sub": [
+                    "arn:aws:ecs:${region}:${account}:task/*",
+                    {
+                      "region": {
+                        "Ref": "AWS::Region"
+                      },
+                      "account": {
+                        "Ref": "AWS::AccountId"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": "ecs:DescribeTaskDefinition",
+              "Resource": {
+                "Fn::Sub": [
+                  "arn:aws:ecs:${region}:${account}:task-definition/audio-processing-task:*",
+                  {
+                    "region": {
+                      "Ref": "AWS::Region"
+                    },
+                    "account": {
+                      "Ref": "AWS::AccountId"
+                    }
+                  }
+                ]
+              }
             },
             {
               "Effect": "Allow",

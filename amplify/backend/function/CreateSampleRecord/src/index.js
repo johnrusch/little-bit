@@ -7,6 +7,19 @@ exports.handler = async (event) => {
     const graphql = require('graphql');
     const { print } = graphql;
     
+    // Helper function to validate ECS configuration
+    const validateEcsConfig = () => {
+      const required = ['ECS_CLUSTER_NAME', 'ECS_TASK_DEFINITION'];
+      for (const env of required) {
+        if (!process.env[env]) {
+          throw new Error(`Missing required ECS configuration: ${env}`);
+        }
+        if (process.env[env].includes('placeholder')) {
+          throw new Error(`Invalid ECS configuration (contains placeholder): ${env}`);
+        }
+      }
+    };
+    
     // Helper function to update processing status
     const updateProcessingStatus = async (sampleId, status, startedAt = null, completedAt = null, error = null) => {
       const updateSample = gql`
@@ -176,8 +189,8 @@ exports.handler = async (event) => {
       console.log('Triggering ECS audio processing task...');
       
       try {
-        // Update processing status to PROCESSING
-        await updateProcessingStatus(sampleId, 'PROCESSING', new Date().toISOString());
+        // Validate ECS configuration before proceeding
+        validateEcsConfig();
         
         // Parse processing parameters from default or S3 metadata (future enhancement)
         const processingParams = {
@@ -190,16 +203,9 @@ exports.handler = async (event) => {
         };
         
         const ecsTaskParams = {
-          cluster: process.env.ECS_CLUSTER_NAME || 'little-bit-audio-processing',
-          taskDefinition: process.env.ECS_TASK_DEFINITION || 'audio-processing-task',
+          cluster: process.env.ECS_CLUSTER_NAME,
+          taskDefinition: process.env.ECS_TASK_DEFINITION,
           launchType: 'FARGATE',
-          networkConfiguration: {
-            awsvpcConfiguration: {
-              subnets: process.env.ECS_SUBNETS ? process.env.ECS_SUBNETS.split(',') : [],
-              securityGroups: process.env.ECS_SECURITY_GROUP ? [process.env.ECS_SECURITY_GROUP] : [],
-              assignPublicIp: 'ENABLED'
-            }
-          },
           overrides: {
             containerOverrides: [{
               name: 'audio-processor',
@@ -223,6 +229,9 @@ exports.handler = async (event) => {
           throw new Error(`ECS task failures: ${JSON.stringify(result.failures)}`);
         }
         
+        // Update processing status to PROCESSING only after successful task launch
+        await updateProcessingStatus(sampleId, 'PROCESSING', new Date().toISOString());
+        
       } catch (ecsError) {
         console.error('Error triggering ECS audio processing task:', ecsError);
         
@@ -238,10 +247,11 @@ exports.handler = async (event) => {
       
       const body = {
         message: "successfully created sample and triggered ECS audio processing!",
-        sample: graphqlData.data.data.createSample
+        sample: graphqlData.data.data.createSample,
+        processing_status: "PROCESSING"
       }
       return {
-        statusCode: 200,
+        statusCode: 202, // Accepted - processing started but not complete
         body: JSON.stringify(body),
         headers: {
             "Access-Control-Allow-Origin": "*",
