@@ -108,7 +108,11 @@
                   ]
                 }
               ]
-            }
+            },
+            "ECS_CLUSTER_NAME": "little-bit-audio-processing",
+            "ECS_TASK_DEFINITION": "audio-processing-task",
+            "ECS_SUBNETS": "subnet-placeholder1,subnet-placeholder2",
+            "ECS_SECURITY_GROUP": "sg-placeholder"
           }
         },
         "Role": {
@@ -212,6 +216,29 @@
                     "region": {
                       "Ref": "AWS::Region"
                     },
+                    "account": {
+                      "Ref": "AWS::AccountId"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ecs:RunTask",
+                "ecs:DescribeTasks",
+                "ecs:DescribeTaskDefinition"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": "iam:PassRole",
+              "Resource": {
+                "Fn::Sub": [
+                  "arn:aws:iam::${account}:role/ecsTaskExecutionRole*",
+                  {
                     "account": {
                       "Ref": "AWS::AccountId"
                     }
