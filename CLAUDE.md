@@ -354,3 +354,59 @@ The current implementation provides a foundation for migrating to ECS/Fargate fo
 **Testing**: All 184 tests pass + comprehensive error handling validation
 
 **PR Reference**: #49 - Complete audio processing pipeline with Lambda function chaining and security improvements
+
+### Recent Improvements (2025-07-20)
+
+#### ECS Audio Processing Container Development (Phase 2)
+**Issue Resolved**: #62 - ECS Audio Processing Container Development with Security Hardening
+
+**Problem Solved**: 
+Developed production-ready ECS container to replace Lambda-based audio processing, enabling advanced PyDub functionality and unlimited processing time while maintaining comprehensive security.
+
+**Key Features Implemented**:
+- **PyDub Integration**: Complete `split_on_silence` functionality restored with configurable parameters
+- **Security Hardening**: Comprehensive input validation, path traversal protection, metadata sanitization
+- **S3 Operations**: Secure download/upload with retry logic and exponential backoff with jitter
+- **Error Handling**: Thread-safe cleanup, categorized errors, comprehensive recovery mechanisms
+- **CloudWatch Logging**: Structured JSON logging with performance metrics and session tracking
+
+**Technical Implementation**:
+- **Container**: Python 3.11-slim with FFmpeg, PyDub, librosa, comprehensive audio libraries
+- **Security**: Non-root execution, input validation framework, resource monitoring
+- **Processing**: Configurable silence detection (-50 to -20 dBFS), intelligent audio analysis
+- **Integration**: Environment variable configuration, structured responses for Lambda integration
+
+**File Structure**:
+```
+amplify/backend/custom/ecs/audio-processing/
+├── audio_processor.py          # Main processing service with security hardening
+├── s3_operations.py            # Secure S3 operations with retry logic  
+├── utils/
+│   ├── input_validation.py     # Comprehensive input validation framework
+│   ├── error_handlers.py       # Categorized error handling and recovery
+│   ├── logging_config.py       # CloudWatch logging configuration
+│   └── audio_utils.py         # Audio processing utilities and configuration
+├── tests/                      # Comprehensive test suite
+├── DEPLOYMENT_CHECKLIST.md    # Production deployment validation guide
+└── deployment_validation.py   # Automated validation framework
+```
+
+**Security Enhancements**:
+- Path traversal protection with `os.path.normpath()` and multi-vector detection
+- Input validation with regex patterns for user IDs, S3 keys, filenames
+- Metadata sanitization preventing CloudWatch injection attacks
+- Thread-safe cleanup preventing race conditions
+- Retry jitter preventing thundering herd problems
+
+**Performance Targets**:
+- Container startup: <30 seconds (cold start)
+- Processing time: <2 minutes for 30-second recordings  
+- Memory usage: <1.5GB per task
+- Success rate: >99% processing completion
+
+**Integration Ready**: 
+Ready for Phase 3 Lambda-ECS integration (Issue #63) with environment variable configuration, structured responses, and comprehensive monitoring.
+
+**Testing**: All 184 tests pass + comprehensive security validation (6/6 validation checks)
+
+**PR Reference**: #67 - Phase 2 ECS Audio Processing Container Development with Security Hardening
