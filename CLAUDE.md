@@ -469,3 +469,106 @@ Enables Phase 4 UI Integration (#64) for user-configurable processing parameters
 **Testing**: All 184 tests pass + comprehensive code review security fixes
 
 **PR Reference**: #68 - Phase 3 Lambda-ECS Integration for Audio Processing Pipeline
+
+#### UI Integration for Audio Processing Controls (Phase 4)
+**Issue Resolved**: #64 - Phase 4: UI Integration for Audio Processing Controls
+
+**Problem Solved**: 
+Complete the ECS audio processing implementation by providing users with intuitive controls for configuring processing parameters and monitoring real-time processing status while maintaining the app's simple, focused design philosophy.
+
+**Key Features Implemented**:
+- **ProcessingSettingsPanel**: Collapsible settings panel with configurable audio processing parameters
+- **ProcessingStatusIndicator**: Real-time processing status with progress feedback  
+- **S3 Metadata Integration**: User preferences passed to ECS containers via S3 metadata
+- **GraphQL Subscription**: Real-time processing status monitoring via `onUpdateSample`
+- **Settings Persistence**: User preferences saved with AsyncStorage between sessions
+
+**Technical Implementation**:
+- **Enhanced Recorder Screen**: `src/screens/Recorder.js` - Integration with new processing controls
+- **Settings Panel**: `src/components/ProcessingSettingsPanel.js` - Collapsible design with smooth animations
+- **Status Indicator**: `src/components/ProcessingStatusIndicator.js` - Real-time status display with progress
+- **Processing Defaults**: `src/utils/processingDefaults.js` - Default settings, validation, and S3 metadata formatting
+- **Comprehensive Testing**: 31 tests across 3 new test files (all 215 tests passing)
+
+**User Interface Components**:
+```
+src/components/
+├── ProcessingSettingsPanel.js     # Collapsible settings with sliders and toggles
+├── ProcessingStatusIndicator.js   # Real-time status with progress animation
+└── __tests__/
+    ├── ProcessingSettingsPanel.test.js    # 12 comprehensive tests
+    └── ProcessingStatusIndicator.test.js  # 10 comprehensive tests
+
+src/utils/
+├── processingDefaults.js          # Settings validation and S3 metadata formatting
+└── __tests__/
+    └── processingDefaults.test.js # 9 validation tests
+```
+
+**Processing Parameters Available**:
+- **Create One-Shot**: Toggle for intelligent audio cropping (enable/disable)
+- **Silence Threshold**: Slider configuration (-50 to -20 dBFS) for silence detection sensitivity
+- **Min Silence Duration**: Slider for minimum silence duration (500-2000ms) before cropping
+- **Preserve Original**: Toggle to keep unprocessed copy of recording
+- **Auto-Detect Threshold**: Future feature toggle for automatic optimal threshold detection
+
+**User Experience Design**:
+- **Progressive Disclosure**: Advanced settings hidden by default, revealed on user request
+- **Visual Hierarchy**: New components integrate seamlessly with existing Recorder screen design
+- **Accessibility**: All controls support platform accessibility features and screen readers
+- **Cross-Platform**: Consistent behavior across iOS, Android, and Web platforms
+- **Performance**: Minimal impact on recording quality or app responsiveness
+
+**Real-Time Status Monitoring**:
+- **Status States**: idle, uploading, processing, completed, failed with color-coded indicators
+- **Progress Animation**: Percentage display during ECS processing with smooth progress bar
+- **Error Handling**: User-friendly error messages for processing failures with retry guidance
+- **GraphQL Integration**: `onUpdateSample` subscription for real-time backend status updates
+
+**S3 Metadata Integration**:
+```javascript
+// Processing metadata passed to ECS containers
+{
+  'processing-enabled': 'true|false',
+  'silence-threshold': '-30',           // dBFS value as string
+  'min-silence-duration': '750',       // milliseconds as string  
+  'preserve-original': 'true|false',
+  'auto-detect-threshold': 'false',    // future feature
+  'processing-version': '1.0',
+  'ui-version': '1.0'
+}
+```
+
+**Critical Security & Platform Fixes**:
+- **Cross-Platform Compatibility**: Replaced browser-specific `window` object with React `useRef` to prevent crashes on React Native
+- **Memory Leak Prevention**: Enhanced subscription cleanup with `isMounted` flags and comprehensive timeout management
+- **Input Validation**: Type checking and NaN validation for numeric inputs with fallback to defaults
+- **Race Condition Prevention**: Coordinated timeout operations using ref-based state management
+
+**Dependencies Added**:
+- **@react-native-community/slider**: For processing parameter controls (v4.5.7)
+- **Enhanced Jest Setup**: Added Slider component mocking for comprehensive test coverage
+
+**Complete End-to-End Workflow**:
+1. **User Configuration**: User adjusts processing settings in collapsible panel
+2. **Recording**: User records audio with configured parameters saved as S3 metadata
+3. **Real-Time Monitoring**: User sees upload → processing → completion status with progress
+4. **ECS Processing**: Container receives user preferences and processes audio accordingly
+5. **Completion Feedback**: User receives success/failure notification with processed audio available
+
+**Architecture Benefits Delivered**:
+- **Complete Feature**: End-to-end intelligent audio processing with user control
+- **Intuitive Interface**: Simple by default, powerful when needed design philosophy
+- **Real-Time Feedback**: Users understand processing status and can act on failures
+- **Scalable Foundation**: ECS backend supports future AI-powered audio analysis features
+- **Cross-Platform Ready**: Works consistently across all supported platforms
+
+**Quality Assurance Completed**:
+- **215 Tests Passing**: Including 31 new tests for UI components and utilities
+- **Code Review Addressed**: All critical cross-platform and memory leak issues resolved
+- **Security Validated**: Input sanitization and bounds checking implemented
+- **Performance Verified**: No impact on existing recording or playback functionality
+
+**Testing**: All 215 tests pass including comprehensive UI component validation and cross-platform compatibility testing
+
+**PR Reference**: #69 - Phase 4 UI Integration for Audio Processing Controls
