@@ -7,19 +7,6 @@ exports.handler = async (event) => {
     const graphql = require('graphql');
     const { print } = graphql;
     
-    // Helper function to validate ECS configuration
-    const validateEcsConfig = () => {
-      const required = ['ECS_CLUSTER_NAME', 'ECS_TASK_DEFINITION'];
-      for (const env of required) {
-        if (!process.env[env]) {
-          throw new Error(`Missing required ECS configuration: ${env}`);
-        }
-        if (process.env[env].includes('placeholder')) {
-          throw new Error(`Invalid ECS configuration (contains placeholder): ${env}`);
-        }
-      }
-    };
-    
     // Helper function to update processing status
     const updateProcessingStatus = async (sampleId, status, startedAt = null, completedAt = null, error = null) => {
       const updateSample = gql`
@@ -182,15 +169,12 @@ exports.handler = async (event) => {
       
       const sampleId = graphqlData.data.data.createSample.id;
       
-      // Now trigger the ECS audio processing task
+      // Now send message to SQS for audio processing
       const AWS = require('aws-sdk');
-      const ecs = new AWS.ECS({ region: process.env.REGION });
       
-      console.log('Triggering ECS audio processing task...');
+      console.log('Sending message to SQS for audio processing...');
       
       try {
-        // Validate ECS configuration before proceeding
-        validateEcsConfig();
         
         // Get S3 object metadata to read user-configured processing parameters
         const s3 = new AWS.S3({ region: process.env.REGION });
@@ -234,100 +218,62 @@ exports.handler = async (event) => {
           // Continue with default parameters
         }
         
-        // Use environment-aware naming for ECS resources
+        // Use environment-aware naming for SQS queue
         const env = process.env.ENV || 'dev';
-        const ecsClusterName = `little-bit-audio-processing-${env}`;
-        const ecsTaskDefinition = `little-bit-audio-processing-${env}`;
+        const queueName = `little-bit-audio-processing-${env}`;
         
-        // Get networking configuration by looking up resources by naming convention
-        const ec2 = new AWS.EC2({ region: process.env.REGION });
+        // Get SQS queue URL
+        const sqs = new AWS.SQS({ region: process.env.REGION });
+        let queueUrl;
         
-        // Find VPC by tag
-        const vpcs = await ec2.describeVpcs({
-          Filters: [
-            { Name: 'tag:Name', Values: [`little-bit-vpc-${env}`] },
-            { Name: 'state', Values: ['available'] }
-          ]
-        }).promise();
-        
-        if (!vpcs.Vpcs || vpcs.Vpcs.length === 0) {
-          throw new Error(`No VPC found with name little-bit-vpc-${env}`);
+        try {
+          const queueUrlResponse = await sqs.getQueueUrl({
+            QueueName: queueName
+          }).promise();
+          queueUrl = queueUrlResponse.QueueUrl;
+        } catch (error) {
+          console.error('Failed to get SQS queue URL:', error);
+          throw new Error(`SQS queue ${queueName} not found. Make sure the ECS infrastructure is deployed.`);
         }
         
-        const vpcId = vpcs.Vpcs[0].VpcId;
+        // Create SQS message
+        const sqsMessage = {
+          recordId: sampleId,
+          bucket: sourceBucket,
+          key: sourceKey,
+          userId: userID,
+          processingParams: processingParams,
+          databaseTable: process.env.API_LITTLEBITGRAPHQLAPI_SAMPLETABLE_NAME,
+          region: process.env.REGION
+        };
         
-        // Find private subnets
-        const subnets = await ec2.describeSubnets({
-          Filters: [
-            { Name: 'vpc-id', Values: [vpcId] },
-            { Name: 'tag:Name', Values: [`little-bit-private-subnet-1-${env}`, `little-bit-private-subnet-2-${env}`] },
-            { Name: 'state', Values: ['available'] }
-          ]
-        }).promise();
-        
-        if (!subnets.Subnets || subnets.Subnets.length === 0) {
-          throw new Error(`No private subnets found for VPC ${vpcId}`);
-        }
-        
-        const subnetIds = subnets.Subnets.map(subnet => subnet.SubnetId);
-        
-        // Find security group
-        const securityGroups = await ec2.describeSecurityGroups({
-          Filters: [
-            { Name: 'vpc-id', Values: [vpcId] },
-            { Name: 'group-name', Values: [`little-bit-ecs-audio-processing-${env}`] }
-          ]
-        }).promise();
-        
-        if (!securityGroups.SecurityGroups || securityGroups.SecurityGroups.length === 0) {
-          throw new Error(`No security group found with name little-bit-ecs-audio-processing-${env}`);
-        }
-        
-        const securityGroupId = securityGroups.SecurityGroups[0].GroupId;
-        
-        const ecsTaskParams = {
-          cluster: ecsClusterName,
-          taskDefinition: ecsTaskDefinition,
-          launchType: 'FARGATE',
-          networkConfiguration: {
-            awsvpcConfiguration: {
-              subnets: subnetIds,
-              securityGroups: [securityGroupId],
-              assignPublicIp: 'DISABLED'
+        const sqsParams = {
+          QueueUrl: queueUrl,
+          MessageBody: JSON.stringify(sqsMessage),
+          MessageAttributes: {
+            'userId': {
+              DataType: 'String',
+              StringValue: userID
+            },
+            'recordId': {
+              DataType: 'String',
+              StringValue: sampleId
             }
-          },
-          overrides: {
-            containerOverrides: [{
-              name: 'audio-processor',
-              environment: [
-                { name: 'S3_BUCKET', value: sourceBucket },
-                { name: 'S3_KEY', value: sourceKey },
-                { name: 'USER_ID', value: userID },
-                { name: 'SAMPLE_ID', value: sampleId },
-                { name: 'PROCESSING_PARAMS', value: JSON.stringify(processingParams) },
-                { name: 'DATABASE_TABLE', value: process.env.API_LITTLEBITGRAPHQLAPI_SAMPLETABLE_NAME },
-                { name: 'REGION', value: process.env.REGION }
-              ]
-            }]
           }
         };
         
-        const result = await ecs.runTask(ecsTaskParams).promise();
-        console.log('ECS audio processing task triggered successfully:', result);
+        const result = await sqs.sendMessage(sqsParams).promise();
+        console.log('Audio processing message sent to SQS successfully:', result);
         
-        if (result.failures && result.failures.length > 0) {
-          throw new Error(`ECS task failures: ${JSON.stringify(result.failures)}`);
-        }
+        // Update processing status to QUEUED
+        await updateProcessingStatus(sampleId, 'QUEUED', new Date().toISOString());
         
-        // Update processing status to PROCESSING only after successful task launch
-        await updateProcessingStatus(sampleId, 'PROCESSING', new Date().toISOString());
-        
-      } catch (ecsError) {
-        console.error('Error triggering ECS audio processing task:', ecsError);
+      } catch (sqsError) {
+        console.error('Error sending message to SQS:', sqsError);
         
         // Update processing status to FAILED
         try {
-          await updateProcessingStatus(sampleId, 'FAILED', null, null, ecsError.message);
+          await updateProcessingStatus(sampleId, 'FAILED', null, null, sqsError.message);
         } catch (updateError) {
           console.error('Error updating processing status to FAILED:', updateError);
         }
@@ -336,9 +282,9 @@ exports.handler = async (event) => {
       }
       
       const body = {
-        message: "successfully created sample and triggered ECS audio processing!",
+        message: "successfully created sample and queued for audio processing!",
         sample: graphqlData.data.data.createSample,
-        processing_status: "PROCESSING"
+        processing_status: "QUEUED"
       }
       return {
         statusCode: 202, // Accepted - processing started but not complete
