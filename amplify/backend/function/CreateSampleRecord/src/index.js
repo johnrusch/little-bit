@@ -192,8 +192,9 @@ exports.handler = async (event) => {
         // Validate ECS configuration before proceeding
         validateEcsConfig();
         
-        // Parse processing parameters from default or S3 metadata (future enhancement)
-        const processingParams = {
+        // Get S3 object metadata to read user-configured processing parameters
+        const s3 = new AWS.S3({ region: process.env.REGION });
+        let processingParams = {
           createOneShot: true,
           silenceThreshold: -30,
           minSilenceDuration: 750,
@@ -201,6 +202,37 @@ exports.handler = async (event) => {
           outputFormat: 'original',
           processingVersion: '1.0'
         };
+        
+        try {
+          const headResult = await s3.headObject({
+            Bucket: sourceBucket,
+            Key: sourceKey
+          }).promise();
+          
+          const metadata = headResult.Metadata || {};
+          console.log('S3 object metadata:', metadata);
+          
+          // Parse user-configured processing parameters from metadata
+          processingParams = {
+            createOneShot: metadata['processing-enabled'] !== undefined ? 
+              metadata['processing-enabled'] === 'true' : true,
+            silenceThreshold: metadata['silence-threshold'] ? 
+              parseInt(metadata['silence-threshold']) : -30,
+            minSilenceDuration: metadata['min-silence-duration'] ? 
+              parseInt(metadata['min-silence-duration']) : 750,
+            preserveOriginal: metadata['preserve-original'] !== undefined ? 
+              metadata['preserve-original'] === 'true' : true,
+            autoDetectThreshold: metadata['auto-detect-threshold'] === 'true',
+            outputFormat: 'original', // Keep as original for now
+            processingVersion: metadata['processing-version'] || '1.0',
+            uiVersion: metadata['ui-version'] || '1.0'
+          };
+          
+          console.log('Parsed processing parameters:', processingParams);
+        } catch (error) {
+          console.warn('Could not read S3 metadata, using defaults');
+          // Continue with default parameters
+        }
         
         // Use environment-aware naming for ECS resources
         const env = process.env.ENV || 'dev';

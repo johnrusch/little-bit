@@ -53,12 +53,12 @@ class AudioProcessingConfig:
         self.silence_threshold = self._validate_range(
             config.get('silenceThreshold', -30), -50, -20, 'silenceThreshold'
         )
-        self.min_silence_duration = self._validate_range(
+        self.min_silence_duration = int(self._validate_range(
             config.get('minSilenceDuration', 750), 500, 2000, 'minSilenceDuration'
-        )
-        self.keep_silence = self._validate_range(
+        ))
+        self.keep_silence = int(self._validate_range(
             config.get('keepSilence', 50), 0, 500, 'keepSilence'
-        )
+        ))
         
         # Processing options
         self.create_one_shot = config.get('createOneShot', True)
@@ -71,9 +71,9 @@ class AudioProcessingConfig:
         
         # Auto-detection settings
         self.auto_detect_threshold = config.get('autoDetectThreshold', False)
-        self.analysis_window_ms = self._validate_range(
+        self.analysis_window_ms = int(self._validate_range(
             config.get('analysisWindowMs', 1000), 500, 5000, 'analysisWindowMs'
-        )
+        ))
         
         # Quality settings
         self.quality_settings = {
@@ -166,7 +166,7 @@ class AudioProcessor:
         """
         try:
             # Sample the audio at regular intervals
-            window_size = self.config.analysis_window_ms
+            window_size = int(self.config.analysis_window_ms)
             samples = []
             
             for i in range(0, len(audio), window_size):
@@ -270,11 +270,13 @@ class AudioProcessor:
         
         try:
             # Split on silence using configurable parameters
+            # Note: All parameters must be integers for PyDub's internal range() calls
             chunks = split_on_silence(
                 audio,
-                min_silence_len=self.config.min_silence_duration,
+                min_silence_len=int(self.config.min_silence_duration),
                 silence_thresh=silence_threshold,
-                keep_silence=self.config.keep_silence
+                keep_silence=int(self.config.keep_silence),
+                seek_step=int(self.config.min_silence_duration / 10)  # Explicit to avoid float default
             )
             
             if not chunks:
@@ -488,10 +490,10 @@ def create_processing_config(env_vars: Dict[str, str]) -> AudioProcessingConfig:
         logger.warning(f"Invalid PROCESSING_PARAMS JSON: {str(e)}, using defaults")
         config_dict = {}
     
-    # Add additional environment-based configuration
-    config_dict.update({
-        'preserveOriginal': env_vars.get('PRESERVE_ORIGINAL', 'true').lower() == 'true',
-        'outputFormat': env_vars.get('OUTPUT_FORMAT', 'original').lower()
-    })
+    # Add additional environment-based configuration (can override JSON params)
+    if env_vars.get('PRESERVE_ORIGINAL'):
+        config_dict['preserveOriginal'] = env_vars.get('PRESERVE_ORIGINAL', 'true').lower() == 'true'
+    if env_vars.get('OUTPUT_FORMAT'):
+        config_dict['outputFormat'] = env_vars.get('OUTPUT_FORMAT', 'original').lower()
     
     return AudioProcessingConfig(config_dict)
