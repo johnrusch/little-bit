@@ -2,6 +2,7 @@ import { getUrl } from "aws-amplify/storage";
 import { generateClient } from "aws-amplify/api";
 import * as subscriptions from "../graphql/subscriptions";
 import * as queries from "../graphql/queries";
+import * as customQueries from "../graphql/customQueries";
 
 const client = generateClient();
 
@@ -21,7 +22,7 @@ const listUserSounds = async (userID) => {
     }
 
     const sounds = await client.graphql({
-      query: queries.listSamples,
+      query: customQueries.listSamplesWithFile,
       variables: {
         filter: {
           user_id: { eq: userID }
