@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { View, StyleSheet, FlatList, RefreshControl, Text } from "react-native";
 import Sound from "../components/Sound";
+import SoundListHeader from "../components/SoundListHeader";
 import EditSoundModal from "../components/modals/EditSoundModal";
 import { wait } from "../utils/loading";
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
-import { PLAYBACK } from "../api";
+import { PLAYBACK, SOUNDS } from "../api";
 
 const Sounds = (props) => {
   const {
@@ -22,6 +23,8 @@ const Sounds = (props) => {
   const [soundObj, setSoundObj] = useState(null);
   const [currentAudio, setCurrentAudio] = useState({});
   const [activeListItem, setActiveListItem] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [sortValue, setSortValue] = useState('createdAt-desc');
 
   // Use ref to store playbackObj for stable callback access
   const playbackObjRef = useRef(null);
@@ -198,36 +201,110 @@ const Sounds = (props) => {
 
   };
 
-  const renderSounds = (sounds) => {
-    return sounds.map((sound, i) => {
-      if (!sound) return null;
-      return (
-        <Sound
-          sound={sound}
-          key={sound.id}
-          loading={loading}
-          active={activeListItem === i}
-          onAudioPress={() => handleAudioPress(sound, i)}
-          setSoundToUpdate={setSoundToUpdate}
-          refreshing={refreshing}
-          isPlaying={isEffectivelyPlaying(soundObj)}
-          selectedSound={currentAudio}
-          unableToLoad={soundObj === null && playbackObj !== null}
-        />
+  // Debounced search handler
+  const [debouncedSearchText, setDebouncedSearchText] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchText(searchText);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
+  // Filter and sort sounds
+  const filteredAndSortedSounds = useMemo(() => {
+    if (!sounds || sounds.length === 0) return [];
+    
+    let result = [...sounds];
+    
+    // Apply search filter
+    if (debouncedSearchText) {
+      result = result.filter(sound => 
+        sound.name && sound.name.toLowerCase().includes(debouncedSearchText.toLowerCase())
       );
-    });
+    }
+    
+    // Apply sorting
+    return SOUNDS.sortSounds(result, sortValue);
+  }, [sounds, debouncedSearchText, sortValue]);
+
+  const renderSound = ({ item, index }) => {
+    if (!item) return null;
+    // Find the original index in the unfiltered array for activeListItem
+    const originalIndex = sounds?.findIndex(s => s.id === item.id) ?? index;
+    
+    return (
+      <Sound
+        sound={item}
+        loading={loading}
+        active={activeListItem === originalIndex}
+        onAudioPress={() => handleAudioPress(item, originalIndex)}
+        setSoundToUpdate={setSoundToUpdate}
+        refreshing={refreshing}
+        isPlaying={isEffectivelyPlaying(soundObj)}
+        selectedSound={currentAudio}
+        unableToLoad={soundObj === null && playbackObj !== null}
+      />
+    );
   };
 
 
+  const ListEmptyComponent = () => {
+    if (searchText && !sounds?.length) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No sounds yet. Record your first sample!</Text>
+        </View>
+      );
+    }
+    if (searchText && filteredAndSortedSounds.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No sounds match "{searchText}"</Text>
+        </View>
+      );
+    }
+    if (!sounds || sounds.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No sounds yet. Record your first sample!</Text>
+        </View>
+      );
+    }
+    return null;
+  };
+
   return (
-    <ScrollView>
-      {sounds && renderSounds(sounds)}
+    <View style={styles.container}>
+      <FlatList
+        data={filteredAndSortedSounds}
+        renderItem={renderSound}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <SoundListHeader
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            sortValue={sortValue}
+            onSortChange={setSortValue}
+            resultsCount={filteredAndSortedSounds.length}
+            totalCount={sounds?.length || 0}
+          />
+        }
+        ListEmptyComponent={ListEmptyComponent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => {}}/>
+        }
+        contentContainerStyle={filteredAndSortedSounds.length === 0 ? styles.emptyListContainer : null}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
+        windowSize={10}
+        removeClippedSubviews={true}
+      />
       <EditSoundModal
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
         soundToUpdate={soundToUpdate}
       />
-    </ScrollView>
+    </View>
   );
 };
 
@@ -241,5 +318,19 @@ const styles = StyleSheet.create({
   recordButton: {
     alignSelf: "center",
     width: "50%",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  emptyListContainer: {
+    flexGrow: 1,
   },
 });

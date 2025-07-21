@@ -82,6 +82,33 @@ const getSound = async (model) => {
   }
 };
 
+const sortSounds = (sounds, sortValue = 'createdAt-desc') => {
+  if (!sounds || !Array.isArray(sounds) || sounds.length === 0) {
+    return sounds;
+  }
+
+  const [criteria, order] = sortValue.split('-');
+  
+  return [...sounds].sort((a, b) => {
+    switch (criteria) {
+      case 'createdAt':
+        const dateA = new Date(a.createdAt);
+        const dateB = new Date(b.createdAt);
+        return order === 'desc' 
+          ? dateB - dateA
+          : dateA - dateB;
+      case 'name':
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        return order === 'asc' 
+          ? nameA.localeCompare(nameB)
+          : nameB.localeCompare(nameA);
+      default:
+        return 0;
+    }
+  });
+};
+
 const SOUNDS = {
   loadUserSounds: async (userID) => {
     try {
@@ -99,6 +126,7 @@ const SOUNDS = {
     }
   },
   getSound,
+  sortSounds,
   subscribeToUserSounds: (userID, setSounds, setLoadingStatus) => {
     try {
       // Validate userID parameter
