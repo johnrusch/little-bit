@@ -205,8 +205,8 @@ exports.handler = async (event) => {
         
         try {
           const headResult = await s3.headObject({
-            Bucket: bucket,
-            Key: key
+            Bucket: sourceBucket,
+            Key: sourceKey
           }).promise();
           
           const metadata = headResult.Metadata || {};
@@ -230,7 +230,7 @@ exports.handler = async (event) => {
           
           console.log('Parsed processing parameters:', processingParams);
         } catch (error) {
-          console.warn('Could not read S3 metadata, using defaults:', error.message);
+          console.warn('Could not read S3 metadata, using defaults');
           // Continue with default parameters
         }
         
