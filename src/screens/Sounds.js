@@ -22,7 +22,7 @@ const Sounds = (props) => {
   const [playbackObj, setPlaybackObj] = useState(null);
   const [soundObj, setSoundObj] = useState(null);
   const [currentAudio, setCurrentAudio] = useState({});
-  const [activeListItem, setActiveListItem] = useState(null);
+  const [activeSoundId, setActiveSoundId] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [sortValue, setSortValue] = useState('createdAt-desc');
 
@@ -47,7 +47,7 @@ const Sounds = (props) => {
       setPlaybackObj(null);
       setSoundObj(null);
       setCurrentAudio({});
-      setActiveListItem(null);
+      setActiveSoundId(null);
     };
   }, []);
 
@@ -107,7 +107,7 @@ const Sounds = (props) => {
         const playbackObject = new Audio.Sound();
         playbackObject.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
         status = await PLAYBACK.play(playbackObject, audio.url);
-        setActiveListItem(index);
+        setActiveSoundId(audio.id);
         setCurrentAudio(audio);
         setPlaybackObj(playbackObject);
         playbackObjRef.current = playbackObject; // Store in ref for callback access
@@ -185,7 +185,7 @@ const Sounds = (props) => {
         } else {
           // playing new audio
           status = await PLAYBACK.playNext(playbackObj, audio.url);
-          setActiveListItem(index);
+          setActiveSoundId(audio.id);
           setCurrentAudio(audio);
         }
       } catch (error) {
@@ -229,15 +229,13 @@ const Sounds = (props) => {
 
   const renderSound = ({ item, index }) => {
     if (!item) return null;
-    // Find the original index in the unfiltered array for activeListItem
-    const originalIndex = sounds?.findIndex(s => s.id === item.id) ?? index;
     
     return (
       <Sound
         sound={item}
         loading={loading}
-        active={activeListItem === originalIndex}
-        onAudioPress={() => handleAudioPress(item, originalIndex)}
+        active={activeSoundId === item.id}
+        onAudioPress={() => handleAudioPress(item, index)}
         setSoundToUpdate={setSoundToUpdate}
         refreshing={refreshing}
         isPlaying={isEffectivelyPlaying(soundObj)}
