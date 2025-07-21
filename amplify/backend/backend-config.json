@@ -55,6 +55,36 @@
       "service": "Cognito"
     }
   },
+  "custom": {
+    "ecsAudioProcessing": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIKeyOutput",
+            "GraphQLAPIIdOutput"
+          ],
+          "category": "api",
+          "resourceName": "littlebitgraphqlAPI"
+        },
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "littlebit3ededec2"
+        },
+        {
+          "attributes": [
+            "BucketName"
+          ],
+          "category": "storage",
+          "resourceName": "littlebitS3Resource"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "customCloudformation"
+    }
+  },
   "function": {
     "CreateSampleRecord": {
       "build": true,

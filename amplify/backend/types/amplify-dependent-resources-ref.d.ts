@@ -17,6 +17,20 @@ export type AmplifyDependentResourcesAttributes = {
       "UserPoolName": "string"
     }
   },
+  "custom": {
+    "ecsAudioProcessing": {
+      "ECRRepositoryUri": "string",
+      "ECSClusterArn": "string",
+      "ECSClusterName": "string",
+      "ECSTaskDefinitionArn": "string",
+      "ECSTaskExecutionRoleArn": "string",
+      "ECSTaskRoleArn": "string",
+      "PrivateSubnet1Id": "string",
+      "PrivateSubnet2Id": "string",
+      "SecurityGroupId": "string",
+      "VPCId": "string"
+    }
+  },
   "function": {
     "CreateSampleRecord": {
       "Arn": "string",

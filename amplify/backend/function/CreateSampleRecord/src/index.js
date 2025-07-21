@@ -202,10 +202,68 @@ exports.handler = async (event) => {
           processingVersion: '1.0'
         };
         
+        // Use environment-aware naming for ECS resources
+        const env = process.env.ENV || 'dev';
+        const ecsClusterName = `little-bit-audio-processing-${env}`;
+        const ecsTaskDefinition = `little-bit-audio-processing-${env}`;
+        
+        // Get networking configuration by looking up resources by naming convention
+        const ec2 = new AWS.EC2({ region: process.env.REGION });
+        
+        // Find VPC by tag
+        const vpcs = await ec2.describeVpcs({
+          Filters: [
+            { Name: 'tag:Name', Values: [`little-bit-vpc-${env}`] },
+            { Name: 'state', Values: ['available'] }
+          ]
+        }).promise();
+        
+        if (!vpcs.Vpcs || vpcs.Vpcs.length === 0) {
+          throw new Error(`No VPC found with name little-bit-vpc-${env}`);
+        }
+        
+        const vpcId = vpcs.Vpcs[0].VpcId;
+        
+        // Find private subnets
+        const subnets = await ec2.describeSubnets({
+          Filters: [
+            { Name: 'vpc-id', Values: [vpcId] },
+            { Name: 'tag:Name', Values: [`little-bit-private-subnet-1-${env}`, `little-bit-private-subnet-2-${env}`] },
+            { Name: 'state', Values: ['available'] }
+          ]
+        }).promise();
+        
+        if (!subnets.Subnets || subnets.Subnets.length === 0) {
+          throw new Error(`No private subnets found for VPC ${vpcId}`);
+        }
+        
+        const subnetIds = subnets.Subnets.map(subnet => subnet.SubnetId);
+        
+        // Find security group
+        const securityGroups = await ec2.describeSecurityGroups({
+          Filters: [
+            { Name: 'vpc-id', Values: [vpcId] },
+            { Name: 'group-name', Values: [`little-bit-ecs-audio-processing-${env}`] }
+          ]
+        }).promise();
+        
+        if (!securityGroups.SecurityGroups || securityGroups.SecurityGroups.length === 0) {
+          throw new Error(`No security group found with name little-bit-ecs-audio-processing-${env}`);
+        }
+        
+        const securityGroupId = securityGroups.SecurityGroups[0].GroupId;
+        
         const ecsTaskParams = {
-          cluster: process.env.ECS_CLUSTER_NAME,
-          taskDefinition: process.env.ECS_TASK_DEFINITION,
+          cluster: ecsClusterName,
+          taskDefinition: ecsTaskDefinition,
           launchType: 'FARGATE',
+          networkConfiguration: {
+            awsvpcConfiguration: {
+              subnets: subnetIds,
+              securityGroups: [securityGroupId],
+              assignPublicIp: 'DISABLED'
+            }
+          },
           overrides: {
             containerOverrides: [{
               name: 'audio-processor',
