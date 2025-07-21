@@ -5,6 +5,12 @@
         "Query",
         "Mutation"
       ]
+    },
+    "storage": {
+      "littlebitc5ff1b72": [
+        "s3:GetObject",
+        "s3:ListBucket"
+      ]
     }
   },
   "lambdaLayers": []
