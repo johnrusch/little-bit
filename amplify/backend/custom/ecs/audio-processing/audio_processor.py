@@ -367,6 +367,12 @@ def run_sqs_polling_loop():
                     body = json.loads(message['Body'])
                     logger.info(f"Processing message: {message['MessageId']}")
                     
+                    # Validate required fields
+                    required_fields = ['bucket', 'key', 'userId', 'recordId']
+                    missing_fields = [field for field in required_fields if field not in body]
+                    if missing_fields:
+                        raise ValueError(f"Missing required fields in SQS message: {missing_fields}")
+                    
                     # Set environment variables from message
                     os.environ['S3_BUCKET'] = body['bucket']
                     os.environ['S3_KEY'] = body['key']

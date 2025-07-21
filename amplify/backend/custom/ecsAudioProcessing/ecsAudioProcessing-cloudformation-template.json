@@ -785,6 +785,9 @@
               "Fn::Sub": "${AudioProcessingRepository.RepositoryUri}:latest"
             },
             "Essential": true,
+            "Cpu": 1024,
+            "Memory": 2048,
+            "MemoryReservation": 1024,
             "Environment": [
               {
                 "Name": "AWS_DEFAULT_REGION",
@@ -1126,7 +1129,7 @@
     "ECRRepositoryUri": {
       "Description": "ECR repository URI for container images",
       "Value": {
-        "Fn::Sub": "539825460496.dkr.ecr.us-west-2.amazonaws.com/little-bit/audio-processing-${env}"
+        "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/little-bit/audio-processing-${env}"
       }
     },
     "ECSTaskExecutionRoleArn": {

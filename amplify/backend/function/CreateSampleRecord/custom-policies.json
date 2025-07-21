@@ -6,7 +6,9 @@
       "sqs:GetQueueAttributes"
     ],
     "Resource": [
-      "arn:aws:sqs:us-west-2:*:little-bit-audio-processing-*"
+      {
+        "Fn::Sub": "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:little-bit-audio-processing-${env}"
+      }
     ]
   }
 ]

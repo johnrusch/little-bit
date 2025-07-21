@@ -19,6 +19,9 @@ export type AmplifyDependentResourcesAttributes = {
   },
   "custom": {
     "ecsAudioProcessing": {
+      "AudioProcessingDLQUrl": "string",
+      "AudioProcessingQueueArn": "string",
+      "AudioProcessingQueueUrl": "string",
       "ECRRepositoryUri": "string",
       "ECSClusterArn": "string",
       "ECSClusterName": "string",
