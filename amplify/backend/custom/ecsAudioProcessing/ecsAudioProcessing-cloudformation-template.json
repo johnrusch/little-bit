@@ -1,0 +1,895 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "{\"createdOn\":\"Mac\",\"createdBy\":\"Amplify\",\"createdWith\":\"12.10.0\",\"stackType\":\"custom-customCloudformation\",\"metadata\":{}}",
+  "Parameters": {
+    "env": {
+      "Type": "String"
+    },
+    "apilittlebitgraphqlAPIGraphQLAPIKeyOutput": {
+      "Type": "String",
+      "Description": "GraphQL API Key from API module",
+      "NoEcho": true
+    },
+    "apilittlebitgraphqlAPIGraphQLAPIIdOutput": {
+      "Type": "String",
+      "Description": "GraphQL API ID from API module"
+    },
+    "apilittlebitgraphqlAPIGraphQLAPIEndpointOutput": {
+      "Type": "String",
+      "Description": "GraphQL API Endpoint from API module"
+    },
+    "authlittlebit3ededec2AppClientID": {
+      "Type": "String",
+      "Description": "Cognito App Client ID from auth module"
+    },
+    "authlittlebit3ededec2AppClientIDWeb": {
+      "Type": "String",
+      "Description": "Cognito App Client ID Web from auth module"
+    },
+    "authlittlebit3ededec2IdentityPoolId": {
+      "Type": "String",
+      "Description": "Cognito Identity Pool ID from auth module"
+    },
+    "authlittlebit3ededec2IdentityPoolName": {
+      "Type": "String",
+      "Description": "Cognito Identity Pool Name from auth module"
+    },
+    "authlittlebit3ededec2UserPoolArn": {
+      "Type": "String",
+      "Description": "Cognito User Pool ARN from auth module"
+    },
+    "authlittlebit3ededec2UserPoolId": {
+      "Type": "String",
+      "Description": "Cognito User Pool ID from auth module"
+    },
+    "authlittlebit3ededec2UserPoolName": {
+      "Type": "String",
+      "Description": "Cognito User Pool Name from auth module"
+    },
+    "functionCreateSampleRecordArn": {
+      "Type": "String",
+      "Description": "CreateSampleRecord Lambda function ARN"
+    },
+    "functionCreateSampleRecordLambdaExecutionRole": {
+      "Type": "String",
+      "Description": "CreateSampleRecord Lambda execution role name"
+    },
+    "functionCreateSampleRecordLambdaExecutionRoleArn": {
+      "Type": "String",
+      "Description": "CreateSampleRecord Lambda execution role ARN"
+    },
+    "functionCreateSampleRecordName": {
+      "Type": "String",
+      "Description": "CreateSampleRecord Lambda function name"
+    },
+    "functionCreateSampleRecordRegion": {
+      "Type": "String",
+      "Description": "CreateSampleRecord Lambda function region"
+    },
+    "storagelittlebitS3ResourceBucketName": {
+      "Type": "String",
+      "Description": "S3 bucket name from storage module"
+    },
+    "storagelittlebitS3ResourceRegion": {
+      "Type": "String",
+      "Description": "S3 bucket region from storage module"
+    }
+  },
+  "Resources": {
+    "AudioProcessingCluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": {
+          "Fn::Sub": "little-bit-audio-processing-${env}"
+        },
+        "CapacityProviders": [
+          "FARGATE",
+          "FARGATE_SPOT"
+        ],
+        "DefaultCapacityProviderStrategy": [
+          {
+            "CapacityProvider": "FARGATE",
+            "Weight": 1
+          },
+          {
+            "CapacityProvider": "FARGATE_SPOT",
+            "Weight": 4
+          }
+        ],
+        "ClusterSettings": [
+          {
+            "Name": "containerInsights",
+            "Value": "enabled"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-audio-processing-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          }
+        ]
+      }
+    },
+    "AudioProcessingRepository": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "RepositoryName": {
+          "Fn::Sub": "little-bit/audio-processing-${env}"
+        },
+        "ImageScanningConfiguration": {
+          "ScanOnPush": true
+        },
+        "LifecyclePolicy": {
+          "LifecyclePolicyText": "{\n  \"rules\": [\n    {\n      \"rulePriority\": 1,\n      \"description\": \"Keep last 10 tagged images\",\n      \"selection\": {\n        \"tagStatus\": \"tagged\",\n        \"tagPrefixList\": [\"v\", \"latest\"],\n        \"countType\": \"imageCountMoreThan\",\n        \"countNumber\": 10\n      },\n      \"action\": {\n        \"type\": \"expire\"\n      }\n    },\n    {\n      \"rulePriority\": 2,\n      \"description\": \"Delete untagged images older than 1 day\",\n      \"selection\": {\n        \"tagStatus\": \"untagged\",\n        \"countType\": \"sinceImagePushed\",\n        \"countUnit\": \"days\",\n        \"countNumber\": 1\n      },\n      \"action\": {\n        \"type\": \"expire\"\n      }\n    }\n  ]\n}"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-audio-processing-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          }
+        ]
+      }
+    },
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-vpc-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "PrivateSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-private-subnet-1-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "PrivateSubnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "10.0.2.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-private-subnet-2-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-igw-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "InternetGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        },
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "PublicSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "10.0.3.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-public-subnet-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "NatGatewayEIP": {
+      "Type": "AWS::EC2::EIP",
+      "DependsOn": "InternetGatewayAttachment",
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-nat-eip-${env}"
+            }
+          }
+        ]
+      }
+    },
+    "NatGateway": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "NatGatewayEIP",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnet"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-nat-gateway-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-public-rt-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "DefaultPublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "InternetGatewayAttachment",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "PublicSubnetRouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnet"
+        }
+      }
+    },
+    "PrivateRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-private-rt-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "DefaultPrivateRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "NatGateway"
+        }
+      }
+    },
+    "PrivateSubnet1RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        },
+        "SubnetId": {
+          "Ref": "PrivateSubnet1"
+        }
+      }
+    },
+    "PrivateSubnet2RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        },
+        "SubnetId": {
+          "Ref": "PrivateSubnet2"
+        }
+      }
+    },
+    "ECSSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for audio processing ECS tasks",
+        "GroupName": {
+          "Fn::Sub": "little-bit-ecs-audio-processing-${env}"
+        },
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": -1,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic for S3, ECR, and CloudWatch"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-ecs-audio-processing-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          }
+        ]
+      }
+    },
+    "AudioProcessingLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Sub": "/ecs/little-bit-audio-processing-${env}"
+        },
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "little-bit-audio-processing-logs-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          }
+        ]
+      }
+    },
+    "ECSTaskExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Sub": "LittleBitECSTaskExecutionRole-${env}"
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "ECRAccessPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:GetAuthorizationToken"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/little-bit/audio-processing-${env}"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "CloudWatchLogsPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeLogStreams"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/little-bit-audio-processing-${env}*"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "LittleBitECSTaskExecutionRole-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          }
+        ]
+      }
+    },
+    "ECSTaskRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Sub": "LittleBitECSTaskRole-${env}"
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "S3AudioProcessingPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:DeleteObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:s3:::${storagelittlebitS3ResourceBucketName}/public/unprocessed/*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:s3:::${storagelittlebitS3ResourceBucketName}/public/processed/*"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:s3:::${storagelittlebitS3ResourceBucketName}/debug/*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:ListBucket",
+                    "s3:GetBucketLocation"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:s3:::${storagelittlebitS3ResourceBucketName}"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "AppSyncGraphQLPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "appsync:GraphQL"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${apilittlebitgraphqlAPIGraphQLAPIIdOutput}/*"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "CloudWatchMetricsPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudwatch:PutMetricData"
+                  ],
+                  "Resource": "*",
+                  "Condition": {
+                    "StringEquals": {
+                      "cloudwatch:namespace": "LittleBit/AudioProcessing"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "CloudWatchLogsPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeLogStreams"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/little-bit-audio-processing-${env}*"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "LittleBitECSTaskRole-${env}"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          },
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          }
+        ]
+      }
+    },
+    "ECSTaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": {
+          "Fn::Sub": "little-bit-audio-processing-${env}"
+        },
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "Cpu": "1024",
+        "Memory": "2048",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "ECSTaskExecutionRole",
+            "Arn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "ECSTaskRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "audio-processor",
+            "Image": {
+              "Fn::Sub": "${AudioProcessingRepository.RepositoryUri}:latest"
+            },
+            "Essential": true,
+            "Environment": [
+              {
+                "Name": "AWS_DEFAULT_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "LOG_LEVEL",
+                "Value": "INFO"
+              }
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "AudioProcessingLogGroup"
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "audio-processor"
+              }
+            },
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "python3 -c 'import boto3; print(\"Health check passed\")' || exit 1"
+              ],
+              "Interval": 30,
+              "Timeout": 5,
+              "Retries": 3,
+              "StartPeriod": 10
+            },
+            "StopTimeout": 120
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          },
+          {
+            "Key": "Service",
+            "Value": "audio-processing"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "ECSClusterName": {
+      "Description": "Name of the ECS cluster",
+      "Value": {
+        "Ref": "AudioProcessingCluster"
+      }
+    },
+    "ECSClusterArn": {
+      "Description": "ARN of the ECS cluster",
+      "Value": {
+        "Fn::GetAtt": [
+          "AudioProcessingCluster",
+          "Arn"
+        ]
+      }
+    },
+    "ECSTaskDefinitionArn": {
+      "Description": "ARN of the ECS task definition",
+      "Value": {
+        "Ref": "ECSTaskDefinition"
+      }
+    },
+    "ECRRepositoryUri": {
+      "Description": "ECR repository URI for container images",
+      "Value": {
+        "Fn::Sub": "539825460496.dkr.ecr.us-west-2.amazonaws.com/little-bit/audio-processing-${env}"
+      }
+    },
+    "ECSTaskExecutionRoleArn": {
+      "Description": "ARN of the ECS task execution role",
+      "Value": {
+        "Fn::GetAtt": [
+          "ECSTaskExecutionRole",
+          "Arn"
+        ]
+      }
+    },
+    "ECSTaskRoleArn": {
+      "Description": "ARN of the ECS task role",
+      "Value": {
+        "Fn::GetAtt": [
+          "ECSTaskRole",
+          "Arn"
+        ]
+      }
+    },
+    "VPCId": {
+      "Description": "VPC ID for ECS tasks",
+      "Value": {
+        "Ref": "VPC"
+      }
+    },
+    "PrivateSubnet1Id": {
+      "Description": "Private subnet 1 ID",
+      "Value": {
+        "Ref": "PrivateSubnet1"
+      }
+    },
+    "PrivateSubnet2Id": {
+      "Description": "Private subnet 2 ID",
+      "Value": {
+        "Ref": "PrivateSubnet2"
+      }
+    },
+    "SecurityGroupId": {
+      "Description": "Security group ID for ECS tasks",
+      "Value": {
+        "Ref": "ECSSecurityGroup"
+      }
+    }
+  }
+}
