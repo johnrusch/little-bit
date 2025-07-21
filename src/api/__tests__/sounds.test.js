@@ -14,6 +14,10 @@ jest.mock('../../graphql/queries', () => ({
   listSamples: 'mock-list-samples-query'
 }));
 
+jest.mock('../../graphql/customQueries', () => ({
+  listSamplesWithFile: 'mock-list-samples-with-file-query'
+}));
+
 jest.mock('../../graphql/subscriptions', () => ({
   onCreateSample: 'mock-on-create-sample-subscription'
 }));
