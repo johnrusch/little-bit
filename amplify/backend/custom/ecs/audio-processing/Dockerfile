@@ -21,7 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY audio_processor.py .
+COPY s3_operations.py .
 COPY entrypoint.sh .
+COPY utils/ ./utils/
 
 # Make entrypoint executable and set proper ownership
 RUN chmod +x entrypoint.sh && chown -R audioprocess:audioprocess /app
