@@ -819,6 +819,79 @@
           }
         ]
       }
+    },
+    "LambdaECSPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "DependsOn": [
+        "AudioProcessingCluster",
+        "ECSTaskDefinition",
+        "ECSTaskExecutionRole",
+        "ECSTaskRole"
+      ],
+      "Properties": {
+        "PolicyName": {
+          "Fn::Sub": "LambdaECSPolicy-${env}"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ecs:RunTask"
+              ],
+              "Resource": {
+                "Fn::Sub": "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/little-bit-audio-processing-${env}:*"
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "iam:PassRole"
+              ],
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ECSTaskExecutionRole",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::GetAtt": [
+                    "ECSTaskRole", 
+                    "Arn"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Fn::Select": [
+              1,
+              {
+                "Fn::Split": [
+                  "/",
+                  {
+                    "Fn::Select": [
+                      5,
+                      {
+                        "Fn::Split": [
+                          ":",
+                          {
+                            "Ref": "functionCreateSampleRecordLambdaExecutionRoleArn"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
     }
   },
   "Outputs": {
