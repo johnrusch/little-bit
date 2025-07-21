@@ -1,6 +1,14 @@
 [
   {
-    "Action": [],
-    "Resource": []
+    "Action": [
+      "sqs:SendMessage",
+      "sqs:GetQueueUrl",
+      "sqs:GetQueueAttributes"
+    ],
+    "Resource": [
+      {
+        "Fn::Sub": "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:little-bit-audio-processing-${env}"
+      }
+    ]
   }
 ]

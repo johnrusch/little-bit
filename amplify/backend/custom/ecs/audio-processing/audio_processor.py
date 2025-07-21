@@ -317,6 +317,93 @@ class AudioProcessingService:
             # Always clean up resources
             self.cleanup()
 
+def run_sqs_polling_loop():
+    """
+    Run continuous SQS polling loop for service mode.
+    """
+    global logger
+    
+    import boto3
+    import signal
+    import sys
+    
+    # Set up signal handlers for graceful shutdown
+    shutdown_flag = threading.Event()
+    
+    def signal_handler(signum, frame):
+        logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+        shutdown_flag.set()
+    
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    # Initialize SQS client
+    sqs = boto3.client('sqs', region_name=os.environ.get('AWS_DEFAULT_REGION', 'us-west-2'))
+    queue_url = os.environ.get('SQS_QUEUE_URL')
+    
+    if not queue_url:
+        raise ConfigurationError("SQS_QUEUE_URL environment variable not set")
+    
+    logger.info(f"Starting SQS polling loop on queue: {queue_url}")
+    
+    while not shutdown_flag.is_set():
+        try:
+            # Receive messages from SQS with long polling
+            response = sqs.receive_message(
+                QueueUrl=queue_url,
+                MaxNumberOfMessages=1,
+                WaitTimeSeconds=20,  # Long polling
+                VisibilityTimeout=900,  # 15 minutes
+                MessageAttributeNames=['All']
+            )
+            
+            messages = response.get('Messages', [])
+            if not messages:
+                continue
+                
+            for message in messages:
+                try:
+                    # Parse message body
+                    body = json.loads(message['Body'])
+                    logger.info(f"Processing message: {message['MessageId']}")
+                    
+                    # Validate required fields
+                    required_fields = ['bucket', 'key', 'userId', 'recordId']
+                    missing_fields = [field for field in required_fields if field not in body]
+                    if missing_fields:
+                        raise ValueError(f"Missing required fields in SQS message: {missing_fields}")
+                    
+                    # Set environment variables from message
+                    os.environ['S3_BUCKET'] = body['bucket']
+                    os.environ['S3_KEY'] = body['key']
+                    os.environ['USER_ID'] = body['userId']
+                    os.environ['SAMPLE_ID'] = body['recordId']
+                    os.environ['PROCESSING_PARAMS'] = json.dumps(body.get('processingParams', {}))
+                    
+                    # Create and run processing service
+                    service = AudioProcessingService()
+                    result = service.process_request()
+                    
+                    # Delete message if processing succeeded
+                    if result.get('statusCode') == 200:
+                        sqs.delete_message(
+                            QueueUrl=queue_url,
+                            ReceiptHandle=message['ReceiptHandle']
+                        )
+                        logger.info(f"Successfully processed and deleted message: {message['MessageId']}")
+                    else:
+                        logger.error(f"Failed to process message: {message['MessageId']}, will retry")
+                        
+                except Exception as e:
+                    logger.error(f"Error processing message: {str(e)}", exc_info=True)
+                    # Message will be retried after visibility timeout
+                    
+        except Exception as e:
+            logger.error(f"Error in polling loop: {str(e)}", exc_info=True)
+            time.sleep(5)  # Brief pause before retrying
+            
+    logger.info("Shutdown complete")
+
 def main() -> Dict[str, Any]:
     """
     Main entry point for the audio processing container.
@@ -329,22 +416,31 @@ def main() -> Dict[str, Any]:
         logger = setup_logging(log_level, 'audio-processing')
         
         logger.info("Little Bit Audio Processing Service - Phase 2 Implementation")
-        logger.info("Starting audio processing workflow")
         
-        # Create and run processing service
-        service = AudioProcessingService()
-        result = service.process_request()
+        # Check processing mode
+        processing_mode = os.environ.get('PROCESSING_MODE', 'task')
         
-        # Log final result
-        status_code = result.get('statusCode', 500)
-        if status_code == 200:
-            logger.info("Audio processing service completed successfully", 
-                       extra={'final_result': result})
+        if processing_mode == 'service':
+            logger.info("Starting in SERVICE mode with SQS polling")
+            run_sqs_polling_loop()
+            return {'statusCode': 200, 'message': 'Service shutdown gracefully'}
         else:
-            logger.error("Audio processing service failed", 
-                        extra={'final_result': result})
-        
-        return result
+            logger.info("Starting in TASK mode for single execution")
+            
+            # Create and run processing service
+            service = AudioProcessingService()
+            result = service.process_request()
+            
+            # Log final result
+            status_code = result.get('statusCode', 500)
+            if status_code == 200:
+                logger.info("Audio processing service completed successfully", 
+                           extra={'final_result': result})
+            else:
+                logger.error("Audio processing service failed", 
+                            extra={'final_result': result})
+            
+            return result
         
     except Exception as e:
         error_msg = f"Critical service failure: {str(e)}"

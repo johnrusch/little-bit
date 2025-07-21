@@ -712,6 +712,26 @@
                 }
               ]
             }
+          },
+          {
+            "PolicyName": "SQSProcessingPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:ChangeMessageVisibility",
+                    "sqs:GetQueueAttributes"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": ["AudioProcessingQueue", "Arn"]
+                  }
+                }
+              ]
+            }
           }
         ],
         "Tags": [
@@ -765,6 +785,9 @@
               "Fn::Sub": "${AudioProcessingRepository.RepositoryUri}:latest"
             },
             "Essential": true,
+            "Cpu": 1024,
+            "Memory": 2048,
+            "MemoryReservation": 1024,
             "Environment": [
               {
                 "Name": "AWS_DEFAULT_REGION",
@@ -775,6 +798,16 @@
               {
                 "Name": "LOG_LEVEL",
                 "Value": "INFO"
+              },
+              {
+                "Name": "SQS_QUEUE_URL",
+                "Value": {
+                  "Ref": "AudioProcessingQueue"
+                }
+              },
+              {
+                "Name": "PROCESSING_MODE",
+                "Value": "service"
               }
             ],
             "LogConfiguration": {
@@ -820,6 +853,182 @@
         ]
       }
     },
+    "AudioProcessingQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": {
+          "Fn::Sub": "little-bit-audio-processing-${env}"
+        },
+        "VisibilityTimeout": 900,
+        "MessageRetentionPeriod": 1209600,
+        "ReceiveMessageWaitTimeSeconds": 20,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": ["AudioProcessingDLQ", "Arn"]
+          },
+          "maxReceiveCount": 3
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          },
+          {
+            "Key": "Service",
+            "Value": "audio-processing"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "AudioProcessingDLQ": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": {
+          "Fn::Sub": "little-bit-audio-processing-dlq-${env}"
+        },
+        "MessageRetentionPeriod": 1209600,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          },
+          {
+            "Key": "Service",
+            "Value": "audio-processing-dlq"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "AudioProcessingService": {
+      "Type": "AWS::ECS::Service",
+      "DependsOn": [
+        "AudioProcessingCluster",
+        "ECSTaskDefinition",
+        "AudioProcessingQueue"
+      ],
+      "Properties": {
+        "ServiceName": {
+          "Fn::Sub": "little-bit-audio-processing-${env}"
+        },
+        "Cluster": {
+          "Ref": "AudioProcessingCluster"
+        },
+        "TaskDefinition": {
+          "Ref": "ECSTaskDefinition"
+        },
+        "LaunchType": "FARGATE",
+        "DesiredCount": 1,
+        "DeploymentConfiguration": {
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 100,
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true
+          }
+        },
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "Subnets": [
+              {
+                "Ref": "PrivateSubnet1"
+              },
+              {
+                "Ref": "PrivateSubnet2"
+              }
+            ],
+            "SecurityGroups": [
+              {
+                "Ref": "ECSSecurityGroup"
+              }
+            ],
+            "AssignPublicIp": "DISABLED"
+          }
+        },
+        "HealthCheckGracePeriodSeconds": 60,
+        "EnableECSManagedTags": true,
+        "PropagateTags": "SERVICE",
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "little-bit"
+          },
+          {
+            "Key": "Service",
+            "Value": "audio-processing"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "ServiceScalingTarget": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "DependsOn": [
+        "AudioProcessingService"
+      ],
+      "Properties": {
+        "ServiceNamespace": "ecs",
+        "ResourceId": {
+          "Fn::Sub": "service/${AudioProcessingCluster}/${AudioProcessingService.Name}"
+        },
+        "ScalableDimension": "ecs:service:DesiredCount",
+        "MinCapacity": 1,
+        "MaxCapacity": 10,
+        "RoleARN": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+        }
+      }
+    },
+    "ServiceScalingPolicy": {
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+      "DependsOn": [
+        "ServiceScalingTarget"
+      ],
+      "Properties": {
+        "PolicyName": {
+          "Fn::Sub": "AudioProcessingQueueDepthScaling-${env}"
+        },
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ServiceScalingTarget"
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "TargetValue": 10,
+          "ScaleInCooldown": 300,
+          "ScaleOutCooldown": 60,
+          "CustomizedMetricSpecification": {
+            "MetricName": "ApproximateNumberOfMessagesVisible",
+            "Namespace": "AWS/SQS",
+            "Dimensions": [
+              {
+                "Name": "QueueName",
+                "Value": {
+                  "Fn::GetAtt": ["AudioProcessingQueue", "QueueName"]
+                }
+              }
+            ],
+            "Statistic": "Average",
+            "Unit": "Count"
+          }
+        }
+      }
+    },
     "LambdaECSPolicy": {
       "Type": "AWS::IAM::Policy",
       "DependsOn": [
@@ -830,7 +1039,7 @@
       ],
       "Properties": {
         "PolicyName": {
-          "Fn::Sub": "LambdaECSPolicy-${env}"
+          "Fn::Sub": "LambdaSQSPolicy-${env}"
         },
         "PolicyDocument": {
           "Version": "2012-10-17",
@@ -838,10 +1047,11 @@
             {
               "Effect": "Allow",
               "Action": [
-                "ecs:RunTask"
+                "sqs:SendMessage",
+                "sqs:GetQueueAttributes"
               ],
               "Resource": {
-                "Fn::Sub": "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/little-bit-audio-processing-${env}:*"
+                "Fn::GetAtt": ["AudioProcessingQueue", "Arn"]
               }
             },
             {
@@ -919,7 +1129,7 @@
     "ECRRepositoryUri": {
       "Description": "ECR repository URI for container images",
       "Value": {
-        "Fn::Sub": "539825460496.dkr.ecr.us-west-2.amazonaws.com/little-bit/audio-processing-${env}"
+        "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/little-bit/audio-processing-${env}"
       }
     },
     "ECSTaskExecutionRoleArn": {
@@ -962,6 +1172,24 @@
       "Description": "Security group ID for ECS tasks",
       "Value": {
         "Ref": "ECSSecurityGroup"
+      }
+    },
+    "AudioProcessingQueueUrl": {
+      "Description": "URL of the audio processing SQS queue",
+      "Value": {
+        "Ref": "AudioProcessingQueue"
+      }
+    },
+    "AudioProcessingQueueArn": {
+      "Description": "ARN of the audio processing SQS queue",
+      "Value": {
+        "Fn::GetAtt": ["AudioProcessingQueue", "Arn"]
+      }
+    },
+    "AudioProcessingDLQUrl": {
+      "Description": "URL of the audio processing dead letter queue",
+      "Value": {
+        "Ref": "AudioProcessingDLQ"
       }
     }
   }
