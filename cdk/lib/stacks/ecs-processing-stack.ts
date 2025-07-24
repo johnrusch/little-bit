@@ -12,6 +12,7 @@ import { Construct } from 'constructs';
 export interface EcsProcessingStackProps extends cdk.StackProps {
   readonly bucket: s3.Bucket;
   readonly apiEndpoint: string;
+  readonly apiId: string;
 }
 
 export class EcsProcessingStack extends cdk.Stack {
@@ -94,14 +95,14 @@ export class EcsProcessingStack extends cdk.Stack {
       resources: [queueArn],
     }));
 
-    // Grant AppSync permissions to task role
+    // Grant AppSync permissions to task role with specific API ID
     taskRole.addToPolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: [
         'appsync:GraphQL',
       ],
       resources: [
-        `arn:aws:appsync:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:apis/*/types/Mutation/*`,
+        `arn:aws:appsync:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:apis/${props.apiId}/types/Mutation/fields/updateSample`,
       ],
     }));
 

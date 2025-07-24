@@ -11,6 +11,8 @@ export interface ComputeStackProps extends cdk.StackProps {
   readonly bucket: s3.Bucket;
   readonly apiEndpoint: string;
   readonly apiKey: string;
+  readonly apiId: string;
+  readonly userPoolId: string;
 }
 
 export class ComputeStack extends cdk.Stack {
@@ -46,8 +48,11 @@ export class ComputeStack extends cdk.Stack {
       memorySize: 128,
       timeout: cdk.Duration.seconds(60),
       environment: {
-        API_ENDPOINT: props.apiEndpoint,
-        API_KEY: props.apiKey,
+        // Match Amplify environment variable naming pattern
+        API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIENDPOINTOUTPUT: props.apiEndpoint,
+        API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIIDOUTPUT: props.apiId,
+        API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIKEYOUTPUT: props.apiKey,
+        AUTH_LITTLEBIT3EDEDEC2_USERPOOLID: props.userPoolId,
         ENV: this.node.tryGetContext('env') || 'dev',
         REGION: cdk.Stack.of(this).region,
         SQS_QUEUE_URL: this.processingQueue.queueUrl,
@@ -59,21 +64,35 @@ export class ComputeStack extends cdk.Stack {
     props.bucket.grantRead(this.createSampleRecordFunction);
     this.processingQueue.grantSendMessages(this.createSampleRecordFunction);
 
-    // Add GraphQL mutation permissions
+    // Add GraphQL mutation permissions with specific API ID
     this.createSampleRecordFunction.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: [
         'appsync:GraphQL',
       ],
       resources: [
-        `arn:aws:appsync:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:apis/*/types/Mutation/*`,
+        `arn:aws:appsync:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:apis/${props.apiId}/types/Mutation/fields/createSample`,
+        `arn:aws:appsync:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:apis/${props.apiId}/types/Mutation/fields/updateSample`,
       ],
     }));
 
     // Configure S3 trigger for CreateSampleRecord
-    // Note: This will be configured in the compute stack to avoid circular dependencies
-    // The Lambda function will be granted permissions to be invoked by S3
-    this.createSampleRecordFunction.grantInvoke(new iam.ServicePrincipal('s3.amazonaws.com'));
+    // Grant S3 permission to invoke the Lambda function
+    this.createSampleRecordFunction.addPermission('S3InvokePermission', {
+      principal: new iam.ServicePrincipal('s3.amazonaws.com'),
+      sourceAccount: cdk.Stack.of(this).account,
+      sourceArn: props.bucket.bucketArn,
+    });
+
+    // Add S3 event notification
+    props.bucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.LambdaDestination(this.createSampleRecordFunction),
+      {
+        prefix: 'public/unprocessed/',
+        suffix: '.wav',
+      }
+    );
 
     // Create EditandConvertRecordings Lambda function
     // Note: This is a placeholder as the actual processing is done by ECS

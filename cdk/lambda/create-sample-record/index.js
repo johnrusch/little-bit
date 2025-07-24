@@ -218,23 +218,14 @@ exports.handler = async (event) => {
           // Continue with default parameters
         }
         
-        // Use environment-aware naming for SQS queue
-        const env = process.env.ENV || 'dev';
-        const queueName = `little-bit-audio-processing-${env}`;
+        // Use SQS queue URL from environment variable
+        const queueUrl = process.env.SQS_QUEUE_URL;
         
-        // Get SQS queue URL
-        const sqs = new AWS.SQS({ region: process.env.REGION });
-        let queueUrl;
-        
-        try {
-          const queueUrlResponse = await sqs.getQueueUrl({
-            QueueName: queueName
-          }).promise();
-          queueUrl = queueUrlResponse.QueueUrl;
-        } catch (error) {
-          console.error('Failed to get SQS queue URL:', error);
-          throw new Error(`SQS queue ${queueName} not found. Make sure the ECS infrastructure is deployed.`);
+        if (!queueUrl) {
+          throw new Error('SQS_QUEUE_URL environment variable not set');
         }
+        
+        const sqs = new AWS.SQS({ region: process.env.REGION });
         
         // Create SQS message
         const sqsMessage = {

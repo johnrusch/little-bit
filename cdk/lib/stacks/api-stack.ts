@@ -60,7 +60,7 @@ export class ApiStack extends cdk.Stack {
     this.apiKey = new appsync.CfnApiKey(this, 'GraphQLAPIKey', {
       apiId: this.graphqlApi.attrApiId,
       description: 'API Key for public access',
-      expires: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60), // 1 year from now
+      expires: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60), // 90 days from now
     });
 
     // Create GraphQL Schema

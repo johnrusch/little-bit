@@ -124,7 +124,13 @@ export class CoreStack extends cdk.Stack {
           s3.HttpMethods.POST,
           s3.HttpMethods.DELETE,
         ],
-        allowedOrigins: ['*'],
+        allowedOrigins: [
+          'http://localhost:*',
+          'capacitor://localhost',
+          'ionic://localhost',
+          'https://*.amplifyapp.com',
+          // Add your production domain here when configured
+        ],
         allowedHeaders: ['*'],
         exposedHeaders: [
           'x-amz-server-side-encryption',

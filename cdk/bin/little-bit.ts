@@ -47,6 +47,8 @@ const computeStack = new ComputeStack(app, `LittleBit-Compute-${envName}`, {
   bucket: coreStack.audioBucket,
   apiEndpoint: apiStack.graphqlApi.attrGraphQlUrl,
   apiKey: apiStack.apiKey.attrApiKey,
+  apiId: apiStack.graphqlApi.attrApiId,
+  userPoolId: coreStack.userPool.userPoolId,
   description: 'Little Bit Compute Infrastructure - Lambda Functions',
   tags: {
     Environment: envName,
@@ -61,6 +63,7 @@ const ecsStack = new EcsProcessingStack(app, `LittleBit-ECS-${envName}`, {
   env,
   bucket: coreStack.audioBucket,
   apiEndpoint: apiStack.graphqlApi.attrGraphQlUrl,
+  apiId: apiStack.graphqlApi.attrApiId,
   description: 'Little Bit ECS Processing Infrastructure - Audio Processing Service',
   tags: {
     Environment: envName,

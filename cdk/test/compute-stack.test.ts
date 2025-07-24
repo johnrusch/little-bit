@@ -21,6 +21,8 @@ describe('ComputeStack', () => {
       bucket: mockBucket,
       apiEndpoint: 'https://mock-api.appsync.amazonaws.com/graphql',
       apiKey: 'mock-api-key',
+      apiId: 'mock-api-id',
+      userPoolId: 'mock-user-pool-id',
     });
     template = Template.fromStack(stack);
   });
