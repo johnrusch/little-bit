@@ -25,3 +25,29 @@ We use custom GraphQL queries in `src/graphql/customQueries.js` that include all
 - `listSamplesWithFile` - Used in `src/api/sounds.js` to fetch user sounds with S3 file information
 
 When adding new features that require GraphQL queries with nested fields, consider creating custom queries if the auto-generated ones are incomplete.
+
+## CDK Infrastructure
+
+The project now includes AWS CDK templates as an alternative to Amplify for infrastructure deployment. The CDK implementation is located in the `cdk/` directory.
+
+### CDK Stack Architecture
+- **Core Stack**: Cognito User Pool, S3 Bucket, IAM roles
+- **API Stack**: AppSync GraphQL API with DynamoDB
+- **Compute Stack**: Lambda functions and SQS queue
+- **ECS Processing Stack**: VPC, ECS cluster, and audio processing service
+
+### Important CDK Notes
+- The S3 event notifications for Lambda triggers are configured in the Compute Stack to avoid circular dependencies
+- ECR repository names must be lowercase
+- The GraphQL schema is read from `cdk/graphql/schema.graphql`
+- Lambda function code is in `cdk/lambda/` directories
+
+### Deployment
+To deploy the CDK stacks:
+```bash
+cd cdk
+npm install
+npx cdk deploy --all
+```
+
+See `cdk/README.md` for detailed deployment instructions and migration guide from Amplify.
