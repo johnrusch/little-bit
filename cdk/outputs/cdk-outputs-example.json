@@ -1,0 +1,16 @@
+{
+  "core": {
+    "UserPoolId": "us-west-2_XXXXXXXXX",
+    "UserPoolClientId": "1234567890abcdefghijklmnop",
+    "IdentityPoolId": "us-west-2:12345678-1234-1234-1234-123456789012",
+    "AudioBucketName": "littlebit-audio-bucket-dev-123456789012"
+  },
+  "api": {
+    "GraphQLAPIURL": "https://abcdefghijklmnopqrstuvwxyz.appsync-api.us-west-2.amazonaws.com/graphql",
+    "GraphQLAPIID": "abcdefghijklmnopqrstuvwxyz",
+    "GraphQLAPIKey": "da2-abcdefghijklmnopqrstuvwxyz"
+  },
+  "compute": {
+    "ProcessingQueueUrl": "https://sqs.us-west-2.amazonaws.com/123456789012/littlebit-processing-queue-dev"
+  }
+}

@@ -38,3 +38,7 @@ amplifytools.xcconfig
 # Testing
 coverage/
 *.lcov
+
+# CDK outputs (contain sensitive values)
+cdk/outputs/cdk-outputs-*.json
+!cdk/outputs/cdk-outputs-example.json
