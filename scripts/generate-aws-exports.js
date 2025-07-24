@@ -29,6 +29,14 @@ const outputFile = outputIndex !== -1 && args[outputIndex + 1]
   ? args[outputIndex + 1] 
   : path.join(__dirname, '..', 'src', 'aws-exports.js');
 
+// Validate environment parameter to prevent command injection
+const allowedEnvironments = ['dev', 'staging', 'prod'];
+if (!allowedEnvironments.includes(environment)) {
+  console.error(`❌ Invalid environment: ${environment}`);
+  console.error(`Allowed environments: ${allowedEnvironments.join(', ')}`);
+  process.exit(1);
+}
+
 // Stack names based on environment
 const stackPrefix = 'LittleBit';
 const coreStackName = `${stackPrefix}-Core-${environment}`;
@@ -40,6 +48,11 @@ const computeStackName = `${stackPrefix}-Compute-${environment}`;
  */
 async function fetchStackOutputs(stackName) {
   try {
+    // Additional validation for stack name (defense in depth)
+    if (!/^[a-zA-Z0-9-]+$/.test(stackName)) {
+      throw new Error(`Invalid stack name format: ${stackName}`);
+    }
+    
     const command = `aws cloudformation describe-stacks --stack-name ${stackName} --query "Stacks[0].Outputs" --output json`;
     const output = execSync(command, { encoding: 'utf-8' });
     const outputs = JSON.parse(output);
