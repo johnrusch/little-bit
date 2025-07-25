@@ -1,5 +1,4 @@
-import { signIn, signUp, signOut, fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
-import { Hub } from "aws-amplify/utils";
+import { signIn, signUp, signOut, fetchAuthSession, getCurrentUser, Hub } from "../services/auth";
 
 const getUsername = (userId) => {
     return userId;

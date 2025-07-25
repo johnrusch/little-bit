@@ -1,5 +1,5 @@
-import { getUrl } from "aws-amplify/storage";
-import { generateClient } from "aws-amplify/api";
+import { getUrl } from "../services/storage";
+import { generateClient } from "../services/api";
 import * as subscriptions from "../graphql/subscriptions";
 import * as queries from "../graphql/queries";
 import * as customQueries from "../graphql/customQueries";
