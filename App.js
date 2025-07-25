@@ -5,6 +5,7 @@ import { Amplify } from "aws-amplify";
 import Navigator from "./src/navigation/Navigator";
 import ConfigurationError from "./src/components/ConfigurationError";
 import { ConfigManager } from "./src/config";
+import { initializeStorage } from "./src/services/storage";
 
 export default function App() {
   const [hasValidConfig, setHasValidConfig] = useState(false);
@@ -17,6 +18,9 @@ export default function App() {
         const config = await ConfigManager.load({
           useAwsExports: true // Enable backward compatibility
         });
+        
+        // Initialize new services with config
+        initializeStorage(config);
         
         // Convert to Amplify format and configure
         const amplifyConfig = ConfigManager.toAmplifyFormat(config);
