@@ -6,6 +6,7 @@ import Navigator from "./src/navigation/Navigator";
 import ConfigurationError from "./src/components/ConfigurationError";
 import { ConfigManager } from "./src/config";
 import { initializeStorage } from "./src/services/storage";
+import { initializeAuth } from "./src/services/auth";
 
 export default function App() {
   const [hasValidConfig, setHasValidConfig] = useState(false);
@@ -21,6 +22,7 @@ export default function App() {
         
         // Initialize new services with config
         initializeStorage(config);
+        initializeAuth(config);
         
         // Convert to Amplify format and configure
         const amplifyConfig = ConfigManager.toAmplifyFormat(config);
