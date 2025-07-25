@@ -1,0 +1,262 @@
+name: Infrastructure Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      stack:
+        description: 'Stack to deploy (all, core, api, compute, ecs)'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - all
+          - core
+          - api
+          - compute
+          - ecs
+  pull_request:
+    branches: [master, develop]
+    paths:
+      - 'cdk/**'
+      - '.github/workflows/infrastructure.yml'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: us-west-2
+  NODE_VERSION: '18.x'
+
+jobs:
+  cdk-diff:
+    name: CDK Diff
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install CDK dependencies
+        run: |
+          cd cdk
+          npm ci
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE }}
+          role-session-name: GitHubActions-CDK-Diff
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: CDK Diff
+        id: cdk_diff
+        run: |
+          cd cdk
+          
+          # Run diff and capture output
+          npx cdk diff --all 2>&1 | tee cdk-diff-output.txt || true
+          
+          # Extract meaningful changes
+          if grep -q "There were no differences" cdk-diff-output.txt; then
+            echo "No infrastructure changes detected"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Infrastructure changes detected"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            
+            # Format output for PR comment
+            {
+              echo "### 🔍 CDK Diff Results"
+              echo ""
+              echo "<details>"
+              echo "<summary>Click to expand infrastructure changes</summary>"
+              echo ""
+              echo '```diff'
+              cat cdk-diff-output.txt
+              echo '```'
+              echo "</details>"
+            } > cdk-diff-comment.md
+          fi
+      
+      - name: Comment PR with diff results
+        if: steps.cdk_diff.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const comment = fs.readFileSync('cdk/cdk-diff-comment.md', 'utf8');
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('CDK Diff Results')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+  deploy:
+    name: Deploy Infrastructure
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install CDK dependencies
+        run: |
+          cd cdk
+          npm ci
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE }}
+          role-session-name: GitHubActions-CDK-Deploy
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Set environment variables
+        run: |
+          echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          echo "CDK_DEPLOY_ACCOUNT=${{ secrets.AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
+          echo "CDK_DEPLOY_REGION=${{ env.AWS_REGION }}" >> $GITHUB_ENV
+      
+      - name: CDK Bootstrap (if needed)
+        run: |
+          cd cdk
+          npx cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }} || true
+      
+      - name: Deploy CDK Stack(s)
+        run: |
+          cd cdk
+          
+          # Set the environment context
+          ENV_CONTEXT="-c env=${{ github.event.inputs.environment }}"
+          
+          # Deploy based on selected stack
+          case "${{ github.event.inputs.stack }}" in
+            "all")
+              echo "Deploying all stacks..."
+              npx cdk deploy --all --require-approval never $ENV_CONTEXT
+              ;;
+            "core")
+              echo "Deploying Core stack..."
+              npx cdk deploy LittleBit-Core-${{ github.event.inputs.environment }} --require-approval never $ENV_CONTEXT
+              ;;
+            "api")
+              echo "Deploying API stack..."
+              npx cdk deploy LittleBit-API-${{ github.event.inputs.environment }} --require-approval never $ENV_CONTEXT
+              ;;
+            "compute")
+              echo "Deploying Compute stack..."
+              npx cdk deploy LittleBit-Compute-${{ github.event.inputs.environment }} --require-approval never $ENV_CONTEXT
+              ;;
+            "ecs")
+              echo "Deploying ECS stack..."
+              npx cdk deploy LittleBit-ECS-${{ github.event.inputs.environment }} --require-approval never $ENV_CONTEXT
+              ;;
+          esac
+      
+      - name: Export CDK outputs
+        run: |
+          cd cdk
+          
+          # Get stack outputs and save to file
+          aws cloudformation describe-stacks \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[?contains(StackName, 'LittleBit-') && contains(StackName, '-${{ github.event.inputs.environment }}')].Outputs" \
+            --output json > outputs/cdk-outputs-${{ github.event.inputs.environment }}.json
+          
+          echo "CDK outputs saved to outputs/cdk-outputs-${{ github.event.inputs.environment }}.json"
+      
+      - name: Generate aws-exports.js
+        run: |
+          cd scripts
+          node generate-aws-exports.js --env ${{ github.event.inputs.environment }}
+      
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-outputs-${{ github.event.inputs.environment }}
+          path: |
+            cdk/outputs/cdk-outputs-${{ github.event.inputs.environment }}.json
+            src/aws-exports.js
+      
+      - name: Post deployment validation
+        run: |
+          echo "🚀 Deployment completed successfully!"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Stack(s): ${{ github.event.inputs.stack }}"
+          
+          # Basic validation - check if stacks exist
+          aws cloudformation describe-stacks \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[?contains(StackName, 'LittleBit-') && contains(StackName, '-${{ github.event.inputs.environment }}')].{Name:StackName,Status:StackStatus}" \
+            --output table
+
+  rollback:
+    name: Rollback Infrastructure
+    if: failure() && github.event_name == 'workflow_dispatch'
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE }}
+          role-session-name: GitHubActions-CDK-Rollback
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Check for rollback capability
+        run: |
+          echo "⚠️ Deployment failed. Checking rollback options..."
+          
+          # List stacks in ROLLBACK_COMPLETE or UPDATE_ROLLBACK_COMPLETE state
+          aws cloudformation list-stacks \
+            --region ${{ env.AWS_REGION }} \
+            --stack-status-filter UPDATE_ROLLBACK_COMPLETE ROLLBACK_COMPLETE \
+            --query "StackSummaries[?contains(StackName, 'LittleBit-')].{Name:StackName,Status:StackStatus}" \
+            --output table
+          
+          echo "Manual intervention may be required to rollback changes."

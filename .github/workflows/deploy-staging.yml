@@ -1,0 +1,223 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  deployments: write
+
+env:
+  AWS_REGION: us-west-2
+  NODE_VERSION: '18.x'
+  ENVIRONMENT: staging
+
+jobs:
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create GitHub deployment
+        uses: actions/github-script@v7
+        id: deployment
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: 'staging',
+              required_contexts: [],
+              auto_merge: false,
+              description: 'Deploying to staging environment'
+            });
+            
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'in_progress',
+              environment_url: 'https://staging.littlebit.app',
+              description: 'Deployment in progress'
+            });
+            
+            return deployment.data.id;
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install CDK dependencies
+        run: |
+          cd cdk
+          npm ci
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_STAGING }}
+          role-session-name: GitHubActions-Deploy-Staging
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Set environment variables
+        run: |
+          echo "CDK_DEPLOY_ACCOUNT=${{ secrets.AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
+          echo "CDK_DEPLOY_REGION=${{ env.AWS_REGION }}" >> $GITHUB_ENV
+      
+      - name: Deploy CDK stacks
+        run: |
+          cd cdk
+          npx cdk deploy --all --require-approval never -c env=${{ env.ENVIRONMENT }}
+      
+      - name: Export CDK outputs
+        run: |
+          cd cdk
+          mkdir -p outputs
+          
+          aws cloudformation describe-stacks \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[?contains(StackName, 'LittleBit-') && contains(StackName, '-${{ env.ENVIRONMENT }}')].Outputs" \
+            --output json > outputs/cdk-outputs-${{ env.ENVIRONMENT }}.json
+      
+      - name: Update deployment status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: state,
+              environment_url: 'https://staging.littlebit.app',
+              description: state === 'success' ? 'Deployment completed' : 'Deployment failed'
+            });
+
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: deploy-infrastructure
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_STAGING }}
+          role-session-name: GitHubActions-Deploy-Frontend-Staging
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Generate aws-exports.js
+        run: |
+          cd scripts
+          node generate-aws-exports.js --env ${{ env.ENVIRONMENT }}
+      
+      - name: Build staging bundle
+        run: |
+          NODE_ENV=production npm run build
+          
+      - name: Deploy to S3
+        run: |
+          # Get bucket name from CDK outputs
+          BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-Core-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='AudioBucketName'].OutputValue" \
+            --output text)
+          
+          # Sync build files to S3
+          aws s3 sync build/ s3://$BUCKET_NAME/web/ \
+            --delete \
+            --cache-control "public, max-age=3600"
+          
+          # Invalidate CloudFront if configured
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-Core-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" \
+            --output text 2>/dev/null || echo "")
+          
+          if [ ! -z "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id $DISTRIBUTION_ID \
+              --paths "/*"
+          fi
+
+  integration-tests:
+    name: Run Integration Tests
+    needs: [deploy-infrastructure, deploy-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_STAGING }}
+          role-session-name: GitHubActions-IntegrationTests-Staging
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Run integration tests
+        run: |
+          # Set environment variables for tests
+          export STAGING_API_ENDPOINT=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-API-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='GraphQLAPIURL'].OutputValue" \
+            --output text)
+          
+          export STAGING_USER_POOL_ID=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-Core-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" \
+            --output text)
+          
+          # Run integration tests against staging
+          npm run test:integration -- --env=staging
+      
+      - name: Generate test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-test-results
+          path: |
+            coverage/
+            test-results/
+
+  notify-success:
+    name: Notify Success
+    needs: [deploy-infrastructure, deploy-frontend, integration-tests]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Send notification
+        run: |
+          echo "✅ Staging deployment completed successfully!"
+          echo "URL: https://staging.littlebit.app"
+          echo "Commit: ${{ github.sha }}"
+          
+          # Add Slack/email notification here if configured
