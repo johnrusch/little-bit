@@ -164,7 +164,13 @@ jobs:
       - name: CDK Bootstrap (if needed)
         run: |
           cd cdk
-          npx cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }} || true
+          # Check if bootstrap is needed
+          if ! aws cloudformation describe-stacks --stack-name CDKToolkit --region ${{ env.AWS_REGION }} 2>/dev/null; then
+            echo "CDK Bootstrap stack not found, bootstrapping..."
+            npx cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }}
+          else
+            echo "CDK Bootstrap stack already exists"
+          fi
       
       - name: Deploy CDK Stack(s)
         run: |

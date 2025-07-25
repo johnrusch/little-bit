@@ -30,7 +30,8 @@ jobs:
         id: check_changes
         run: |
           # Check if there are changes in deployable directories
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD || true)
+          # Handle edge case for first commit or shallow clones
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
           
           if echo "$CHANGED_FILES" | grep -qE '^(src/|cdk/|amplify/backend/|package\.json)'; then
             echo "Deployable changes detected"

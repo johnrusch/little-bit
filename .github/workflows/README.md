@@ -83,14 +83,27 @@ This directory contains the CI/CD pipeline workflows that replace AWS Amplify's 
          "Action": "sts:AssumeRoleWithWebIdentity",
          "Condition": {
            "StringEquals": {
-             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-             "token.actions.githubusercontent.com:sub": "repo:johnrusch/little-bit:ref:refs/heads/main"
+             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+           },
+           "StringLike": {
+             "token.actions.githubusercontent.com:sub": [
+               "repo:johnrusch/little-bit:ref:refs/heads/master",
+               "repo:johnrusch/little-bit:ref:refs/heads/develop",
+               "repo:johnrusch/little-bit:ref:refs/heads/staging",
+               "repo:johnrusch/little-bit:ref:refs/tags/v*",
+               "repo:johnrusch/little-bit:pull_request"
+             ]
            }
          }
        }
      ]
    }
    ```
+   
+   **Note**: Adjust the allowed refs based on your environment:
+   - Development role: Allow `develop` branch and pull requests
+   - Staging role: Allow `staging` branch
+   - Production role: Allow `master` branch and version tags (`v*`)
 
 ### GitHub Secrets
 
