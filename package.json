@@ -58,7 +58,7 @@
     "@react-native-community/cli": "^19.1.0",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^12.8.0",
-    "eslint": "^9.32.0",
+    "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-native": "^5.0.0",
     "jest": "^30.0.4",
