@@ -121,3 +121,56 @@ All configuration can be overridden via environment variables:
 - The system maintains full backward compatibility with aws-exports.js
 - Configuration is validated at runtime to catch errors early
 - All sensitive values should use environment variables, not committed files
+
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment, replacing AWS Amplify's deployment pipeline.
+
+### GitHub Actions Workflows
+
+#### Continuous Integration (`ci.yml`)
+- Runs on all pushes and pull requests
+- ESLint and Prettier checks
+- Unit and integration tests
+- Bundle size analysis
+- Security vulnerability scanning
+- CDK template validation
+
+#### Infrastructure Deployment (`infrastructure.yml`)
+- Manual deployment via workflow dispatch
+- CDK diff on pull requests
+- Environment-specific deployments (dev, staging, prod)
+- Automated rollback procedures
+
+#### Environment Deployments
+- **Development** (`deploy-dev.yml`): Auto-deploys from `develop` branch
+- **Staging** (`deploy-staging.yml`): Auto-deploys from `staging` branch
+- **Production** (`deploy-production.yml`): Manual approval required, triggered by version tags
+
+### Required Setup
+Before using the CI/CD pipeline:
+
+1. **Configure AWS OIDC Provider** for GitHub Actions authentication
+2. **Create IAM roles** for each environment with appropriate permissions
+3. **Add GitHub Secrets**:
+   - `AWS_ACCOUNT_ID`
+   - `AWS_DEPLOY_ROLE_DEV`, `AWS_DEPLOY_ROLE_STAGING`, `AWS_DEPLOY_ROLE_PROD`
+   - `AWS_GITHUB_ACTIONS_ROLE` (for read-only operations)
+
+See `.github/workflows/README.md` for detailed setup instructions.
+
+### Deployment Commands
+```bash
+# Manual infrastructure deployment
+gh workflow run infrastructure.yml -f environment=dev -f stack=all
+
+# Create production release
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+```
+
+### Important CI/CD Notes
+- Production deployments require manual approval
+- All deployments use AWS OIDC (no long-lived credentials)
+- CDK tests run with `testing: true` context to avoid circular dependencies
+- The S3 bucket interface changed from `Bucket` to `IBucket` for better testing
