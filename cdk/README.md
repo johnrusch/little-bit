@@ -140,24 +140,23 @@ To migrate from existing Amplify infrastructure:
 
 ## Updating Frontend Configuration
 
-Create a new configuration file with CDK outputs:
+Use the provided script to automatically generate `aws-exports.js` from CDK outputs:
 
-```javascript
-// src/aws-exports-cdk.js
-export default {
-  aws_project_region: 'us-west-2',
-  aws_cognito_identity_pool_id: 'IDENTITY_POOL_ID_FROM_CDK',
-  aws_cognito_region: 'us-west-2',
-  aws_user_pools_id: 'USER_POOL_ID_FROM_CDK',
-  aws_user_pools_web_client_id: 'CLIENT_ID_FROM_CDK',
-  aws_appsync_graphqlEndpoint: 'GRAPHQL_URL_FROM_CDK',
-  aws_appsync_region: 'us-west-2',
-  aws_appsync_authenticationType: 'AMAZON_COGNITO_USER_POOLS',
-  aws_appsync_apiKey: 'API_KEY_FROM_CDK',
-  aws_user_files_s3_bucket: 'BUCKET_NAME_FROM_CDK',
-  aws_user_files_s3_bucket_region: 'us-west-2',
-};
+```bash
+# After CDK deployment, generate configuration
+node scripts/generate-aws-exports.js --env dev
+
+# For different environments
+node scripts/generate-aws-exports.js --env staging
+node scripts/generate-aws-exports.js --env prod
 ```
+
+The script will:
+1. Fetch outputs from deployed CloudFormation stacks (if AWS CLI is configured)
+2. Fall back to local JSON file at `cdk/outputs/cdk-outputs-{env}.json`
+3. Generate a properly formatted `aws-exports.js` for the frontend
+
+See `docs/CDK_MIGRATION.md` for detailed migration instructions.
 
 ## Multi-Region Deployment
 
