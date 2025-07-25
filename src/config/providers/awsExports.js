@@ -68,7 +68,15 @@ export const convertAwsExports = (awsExports) => {
 export const loadFromAwsExports = () => {
   try {
     // Try to import aws-exports.js
-    const awsExports = require('../../aws-exports').default;
+    // Using a try-catch approach to handle missing file gracefully
+    let awsExports;
+    try {
+      // First try the standard location
+      awsExports = require('../../aws-exports').default;
+    } catch (e) {
+      // If not found, return null (file doesn't exist)
+      return null;
+    }
     
     // Check if it's a valid configuration (not placeholder)
     if (awsExports.aws_user_pools_id && 
@@ -82,8 +90,8 @@ export const loadFromAwsExports = () => {
     console.log('aws-exports.js contains placeholder values, skipping...');
     return null;
   } catch (error) {
-    // aws-exports.js doesn't exist or failed to load
-    console.log('aws-exports.js not found or failed to load:', error.message);
+    // Unexpected error during processing
+    console.log('Failed to process aws-exports.js');
     return null;
   }
 };

@@ -23,8 +23,10 @@ export default function App() {
         Amplify.configure(amplifyConfig);
         
         console.log('✅ Application configured successfully');
-        console.log(`Environment: ${config.environment}`);
-        console.log(`Region: ${config.aws.region}`);
+        // Only log details in development mode
+        if (config.environment === 'development') {
+          console.log(`Environment: ${config.environment}`);
+        }
         
         setHasValidConfig(true);
       } catch (error) {

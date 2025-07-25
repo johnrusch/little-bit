@@ -62,7 +62,10 @@ class ConfigManager {
       const validatedConfig = this.validate(configs);
       
       console.log('✅ Configuration loaded successfully');
-      console.log(`Environment: ${validatedConfig.environment}`);
+      // Only log environment in development mode
+      if (validatedConfig.environment === 'development') {
+        console.log(`Environment: ${validatedConfig.environment}`);
+      }
       
       return validatedConfig;
     } catch (error) {

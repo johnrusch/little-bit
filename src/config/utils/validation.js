@@ -69,6 +69,32 @@ export const isValidEnvironment = (env) => {
 };
 
 /**
+ * Validates API key format
+ * @param {string} apiKey
+ * @returns {boolean}
+ */
+export const isValidApiKey = (apiKey) => {
+  // API keys should be non-empty strings with reasonable length
+  return typeof apiKey === 'string' && 
+         apiKey.length >= 20 && 
+         apiKey.length <= 128 &&
+         /^[a-zA-Z0-9_-]+$/.test(apiKey);
+};
+
+/**
+ * Validates Cognito Client ID format
+ * @param {string} clientId
+ * @returns {boolean}
+ */
+export const isValidClientId = (clientId) => {
+  // Cognito client IDs are typically 26 alphanumeric characters
+  return typeof clientId === 'string' && 
+         clientId.length >= 20 && 
+         clientId.length <= 128 &&
+         /^[a-zA-Z0-9]+$/.test(clientId);
+};
+
+/**
  * Validates the entire configuration object
  * @param {Object} config
  * @returns {{valid: boolean, errors: string[]}}
@@ -84,7 +110,7 @@ export const validateConfig = (config) => {
 
   // Validate environment
   if (!isValidEnvironment(config.environment)) {
-    errors.push(`Invalid environment: ${config.environment}`);
+    errors.push('Invalid environment value');
   }
 
   // Validate AWS config
@@ -92,7 +118,7 @@ export const validateConfig = (config) => {
     errors.push('AWS configuration is required');
   } else {
     if (!isValidAwsRegion(config.aws.region)) {
-      errors.push(`Invalid AWS region: ${config.aws.region}`);
+      errors.push('Invalid AWS region format');
     }
 
     // Validate Cognito
@@ -100,10 +126,10 @@ export const validateConfig = (config) => {
       errors.push('Cognito configuration is required');
     } else {
       if (!isValidUserPoolId(config.aws.cognito.userPoolId)) {
-        errors.push(`Invalid User Pool ID: ${config.aws.cognito.userPoolId}`);
+        errors.push('Invalid User Pool ID format');
       }
-      if (!config.aws.cognito.clientId || config.aws.cognito.clientId.length < 1) {
-        errors.push('Cognito Client ID is required');
+      if (!isValidClientId(config.aws.cognito.clientId)) {
+        errors.push('Invalid Cognito Client ID format');
       }
       if (!config.aws.cognito.identityPoolId) {
         errors.push('Cognito Identity Pool ID is required');
@@ -115,7 +141,7 @@ export const validateConfig = (config) => {
       errors.push('S3 configuration is required');
     } else {
       if (!isValidS3BucketName(config.aws.s3.bucketName)) {
-        errors.push(`Invalid S3 bucket name: ${config.aws.s3.bucketName}`);
+        errors.push('Invalid S3 bucket name format');
       }
     }
 
@@ -124,11 +150,17 @@ export const validateConfig = (config) => {
       errors.push('AppSync configuration is required');
     } else {
       if (!isValidUrl(config.aws.appsync.endpoint)) {
-        errors.push(`Invalid AppSync endpoint: ${config.aws.appsync.endpoint}`);
+        errors.push('Invalid AppSync endpoint URL');
       }
       const validAuthTypes = ['API_KEY', 'AWS_IAM', 'AMAZON_COGNITO_USER_POOLS'];
       if (!validAuthTypes.includes(config.aws.appsync.authenticationType)) {
-        errors.push(`Invalid authentication type: ${config.aws.appsync.authenticationType}`);
+        errors.push('Invalid authentication type');
+      }
+      // Validate API key if using API_KEY authentication
+      if (config.aws.appsync.authenticationType === 'API_KEY' && 
+          config.aws.appsync.apiKey && 
+          !isValidApiKey(config.aws.appsync.apiKey)) {
+        errors.push('Invalid AppSync API key format');
       }
     }
   }
@@ -138,7 +170,7 @@ export const validateConfig = (config) => {
     errors.push('API configuration is required');
   } else {
     if (!isValidUrl(config.api.baseUrl)) {
-      errors.push(`Invalid API base URL: ${config.api.baseUrl}`);
+      errors.push('Invalid API base URL format');
     }
     if (typeof config.api.timeout !== 'number' || config.api.timeout < 0) {
       errors.push('API timeout must be a positive number');
@@ -152,7 +184,7 @@ export const validateConfig = (config) => {
     const booleanFeatures = ['audioProcessing', 'socialSharing', 'analytics'];
     booleanFeatures.forEach(feature => {
       if (typeof config.features[feature] !== 'boolean') {
-        errors.push(`Feature ${feature} must be a boolean`);
+        errors.push(`Feature flag '${feature}' must be a boolean`);
       }
     });
   }

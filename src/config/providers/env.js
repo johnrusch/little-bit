@@ -4,6 +4,26 @@
  */
 
 /**
+ * Parse boolean environment variable
+ * @param {string} value - The environment variable value
+ * @returns {boolean|undefined} Parsed boolean or undefined if invalid
+ */
+const parseBoolean = (value) => {
+  if (value === undefined || value === null) return undefined;
+  const normalizedValue = String(value).toLowerCase().trim();
+  
+  if (normalizedValue === 'true' || normalizedValue === '1' || normalizedValue === 'yes' || normalizedValue === 'on') {
+    return true;
+  }
+  if (normalizedValue === 'false' || normalizedValue === '0' || normalizedValue === 'no' || normalizedValue === 'off') {
+    return false;
+  }
+  
+  console.warn(`Invalid boolean value: "${value}". Expected: true/false, 1/0, yes/no, on/off`);
+  return undefined;
+};
+
+/**
  * Load configuration from environment variables
  * @returns {Object} Partial configuration object
  */
@@ -65,20 +85,34 @@ export const loadFromEnv = () => {
   // API Configuration
   if (process.env.APP_API_BASE_URL || process.env.APP_API_TIMEOUT) {
     config.api = {
-      baseUrl: process.env.APP_API_BASE_URL,
-      timeout: process.env.APP_API_TIMEOUT ? parseInt(process.env.APP_API_TIMEOUT, 10) : undefined
+      baseUrl: process.env.APP_API_BASE_URL
     };
+    
+    // Parse timeout with error handling
+    if (process.env.APP_API_TIMEOUT) {
+      const timeout = parseInt(process.env.APP_API_TIMEOUT, 10);
+      if (!isNaN(timeout) && timeout > 0) {
+        config.api.timeout = timeout;
+      } else {
+        console.warn('Invalid APP_API_TIMEOUT value, using default');
+      }
+    }
   }
 
   // Features Configuration
   if (process.env.APP_FEATURE_AUDIO_PROCESSING !== undefined ||
       process.env.APP_FEATURE_SOCIAL_SHARING !== undefined ||
       process.env.APP_FEATURE_ANALYTICS !== undefined) {
-    config.features = {
-      audioProcessing: process.env.APP_FEATURE_AUDIO_PROCESSING === 'true',
-      socialSharing: process.env.APP_FEATURE_SOCIAL_SHARING === 'true',
-      analytics: process.env.APP_FEATURE_ANALYTICS === 'true'
-    };
+    config.features = {};
+    
+    const audioProcessing = parseBoolean(process.env.APP_FEATURE_AUDIO_PROCESSING);
+    if (audioProcessing !== undefined) config.features.audioProcessing = audioProcessing;
+    
+    const socialSharing = parseBoolean(process.env.APP_FEATURE_SOCIAL_SHARING);
+    if (socialSharing !== undefined) config.features.socialSharing = socialSharing;
+    
+    const analytics = parseBoolean(process.env.APP_FEATURE_ANALYTICS);
+    if (analytics !== undefined) config.features.analytics = analytics;
   }
 
   return config;
