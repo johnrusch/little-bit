@@ -1,0 +1,193 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+      
+      - name: Check Prettier formatting
+        run: npm run format:check || (echo "Run 'npm run format' to fix formatting issues" && exit 1)
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run unit tests
+        run: npm run test:unit -- --ci --coverage --maxWorkers=2
+      
+      - name: Run integration tests
+        run: npm run test:integration -- --ci --maxWorkers=2
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: matrix.node-version == '18.x'
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  bundle-analysis:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build bundle
+        run: npm run build
+      
+      - name: Analyze bundle size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Check if build directory exists
+            const buildDir = path.join(process.cwd(), 'build');
+            if (!fs.existsSync(buildDir)) {
+              console.log('No build directory found - skipping analysis');
+              return;
+            }
+            
+            // Calculate total bundle size
+            let totalSize = 0;
+            const walkDir = (dir) => {
+              const files = fs.readdirSync(dir);
+              files.forEach(file => {
+                const filePath = path.join(dir, file);
+                const stat = fs.statSync(filePath);
+                if (stat.isDirectory()) {
+                  walkDir(filePath);
+                } else if (file.endsWith('.js') || file.endsWith('.css')) {
+                  totalSize += stat.size;
+                }
+              });
+            };
+            
+            walkDir(buildDir);
+            const sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+            console.log(`Total bundle size: ${sizeMB} MB`);
+            
+            // Comment on PR if this is a pull request
+            if (context.eventName === 'pull_request') {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `📦 Bundle size: ${sizeMB} MB`
+              });
+            }
+
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run npm audit
+        run: npm audit --production --audit-level=high
+        continue-on-error: true
+      
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: npm-audit-results
+          path: npm-audit.json
+
+  cdk-validate:
+    name: CDK Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install CDK dependencies
+        run: |
+          cd cdk
+          npm ci
+      
+      - name: CDK Synth
+        run: |
+          cd cdk
+          npx cdk synth --quiet
+      
+      - name: Run CDK tests
+        run: |
+          cd cdk
+          npm test
+
+  all-checks:
+    name: All CI Checks Passed
+    needs: [lint, test, bundle-analysis, security-scan, cdk-validate]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check if all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" || \
+                "${{ needs.test.result }}" != "success" || \
+                "${{ needs.bundle-analysis.result }}" != "success" || \
+                "${{ needs.cdk-validate.result }}" != "success" ]]; then
+            echo "One or more CI checks failed"
+            exit 1
+          fi
+          echo "All CI checks passed successfully!"

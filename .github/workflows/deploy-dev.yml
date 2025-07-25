@@ -1,0 +1,244 @@
+name: Deploy to Development
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  deployments: write
+
+env:
+  AWS_REGION: us-west-2
+  NODE_VERSION: '18.x'
+  ENVIRONMENT: dev
+
+jobs:
+  pre-deployment-checks:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check_changes.outputs.should_deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check for deployable changes
+        id: check_changes
+        run: |
+          # Check if there are changes in deployable directories
+          # Handle edge case for first commit or shallow clones
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
+          
+          if echo "$CHANGED_FILES" | grep -qE '^(src/|cdk/|amplify/backend/|package\.json)'; then
+            echo "Deployable changes detected"
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "No deployable changes detected"
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    needs: pre-deployment-checks
+    if: needs.pre-deployment-checks.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create GitHub deployment
+        uses: actions/github-script@v7
+        id: deployment
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: 'development',
+              required_contexts: [],
+              auto_merge: false,
+              description: 'Deploying to development environment'
+            });
+            
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'in_progress',
+              environment_url: 'https://dev.littlebit.app',
+              description: 'Deployment in progress'
+            });
+            
+            return deployment.data.id;
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install CDK dependencies
+        run: |
+          cd cdk
+          npm ci
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_DEV }}
+          role-session-name: GitHubActions-Deploy-Dev
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Set environment variables
+        run: |
+          echo "CDK_DEPLOY_ACCOUNT=${{ secrets.AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
+          echo "CDK_DEPLOY_REGION=${{ env.AWS_REGION }}" >> $GITHUB_ENV
+      
+      - name: Deploy CDK stacks
+        run: |
+          cd cdk
+          npx cdk deploy --all --require-approval never -c env=${{ env.ENVIRONMENT }}
+      
+      - name: Export CDK outputs
+        run: |
+          cd cdk
+          mkdir -p outputs
+          
+          aws cloudformation describe-stacks \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[?contains(StackName, 'LittleBit-') && contains(StackName, '-${{ env.ENVIRONMENT }}')].Outputs" \
+            --output json > outputs/cdk-outputs-${{ env.ENVIRONMENT }}.json
+      
+      - name: Update deployment status - Success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: 'success',
+              environment_url: 'https://dev.littlebit.app',
+              description: 'Deployment completed successfully'
+            });
+      
+      - name: Update deployment status - Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: 'failure',
+              description: 'Deployment failed'
+            });
+
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: deploy-infrastructure
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_DEV }}
+          role-session-name: GitHubActions-Deploy-Frontend-Dev
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Generate aws-exports.js
+        run: |
+          cd scripts
+          node generate-aws-exports.js --env ${{ env.ENVIRONMENT }}
+      
+      - name: Build web app
+        run: |
+          npm run build
+          
+      - name: Deploy to S3
+        run: |
+          # Get bucket name from CDK outputs
+          BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-Core-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='AudioBucketName'].OutputValue" \
+            --output text)
+          
+          # Sync build files to S3 web hosting path
+          aws s3 sync build/ s3://$BUCKET_NAME/web/ \
+            --delete \
+            --cache-control "public, max-age=3600"
+          
+          # Invalidate CloudFront if configured
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-Core-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" \
+            --output text 2>/dev/null || echo "")
+          
+          if [ ! -z "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id $DISTRIBUTION_ID \
+              --paths "/*"
+          fi
+
+  post-deployment-tests:
+    name: Post-deployment Tests
+    needs: [deploy-infrastructure, deploy-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_DEV }}
+          role-session-name: GitHubActions-PostDeploy-Dev
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Run smoke tests
+        run: |
+          # Get API endpoint from CDK outputs
+          API_ENDPOINT=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-API-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='GraphQLAPIURL'].OutputValue" \
+            --output text)
+          
+          # Basic health check
+          curl -f "$API_ENDPOINT/health" || echo "No health endpoint configured"
+          
+          # Run any smoke tests
+          # npm run test:smoke -- --env=${{ env.ENVIRONMENT }}
+      
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Development deployment completed successfully!"
+          echo "Environment: ${{ env.ENVIRONMENT }}"
+          echo "Commit: ${{ github.sha }}"

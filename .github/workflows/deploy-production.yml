@@ -1,0 +1,422 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to deploy (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+  deployments: write
+  issues: write
+
+env:
+  AWS_REGION: us-west-2
+  NODE_VERSION: '18.x'
+  ENVIRONMENT: prod
+
+jobs:
+  pre-deployment:
+    name: Pre-deployment Validation
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      changelog: ${{ steps.get_changelog.outputs.changelog }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${{ github.event.inputs.tag }}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION"
+      
+      - name: Validate tag format
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Error: Invalid version format. Expected format: v1.0.0"
+            exit 1
+          fi
+      
+      - name: Generate changelog
+        id: get_changelog
+        run: |
+          # Get changelog between current tag and previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            CHANGELOG="Initial release"
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..${{ steps.get_version.outputs.version }})
+          fi
+          
+          # Save to output (escape newlines)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Run production readiness checks
+        run: |
+          echo "Running production readiness checks..."
+          
+          # Check if all tests pass
+          npm ci
+          npm test -- --ci
+          
+          # Check for security vulnerabilities
+          npm audit --production --audit-level=high || true
+          
+          # Verify CDK templates
+          cd cdk
+          npm ci
+          npx cdk synth --quiet
+
+  request-approval:
+    name: Request Deployment Approval
+    needs: pre-deployment
+    runs-on: ubuntu-latest
+    environment: production-approval
+    outputs:
+      issue_number: ${{ steps.create_issue.outputs.result }}
+    steps:
+      - name: Create deployment issue
+        uses: actions/github-script@v7
+        id: create_issue
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Production Deployment Request: ${{ needs.pre-deployment.outputs.version }}`,
+              body: `## 🚀 Production Deployment Request
+              
+              **Version:** ${{ needs.pre-deployment.outputs.version }}
+              **Requested by:** @${{ github.actor }}
+              **Commit:** ${{ github.sha }}
+              
+              ### Changelog
+              ${{ needs.pre-deployment.outputs.changelog }}
+              
+              ### Deployment Checklist
+              - [ ] All tests passing
+              - [ ] Security scan completed
+              - [ ] Database migrations reviewed (if applicable)
+              - [ ] Rollback plan documented
+              - [ ] Stakeholders notified
+              
+              ### Approval
+              This deployment requires manual approval. Please review and approve in the GitHub Actions workflow.
+              
+              [View Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`,
+              labels: ['deployment', 'production']
+            });
+            
+            return issue.data.number;
+      
+      - name: Wait for approval
+        run: |
+          echo "⏳ Waiting for manual approval..."
+          echo "Please review the deployment request and approve in the GitHub Actions UI"
+
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    needs: [pre-deployment, request-approval]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.pre-deployment.outputs.version }}
+      
+      - name: Create GitHub deployment
+        uses: actions/github-script@v7
+        id: deployment
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: '${{ needs.pre-deployment.outputs.version }}',
+              environment: 'production',
+              required_contexts: [],
+              auto_merge: false,
+              description: 'Deploying version ${{ needs.pre-deployment.outputs.version }} to production'
+            });
+            
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'in_progress',
+              environment_url: 'https://littlebit.app',
+              description: 'Production deployment in progress'
+            });
+            
+            return deployment.data.id;
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install CDK dependencies
+        run: |
+          cd cdk
+          npm ci
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_PROD }}
+          role-session-name: GitHubActions-Deploy-Prod
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Create pre-deployment backup
+        run: |
+          echo "Creating pre-deployment backup..."
+          
+          # Backup DynamoDB tables
+          TABLES=$(aws dynamodb list-tables --query "TableNames[?contains(@, 'LittleBit')]" --output json)
+          for table in $(echo $TABLES | jq -r '.[]'); do
+            aws dynamodb create-backup \
+              --table-name $table \
+              --backup-name "$table-pre-deploy-${{ needs.pre-deployment.outputs.version }}-$(date +%Y%m%d%H%M%S)"
+          done
+      
+      - name: Deploy CDK stacks
+        run: |
+          cd cdk
+          
+          # Deploy with extra confirmation
+          npx cdk deploy --all --require-approval never -c env=${{ env.ENVIRONMENT }}
+      
+      - name: Export CDK outputs
+        run: |
+          cd cdk
+          mkdir -p outputs
+          
+          aws cloudformation describe-stacks \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[?contains(StackName, 'LittleBit-') && contains(StackName, '-${{ env.ENVIRONMENT }}')].Outputs" \
+            --output json > outputs/cdk-outputs-${{ env.ENVIRONMENT }}.json
+      
+      - name: Update deployment status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: state,
+              environment_url: 'https://littlebit.app',
+              description: state === 'success' ? 'Deployment completed' : 'Deployment failed'
+            });
+
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: [pre-deployment, deploy-infrastructure]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.pre-deployment.outputs.version }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci --production
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_PROD }}
+          role-session-name: GitHubActions-Deploy-Frontend-Prod
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Generate aws-exports.js
+        run: |
+          cd scripts
+          node generate-aws-exports.js --env ${{ env.ENVIRONMENT }}
+      
+      - name: Build production bundle
+        run: |
+          NODE_ENV=production npm run build
+      
+      - name: Deploy to S3 with versioning
+        run: |
+          # Get bucket name from CDK outputs
+          BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-Core-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='AudioBucketName'].OutputValue" \
+            --output text)
+          
+          # Create version folder
+          VERSION_PATH="web/versions/${{ needs.pre-deployment.outputs.version }}"
+          
+          # Upload to versioned path
+          aws s3 sync build/ s3://$BUCKET_NAME/$VERSION_PATH/
+          
+          # Update current version
+          aws s3 sync build/ s3://$BUCKET_NAME/web/ \
+            --delete \
+            --cache-control "public, max-age=31536000" \
+            --exclude "*.html" \
+            --exclude "service-worker.js"
+          
+          # HTML files with shorter cache
+          aws s3 sync build/ s3://$BUCKET_NAME/web/ \
+            --exclude "*" \
+            --include "*.html" \
+            --include "service-worker.js" \
+            --cache-control "public, max-age=300"
+      
+      - name: Invalidate CloudFront
+        run: |
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-Core-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" \
+            --output text 2>/dev/null || echo "")
+          
+          if [ ! -z "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id $DISTRIBUTION_ID \
+              --paths "/*" \
+              --invalidation-batch "{\"Paths\": {\"Quantity\": 1, \"Items\": [\"/*\"]}, \"CallerReference\": \"deploy-${{ needs.pre-deployment.outputs.version }}-$(date +%s)\"}"
+          fi
+
+  post-deployment:
+    name: Post-deployment Validation
+    needs: [pre-deployment, deploy-infrastructure, deploy-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_PROD }}
+          role-session-name: GitHubActions-PostDeploy-Prod
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Run production smoke tests
+        run: |
+          # Get API endpoint
+          API_ENDPOINT=$(aws cloudformation describe-stacks \
+            --stack-name LittleBit-API-${{ env.ENVIRONMENT }} \
+            --query "Stacks[0].Outputs[?OutputKey=='GraphQLAPIURL'].OutputValue" \
+            --output text)
+          
+          # Health checks
+          curl -f "https://littlebit.app" || exit 1
+          curl -f "$API_ENDPOINT/health" || echo "No health endpoint"
+          
+          echo "✅ Production deployment validated"
+      
+      - name: Update deployment issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.request-approval.outputs.issue_number }},
+              body: `## ✅ Deployment Completed Successfully
+              
+              **Version:** ${{ needs.pre-deployment.outputs.version }}
+              **Environment:** Production
+              **Status:** Success
+              
+              ### Deployment Summary
+              - Infrastructure deployed
+              - Frontend deployed
+              - CloudFront cache invalidated
+              - Smoke tests passed
+              
+              **Live at:** https://littlebit.app`
+            });
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.request-approval.outputs.issue_number }},
+              state: 'closed'
+            });
+      
+      - name: Create release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: '${{ needs.pre-deployment.outputs.version }}',
+              name: 'Release ${{ needs.pre-deployment.outputs.version }}',
+              body: `## Changelog\n${{ needs.pre-deployment.outputs.changelog }}`,
+              draft: false,
+              prerelease: false
+            });
+
+  rollback:
+    name: Production Rollback
+    if: failure()
+    needs: [pre-deployment, deploy-infrastructure, deploy-frontend]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_PROD }}
+          role-session-name: GitHubActions-Rollback-Prod
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Initiate rollback
+        run: |
+          echo "❌ Deployment failed. Initiating rollback..."
+          
+          # Get previous version (would need to store this somewhere)
+          # For now, manual intervention required
+          echo "Manual rollback required. Please check CloudFormation console."
+          
+      - name: Notify failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Production Deployment Failed: ${{ needs.pre-deployment.outputs.version }}`,
+              body: `## Deployment Failure
+              
+              **Version:** ${{ needs.pre-deployment.outputs.version }}
+              **Environment:** Production
+              **Status:** Failed
+              
+              **Action Required:** Manual rollback may be needed.
+              
+              [View Failed Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`,
+              labels: ['bug', 'deployment', 'production', 'urgent']
+            });

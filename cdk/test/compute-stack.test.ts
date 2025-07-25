@@ -2,19 +2,27 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Template, Match } from 'aws-cdk-lib/assertions';
 import { ComputeStack } from '../lib/stacks/compute-stack';
+import { MockBucket } from './mocks/mock-bucket';
 
 describe('ComputeStack', () => {
   let app: cdk.App;
   let stack: ComputeStack;
   let template: Template;
-  let mockBucket: s3.Bucket;
 
   beforeEach(() => {
-    app = new cdk.App();
+    app = new cdk.App({
+      context: {
+        testing: true // Set testing context to skip S3 notifications
+      }
+    });
     
-    // Create mock dependencies
-    const coreStack = new cdk.Stack(app, 'MockCoreStack');
-    mockBucket = new s3.Bucket(coreStack, 'MockBucket');
+    // Create a separate stack for the test
+    const testStack = new cdk.Stack(app, 'TestStack', {
+      env: { account: '123456789012', region: 'us-west-2' }
+    });
+    
+    // Use mock bucket to avoid cross-stack dependencies
+    const mockBucket = new MockBucket(testStack, 'MockBucket') as unknown as s3.IBucket;
     
     stack = new ComputeStack(app, 'TestComputeStack', {
       env: { account: '123456789012', region: 'us-west-2' },
@@ -95,9 +103,9 @@ describe('ComputeStack', () => {
     });
   });
 
-  test('S3 bucket has event notification for Lambda', () => {
-    // Note: This is configured on the bucket in the core stack, 
-    // but we can verify the Lambda has the necessary permissions
+  test('Lambda has S3 invocation permission', () => {
+    // Note: S3 event notifications are skipped in test mode to avoid cyclic dependencies.
+    // We verify the Lambda has the necessary permissions for S3 to invoke it.
     template.hasResourceProperties('AWS::Lambda::Permission', {
       Action: 'lambda:InvokeFunction',
       Principal: 's3.amazonaws.com',

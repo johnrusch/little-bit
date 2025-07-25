@@ -1,0 +1,12 @@
+node_modules/
+build/
+dist/
+coverage/
+cdk/cdk.out/
+amplify/
+*.min.js
+*.min.css
+package-lock.json
+yarn.lock
+.expo/
+.expo-shared/
