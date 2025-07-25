@@ -163,7 +163,7 @@ class AuthAdapter {
         listeners.splice(index, 1);
       }
       
-      if (channel === 'auth') {
+      if (channel === 'auth' && this.cognitoService.removeAuthStateListener) {
         this.cognitoService.removeAuthStateListener(callback);
       }
     };

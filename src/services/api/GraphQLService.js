@@ -17,11 +17,12 @@ class GraphQLService {
     }
 
     // Initialize GraphQL client with API key authentication
-    this.client = new GraphQLClient(appsync.endpoint, {
-      headers: {
-        'x-api-key': appsync.apiKey || ''
-      }
-    });
+    const headers = {};
+    if (appsync.apiKey) {
+      headers['x-api-key'] = appsync.apiKey;
+    }
+    
+    this.client = new GraphQLClient(appsync.endpoint, { headers });
 
     this.config = config;
     this.subscriptionCallbacks = new Map();
@@ -39,8 +40,8 @@ class GraphQLService {
       const data = await this.client.request(query, variables);
       return { data };
     } catch (error) {
-      console.error('GraphQL query error:', error);
-      throw new Error(`GraphQL query failed: ${error.message}`);
+      console.error('GraphQL query failed');
+      throw new Error('GraphQL query failed');
     }
   }
 
@@ -55,8 +56,8 @@ class GraphQLService {
       const data = await this.client.request(mutation, variables);
       return { data };
     } catch (error) {
-      console.error('GraphQL mutation error:', error);
-      throw new Error(`GraphQL mutation failed: ${error.message}`);
+      console.error('GraphQL mutation failed');
+      throw new Error('GraphQL mutation failed');
     }
   }
 
@@ -70,8 +71,10 @@ class GraphQLService {
   subscribe(params) {
     const { query, variables = {} } = params;
     
-    // Generate unique subscription ID
-    const subscriptionId = Math.random().toString(36).substring(7);
+    // Generate cryptographically secure subscription ID
+    const subscriptionId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : `sub-${Date.now()}-${Math.random().toString(36).substring(7)}`;
     
     // Store subscription info
     const subscription = {
@@ -111,10 +114,21 @@ class GraphQLService {
    * @param {Object} headers - New headers to merge
    */
   updateHeaders(headers) {
+    // Validate headers to prevent injection
+    const sanitizedHeaders = {};
+    const allowedHeaders = ['Authorization', 'x-api-key', 'Content-Type'];
+    
+    for (const [key, value] of Object.entries(headers)) {
+      if (allowedHeaders.includes(key) && typeof value === 'string') {
+        // Remove any newline characters that could cause header injection
+        sanitizedHeaders[key] = value.replace(/[\r\n]/g, '');
+      }
+    }
+    
     this.client = new GraphQLClient(this.config.aws.appsync.endpoint, {
       headers: {
         ...this.client.options.headers,
-        ...headers
+        ...sanitizedHeaders
       }
     });
   }

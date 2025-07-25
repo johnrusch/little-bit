@@ -9,7 +9,7 @@ import {
 import { Hub as AmplifyHub } from 'aws-amplify/utils';
 
 // Feature flag to enable/disable new auth implementation
-const USE_NEW_AUTH = process.env.REACT_APP_USE_NEW_AUTH !== 'false';
+const USE_NEW_AUTH = process.env.REACT_APP_USE_NEW_AUTH === 'true';
 
 let authAdapter = null;
 

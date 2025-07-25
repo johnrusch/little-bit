@@ -49,8 +49,8 @@ class S3Service {
       const url = await getSignedUrl(this.s3Client, command, { expiresIn });
       return url;
     } catch (error) {
-      console.error('Error generating presigned URL:', error);
-      throw new Error(`Failed to generate presigned URL: ${error.message}`);
+      console.error('Failed to generate presigned URL');
+      throw new Error('Failed to generate presigned URL');
     }
   }
 
@@ -76,8 +76,8 @@ class S3Service {
       const url = await getSignedUrl(this.s3Client, command, { expiresIn });
       return url;
     } catch (error) {
-      console.error('Error generating presigned upload URL:', error);
-      throw new Error(`Failed to generate presigned upload URL: ${error.message}`);
+      console.error('Failed to generate presigned upload URL');
+      throw new Error('Failed to generate presigned upload URL');
     }
   }
 
@@ -109,8 +109,8 @@ class S3Service {
         ...result
       };
     } catch (error) {
-      console.error('Error uploading to S3:', error);
-      throw new Error(`Failed to upload file: ${error.message}`);
+      console.error('Failed to upload file');
+      throw new Error('Failed to upload file');
     }
   }
 
@@ -132,8 +132,8 @@ class S3Service {
 
       await this.s3Client.send(command);
     } catch (error) {
-      console.error('Error deleting from S3:', error);
-      throw new Error(`Failed to delete file: ${error.message}`);
+      console.error('Failed to delete file');
+      throw new Error('Failed to delete file');
     }
   }
 

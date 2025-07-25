@@ -2,7 +2,7 @@ import StorageAdapter from './StorageAdapter';
 import { getUrl as amplifyGetUrl } from 'aws-amplify/storage';
 
 // Feature flag to enable/disable new storage implementation
-const USE_NEW_STORAGE = process.env.REACT_APP_USE_NEW_STORAGE !== 'false';
+const USE_NEW_STORAGE = process.env.REACT_APP_USE_NEW_STORAGE === 'true';
 
 let storageAdapter = null;
 

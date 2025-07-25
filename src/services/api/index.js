@@ -2,7 +2,7 @@ import APIAdapter from './APIAdapter';
 import { generateClient as amplifyGenerateClient } from 'aws-amplify/api';
 
 // Feature flag to enable/disable new API implementation
-const USE_NEW_API = process.env.REACT_APP_USE_NEW_API !== 'false';
+const USE_NEW_API = process.env.REACT_APP_USE_NEW_API === 'true';
 
 let apiAdapter = null;
 let generatedClient = null;

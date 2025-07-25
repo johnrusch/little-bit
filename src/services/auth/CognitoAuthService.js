@@ -63,8 +63,8 @@ class CognitoAuthService {
           resolve(userId);
         },
         onFailure: (err) => {
-          console.error('Sign in error:', err.message);
-          reject(err);
+          console.error('Authentication failed');
+          reject(new Error('Authentication failed'));
         },
         newPasswordRequired: (userAttributes, requiredAttributes) => {
           // Handle new password requirement if needed
@@ -92,8 +92,8 @@ class CognitoAuthService {
 
       this.userPool.signUp(email, password, attributeList, null, (err, result) => {
         if (err) {
-          console.error('Sign up error:', err.message);
-          reject(err);
+          console.error('Sign up failed');
+          reject(new Error('Sign up failed'));
           return;
         }
 
@@ -123,7 +123,7 @@ class CognitoAuthService {
       
       return true;
     } catch (error) {
-      console.error('Sign out error:', error.message);
+      console.error('Sign out failed');
       return false;
     }
   }
@@ -199,12 +199,24 @@ class CognitoAuthService {
       throw new Error('No valid session');
     }
 
+    // Validate configuration values to prevent injection
+    const region = this.config.aws.cognito.region || this.config.aws.region;
+    const userPoolId = this.config.aws.cognito.userPoolId;
+    
+    if (!region || !region.match(/^[a-z]{2}-[a-z]+-\d{1}$/)) {
+      throw new Error('Invalid AWS region format');
+    }
+    
+    if (!userPoolId || !userPoolId.match(/^[a-zA-Z0-9_-]+$/)) {
+      throw new Error('Invalid User Pool ID format');
+    }
+
     // Return credentials configuration for AWS SDK
     return {
-      region: this.config.aws.cognito.region || this.config.aws.region,
+      region,
       identityPoolId: this.config.aws.cognito.identityPoolId,
       logins: {
-        [`cognito-idp.${this.config.aws.cognito.region || this.config.aws.region}.amazonaws.com/${this.config.aws.cognito.userPoolId}`]: session.idToken
+        [`cognito-idp.${region}.amazonaws.com/${userPoolId}`]: session.idToken
       }
     };
   }

@@ -14,17 +14,20 @@ export async function initializeServices(config) {
   initializeAPI(config);
 
   // Set up auth state change listeners if using new services
-  if (process.env.REACT_APP_USE_NEW_AUTH !== 'false') {
-    try {
-      // Get initial credentials and update storage
-      const credentials = await getAuthCredentials();
-      if (credentials) {
-        updateStorageCredentials(credentials);
+  if (process.env.REACT_APP_USE_NEW_AUTH === 'true' && process.env.REACT_APP_USE_NEW_STORAGE === 'true') {
+    // Use setTimeout to ensure services are fully initialized
+    setTimeout(async () => {
+      try {
+        // Get initial credentials and update storage
+        const credentials = await getAuthCredentials();
+        if (credentials) {
+          updateStorageCredentials(credentials);
+        }
+      } catch (error) {
+        // User might not be logged in, which is okay
+        console.log('No initial auth credentials available');
       }
-    } catch (error) {
-      // User might not be logged in, which is okay
-      console.log('No initial auth credentials available');
-    }
+    }, 100);
   }
 
   return {
@@ -39,9 +42,9 @@ export async function initializeServices(config) {
  * @returns {boolean} True if all services are using new implementation
  */
 export function areNewServicesEnabled() {
-  return process.env.REACT_APP_USE_NEW_STORAGE !== 'false' &&
-         process.env.REACT_APP_USE_NEW_AUTH !== 'false' &&
-         process.env.REACT_APP_USE_NEW_API !== 'false';
+  return process.env.REACT_APP_USE_NEW_STORAGE === 'true' &&
+         process.env.REACT_APP_USE_NEW_AUTH === 'true' &&
+         process.env.REACT_APP_USE_NEW_API === 'true';
 }
 
 // Re-export individual service functions for convenience
