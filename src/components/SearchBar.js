@@ -26,21 +26,21 @@ export default SearchBar;
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
     borderRadius: 25,
-    paddingHorizontal: 15,
-    height: 40,
+    flexDirection: 'row',
     flex: 1,
+    height: 40,
     marginRight: 10,
+    paddingHorizontal: 15,
   },
   iconContainer: {
     marginRight: 10,
   },
   input: {
+    color: '#333',
     flex: 1,
     fontSize: 16,
-    color: '#333',
   },
 });

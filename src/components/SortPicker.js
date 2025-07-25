@@ -69,55 +69,55 @@ export default SortPicker;
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
     borderRadius: 25,
-    paddingHorizontal: 15,
+    flexDirection: 'row',
     height: 40,
     minWidth: 120,
+    paddingHorizontal: 15,
   },
   icon: {
     marginRight: 8,
   },
-  selectedText: {
-    fontSize: 16,
-    color: '#333',
-    marginRight: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   modalContent: {
     backgroundColor: 'white',
     borderRadius: 12,
+    maxWidth: 300,
     padding: 20,
     width: '80%',
-    maxWidth: 300,
+  },
+  modalOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
+    justifyContent: 'center',
   },
   modalTitle: {
+    color: '#333',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
-    color: '#333',
   },
   option: {
-    paddingVertical: 12,
-    paddingHorizontal: 10,
     borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+  },
+  optionText: {
+    color: '#333',
+    fontSize: 16,
   },
   selectedOption: {
     backgroundColor: '#f0f0f0',
   },
-  optionText: {
-    fontSize: 16,
-    color: '#333',
-  },
   selectedOptionText: {
-    fontWeight: 'bold',
     color: '#37AD65',
+    fontWeight: 'bold',
+  },
+  selectedText: {
+    color: '#333',
+    fontSize: 16,
+    marginRight: 8,
   },
 });

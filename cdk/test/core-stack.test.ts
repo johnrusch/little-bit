@@ -51,7 +51,7 @@ describe('CoreStack', () => {
 
   test('Creates S3 Bucket with proper configuration', () => {
     template.hasResourceProperties('AWS::S3::Bucket', {
-      BucketName: Match.stringLikeRegexp('littlebit-audio-.*'),
+      BucketName: 'littlebit-audio-123456789012-us-west-2',
       BucketEncryption: {
         ServerSideEncryptionConfiguration: [{
           ServerSideEncryptionByDefault: {

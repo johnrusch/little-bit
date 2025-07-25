@@ -70,13 +70,13 @@ export default NavBar;
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
     backgroundColor: "#69FAA0",
-    padding: 25,
+    flexDirection: "row",
     justifyContent: "space-around",
+    padding: 25,
   },
   tabButton: {
-    flex: 1,
     alignItems: "center",
+    flex: 1,
   },
 });

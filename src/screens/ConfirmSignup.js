@@ -252,25 +252,25 @@ const ConfirmSignup = (props) => {
   
   const styles = StyleSheet.create({
     container: {
-      flex: 1,
       backgroundColor: '#343a40',
+      flex: 1,
       justifyContent: 'center'
     },
     digitBoxes: {
       flexDirection: 'row',
       justifyContent: 'space-around',
-      width: '100%',
-      marginTop: 20
+      marginTop: 20,
+      width: '100%'
     },
     digitCon: {
-      flexDirection: 'column',
-      marginTop: 50,
-      width: '100%',
-      paddingHorizontal: 20,
-      paddingTop: 30,
-      paddingBottom: 100,
       backgroundColor: 'rgba(216, 216, 216, 0.25)',
       borderRadius: 20,
+      flexDirection: 'column',
+      marginTop: 50,
+      paddingBottom: 100,
+      paddingHorizontal: 20,
+      paddingTop: 30,
+      width: '100%',
     },
     header: {
       position: "absolute", 

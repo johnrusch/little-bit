@@ -24,8 +24,8 @@ const styles = StyleSheet.create({
     marginRight: 10
   },
   buttonText: {
+      color: 'black',
       fontSize: 18,
       fontWeight: 'bold',
-      color: 'black',
   }
 });

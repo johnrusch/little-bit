@@ -2,24 +2,34 @@ import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { Template, Match } from 'aws-cdk-lib/assertions';
 import { ApiStack } from '../lib/stacks/api-stack';
+import { MockUserPool } from './mocks/mock-user-pool';
 
 describe('ApiStack', () => {
   let app: cdk.App;
   let stack: ApiStack;
   let template: Template;
-  let mockUserPool: cognito.UserPool;
+  let mockUserPool: cognito.IUserPool;
 
   beforeEach(() => {
-    app = new cdk.App();
+    app = new cdk.App({
+      context: {
+        testing: true
+      }
+    });
     
-    // Create a mock user pool
-    const coreStack = new cdk.Stack(app, 'MockCoreStack');
+    // Create a core stack with the user pool
+    const coreStack = new cdk.Stack(app, 'MockCoreStack', {
+      env: { account: '123456789012', region: 'us-west-2' },
+    });
     mockUserPool = new cognito.UserPool(coreStack, 'MockUserPool');
     
+    // Create API stack in the same app
     stack = new ApiStack(app, 'TestApiStack', {
       env: { account: '123456789012', region: 'us-west-2' },
       userPool: mockUserPool,
     });
+    
+    // Only analyze the API stack
     template = Template.fromStack(stack);
   });
 

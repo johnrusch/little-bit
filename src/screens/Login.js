@@ -92,47 +92,47 @@ const Login = ({navigation, route}) => {
 
 const styles = StyleSheet.create({
     container: {
-      flex: 1,
-      backgroundColor: "#D0F7DD",
-      justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: "#D0F7DD",
+      flex: 1,
+      justifyContent: 'center',
       padding: 20,
       paddingTop: 50
-    },
-    logo: {
-      height: 150,
-      width: 150,
-      resizeMode: 'cover',
-    },
-    text: {
-      fontSize: 28,
-      marginBottom: 10,
-      color: '#051d5f',
-    },
-    successContainer: {
-      backgroundColor: 'rgba(51, 122, 79, 0.1)',
-      padding: 15,
-      borderRadius: 10,
-      marginBottom: 20,
-      borderWidth: 1,
-      borderColor: '#337A4F',
-    },
-    successText: {
-      fontSize: 16,
-      color: '#337A4F',
-      fontWeight: '600',
-      textAlign: 'center',
-    },
-    navButton: {
-      marginTop: 15,
     },
     forgotButton: {
       marginTop: 15,
     },
+    logo: {
+      height: 150,
+      resizeMode: 'cover',
+      width: 150,
+    },
+    navButton: {
+      marginTop: 15,
+    },
     navButtonText: {
+      color: '#337A4F',
       fontSize: 18,
       fontWeight: '500',
+    },
+    successContainer: {
+      backgroundColor: 'rgba(51, 122, 79, 0.1)',
+      borderColor: '#337A4F',
+      borderRadius: 10,
+      borderWidth: 1,
+      marginBottom: 20,
+      padding: 15,
+    },
+    successText: {
       color: '#337A4F',
+      fontSize: 16,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    text: {
+      color: '#051d5f',
+      fontSize: 28,
+      marginBottom: 10,
     },
   });
 
