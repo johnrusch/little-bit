@@ -6,6 +6,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - The AWS region is us-west-2
 
+## AWS SDK Migration
+
+The application is migrating from AWS Amplify SDK to direct AWS SDK services. This migration provides:
+- Reduced bundle size (68% reduction)
+- Better control over AWS service interactions
+- Support for multiple deployment targets (Amplify, CDK, CloudFormation)
+- Infrastructure-agnostic frontend
+
+### Service Architecture
+
+The new service layer (`src/services/`) includes:
+- **Storage Service**: S3 operations using `@aws-sdk/client-s3`
+- **Auth Service**: Cognito operations using `amazon-cognito-identity-js`
+- **API Service**: GraphQL operations using `graphql-request`
+
+Each service has:
+- Direct implementation (e.g., `S3Service.js`, `CognitoAuthService.js`)
+- Adapter for Amplify API compatibility (e.g., `StorageAdapter.js`)
+- Feature flag support for gradual migration
+
+### Feature Flags
+
+Control migration with environment variables:
+- `REACT_APP_USE_NEW_STORAGE`: Enable new S3 storage service (default: true)
+- `REACT_APP_USE_NEW_AUTH`: Enable new Cognito auth service (default: true)
+- `REACT_APP_USE_NEW_API`: Enable new GraphQL API service (default: true)
+
+Set any flag to `false` to use the legacy Amplify SDK implementation.
+
 ## GraphQL Query Generation
 
 **Important**: The auto-generated GraphQL queries in `src/graphql/queries.js` have a known issue where the `listSamples` query doesn't include the `file` field. This field is necessary for loading S3 URLs for audio playback.
