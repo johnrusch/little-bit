@@ -51,3 +51,44 @@ npx cdk deploy --all
 ```
 
 See `cdk/README.md` for detailed deployment instructions and migration guide from Amplify.
+
+## Environment Configuration Management
+
+The project now includes a robust environment configuration management system that replaces Amplify's configuration approach. This system supports multiple environments, provides type-safe configuration access, and maintains backward compatibility with aws-exports.js.
+
+### Configuration System Architecture
+- **ConfigManager**: Central configuration loader and validator
+- **Multiple sources**: Environment variables, aws-exports.js, and defaults
+- **Validation**: Runtime validation of all configuration values
+- **Type safety**: JSDoc type definitions for configuration structure
+
+### Configuration Sources (priority order)
+1. Environment variables (highest priority)
+2. aws-exports.js (backward compatibility)
+3. Default values (lowest priority)
+
+### Usage
+The configuration system is automatically initialized in App.js:
+```javascript
+const config = await ConfigManager.load({
+  useAwsExports: true // Enable backward compatibility
+});
+```
+
+### Environment Variables
+All configuration can be overridden via environment variables:
+- `APP_ENV`: Environment name (development/staging/production)
+- `APP_AWS_REGION`: AWS region
+- `APP_COGNITO_USER_POOL_ID`: Cognito User Pool ID
+- `APP_S3_BUCKET_NAME`: S3 bucket name
+- See `environments/README.md` for complete list
+
+### Local Development
+1. Copy `environments/.env.example` to `.env.development`
+2. Fill in your development values
+3. Use a tool like react-native-dotenv to load the values
+
+### Important Notes
+- The system maintains full backward compatibility with aws-exports.js
+- Configuration is validated at runtime to catch errors early
+- All sensitive values should use environment variables, not committed files

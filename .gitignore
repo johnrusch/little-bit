@@ -42,3 +42,8 @@ coverage/
 # CDK outputs (contain sensitive values)
 cdk/outputs/cdk-outputs-*.json
 !cdk/outputs/cdk-outputs-example.json
+
+# Environment configuration files
+environments/.env*
+!environments/.env.example
+!environments/README.md
