@@ -3,22 +3,17 @@ import { View, StyleSheet, FlatList, RefreshControl, Text } from "react-native";
 import Sound from "../components/Sound";
 import SoundListHeader from "../components/SoundListHeader";
 import EditSoundModal from "../components/modals/EditSoundModal";
-import { wait } from "../utils/loading";
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
 import { PLAYBACK, SOUNDS } from "../api";
 
 const Sounds = (props) => {
   const {
-    user,
     sounds,
-    setLoadingStatus,
-    setSounds,
-    setRefreshing,
     refreshing,
   } = props;
   const [modalVisible, setModalVisible] = useState(false);
   const [soundToUpdate, setSoundToUpdate] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [playbackObj, setPlaybackObj] = useState(null);
   const [soundObj, setSoundObj] = useState(null);
   const [currentAudio, setCurrentAudio] = useState({});
