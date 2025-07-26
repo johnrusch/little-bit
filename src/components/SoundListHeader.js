@@ -38,21 +38,21 @@ export default SoundListHeader;
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: 'white',
+    borderBottomColor: '#f0f0f0',
+    borderBottomWidth: 1,
+    paddingBottom: 10,
     paddingHorizontal: 15,
     paddingTop: 15,
-    paddingBottom: 10,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   controlsContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   resultsText: {
-    marginTop: 10,
-    fontSize: 14,
     color: '#666',
+    fontSize: 14,
     fontStyle: 'italic',
+    marginTop: 10,
   },
 });

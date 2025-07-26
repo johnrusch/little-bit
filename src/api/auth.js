@@ -1,4 +1,4 @@
-import { signIn, signUp, signOut, fetchAuthSession, getCurrentUser, Hub } from "../services/auth";
+import { signIn, signUp, signOut, getCurrentUser, Hub } from "../services/auth";
 
 const getUsername = (userId) => {
     return userId;
@@ -7,7 +7,7 @@ const getUsername = (userId) => {
 const AUTH = {
     logIn: async (username, password) => {
         try {
-            const { isSignedIn, nextStep } = await signIn({ 
+            const { isSignedIn } = await signIn({ 
                 username, 
                 password,
                 options: {

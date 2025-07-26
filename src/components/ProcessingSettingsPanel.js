@@ -179,93 +179,93 @@ const ProcessingSettingsPanel = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    marginVertical: 8,
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f8f9fa',
-  },
-  headerText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
   chevronIcon: {
     color: '#666',
+  },
+  container: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    borderWidth: 1,
+    marginVertical: 8,
+    overflow: 'hidden',
   },
   content: {
     overflow: 'hidden',
   },
-  settingsContainer: {
-    padding: 16,
-  },
-  settingRow: {
+  header: {
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+    padding: 16,
+  },
+  headerText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  settingDescription: {
+    color: '#666',
+    fontSize: 12,
+    lineHeight: 16,
   },
   settingInfo: {
     flex: 1,
     marginRight: 12,
   },
   settingLabel: {
+    color: '#333',
     fontSize: 15,
     fontWeight: '500',
-    color: '#333',
     marginBottom: 2,
   },
-  settingDescription: {
-    fontSize: 12,
-    color: '#666',
-    lineHeight: 16,
+  settingRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  settingsContainer: {
+    padding: 16,
+  },
+  slider: {
+    height: 40,
+    marginVertical: 8,
+    width: '100%',
   },
   sliderContainer: {
     marginBottom: 20,
   },
   sliderHeader: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 4,
   },
-  sliderValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#69FAA0',
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-    marginVertical: 8,
-  },
-  sliderThumb: {
-    backgroundColor: '#69FAA0',
-    width: 20,
-    height: 20,
-  },
-  sliderTrack: {
-    height: 4,
-    borderRadius: 2,
+  sliderLabelText: {
+    color: '#999',
+    fontSize: 11,
+    fontStyle: 'italic',
   },
   sliderLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 4,
   },
-  sliderLabelText: {
-    fontSize: 11,
-    color: '#999',
-    fontStyle: 'italic',
+  sliderThumb: {
+    backgroundColor: '#69FAA0',
+    height: 20,
+    width: 20,
+  },
+  sliderTrack: {
+    borderRadius: 2,
+    height: 4,
+  },
+  sliderValue: {
+    color: '#69FAA0',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

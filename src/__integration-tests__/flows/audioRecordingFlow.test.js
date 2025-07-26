@@ -6,7 +6,7 @@ import { uploadData } from 'aws-amplify/storage';
 
 import NameSoundModal from '../../components/modals/NameSoundModal';
 import { simulateAudioRecording, simulateStorageOperations } from '../helpers/testUtils';
-import { mockAudioPermissions, mockRecordingStates } from '../fixtures/audioData';
+import { mockAudioPermissions } from '../fixtures/audioData';
 import '../helpers/integrationSetup';
 
 // Mock uploadData from AWS Amplify

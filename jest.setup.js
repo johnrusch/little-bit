@@ -187,9 +187,7 @@ jest.mock('react-native-vector-icons/FontAwesome', () => {
 // Mock React Native Community Slider
 jest.mock('@react-native-community/slider', () => {
   const React = require('react');
-  return {
-    __esModule: true,
-    default: React.forwardRef(({ value, onValueChange, testID, ...props }, ref) => {
+  const SliderMock = React.forwardRef(({ value, onValueChange, testID, ...props }, _ref) => {
       const SliderComponent = React.createElement('View', {
         testID,
         onValueChange,
@@ -197,6 +195,10 @@ jest.mock('@react-native-community/slider', () => {
         ...props,
       });
       return SliderComponent;
-    })
+    });
+  SliderMock.displayName = 'SliderMock';
+  return {
+    __esModule: true,
+    default: SliderMock
   };
 });

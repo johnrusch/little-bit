@@ -131,15 +131,15 @@ export default Home;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: "rgba(255,255,255,1)",
-  },
-  recordButton: {
-    alignSelf: "center",
-    width: "50%",
+    flex: 1,
   },
   logOutButton: {
     marginRight: 20,
     padding: 10,
+  },
+  recordButton: {
+    alignSelf: "center",
+    width: "50%",
   },
 });

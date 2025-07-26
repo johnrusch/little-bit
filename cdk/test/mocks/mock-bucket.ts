@@ -92,4 +92,28 @@ export class MockBucket extends Construct implements s3.IBucket {
   addToResourcePolicy(): any {
     return { statementAdded: true, policyDependsOn: [] };
   }
+  
+  transferAccelerationUrlForObject(key?: string): string {
+    return `https://${this.bucketName}.s3-accelerate.amazonaws.com/${key || ''}`;
+  }
+  
+  grantPutAcl(): any {
+    return { principalAccount: '123456789012' };
+  }
+  
+  grantReplicationPermission(): any {
+    return { principalAccount: '123456789012' };
+  }
+  
+  addObjectCreatedNotification(): void {
+    // Mock implementation - do nothing to avoid dependencies
+  }
+  
+  addObjectRemovedNotification(): void {
+    // Mock implementation - do nothing to avoid dependencies
+  }
+  
+  addLifecycleRule(): void {
+    // Mock implementation - do nothing to avoid dependencies
+  }
 }

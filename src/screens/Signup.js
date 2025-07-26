@@ -56,36 +56,36 @@ const Signup = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  color_textPrivate: {
+    color: "grey",
+    fontSize: 13,
+    fontWeight: "400",
+  },
   container: {
+    alignItems: "center",
     backgroundColor: "#D0F7DD",
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
     padding: 20,
-  },
-  text: {
-    fontSize: 28,
-    marginBottom: 10,
-    color: "#051d5f",
   },
   navButton: {
     marginTop: 15,
   },
   navButtonText: {
+    color: "#337A4F",
     fontSize: 18,
     fontWeight: "500",
-    color: "#337A4F",
+  },
+  text: {
+    color: "#051d5f",
+    fontSize: 28,
+    marginBottom: 10,
   },
   textPrivate: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginVertical: 35,
     justifyContent: "center",
-  },
-  color_textPrivate: {
-    fontSize: 13,
-    fontWeight: "400",
-    color: "grey",
+    marginVertical: 35,
   },
 });
 

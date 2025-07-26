@@ -1,6 +1,6 @@
 import { initializeStorage, updateStorageCredentials } from './storage';
 import { initializeAuth, getAuthCredentials } from './auth';
-import { initializeAPI, updateAPIAuthToken } from './api';
+import { initializeAPI } from './api';
 
 /**
  * Initialize all services with the given configuration
