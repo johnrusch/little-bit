@@ -69,56 +69,56 @@ const ProcessingStatusIndicator = ({ status = 'idle', progress = 0, error = null
 
 const styles = StyleSheet.create({
   container: {
-    padding: 12,
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
     marginVertical: 8,
+    padding: 12,
   },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    flex: 1,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
+  errorText: {
+    color: '#FF5722',
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   progressBar: {
-    flex: 1,
-    height: 4,
     backgroundColor: '#e0e0e0',
     borderRadius: 2,
+    flex: 1,
+    height: 4,
     marginRight: 8,
   },
+  progressContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: 8,
+  },
   progressFill: {
-    height: '100%',
     borderRadius: 2,
+    height: '100%',
   },
   progressText: {
-    fontSize: 12,
     color: '#666',
+    fontSize: 12,
     fontWeight: '500',
     minWidth: 35,
     textAlign: 'right',
   },
-  errorText: {
-    fontSize: 12,
-    color: '#FF5722',
-    marginTop: 4,
-    fontStyle: 'italic',
+  statusDot: {
+    borderRadius: 6,
+    height: 12,
+    marginRight: 8,
+    width: 12,
+  },
+  statusRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  statusText: {
+    color: '#333',
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

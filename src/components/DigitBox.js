@@ -21,30 +21,30 @@ const DigitBox = ({inputProps, onBack, digitInput, isFocused, setData, forwarded
 
 const styles = StyleSheet.create({
   digitBox: {
+    alignItems: "center",
     flex: 1,
-    width: 57,
     height: 52,
     justifyContent: "center", 
-    alignItems: "center"
-  },
-  inputDigitComplete: {
-    position: "absolute",
-    borderRadius: 10,
-    width: 57,
-    height: 52,
-    zIndex: 0,
-    backgroundColor: '#FF3366'
+    width: 57
   },
   inputDigit: {
-    borderWidth: 1,
+    backgroundColor: "#ffffff",
     borderColor: "#c3cddc",
     borderRadius: 10,
-    backgroundColor: "#ffffff",
-    width: 55,
-    height: 50,
+    borderWidth: 1,
     fontSize: 20,
     fontWeight: "bold",
-    textAlign: "center"
+    height: 50,
+    textAlign: "center",
+    width: 55
+  },
+  inputDigitComplete: {
+    backgroundColor: '#FF3366',
+    borderRadius: 10,
+    height: 52,
+    position: "absolute",
+    width: 57,
+    zIndex: 0
   }
 });
 

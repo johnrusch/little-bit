@@ -62,11 +62,10 @@ class CognitoAuthService {
           
           resolve(userId);
         },
-        onFailure: (err) => {
-          console.error('Authentication failed');
+        onFailure: (_err) => {
           reject(new Error('Authentication failed'));
         },
-        newPasswordRequired: (userAttributes, requiredAttributes) => {
+        newPasswordRequired: (_userAttributes, _requiredAttributes) => {
           // Handle new password requirement if needed
           reject(new Error('New password required'));
         }
@@ -133,7 +132,7 @@ class CognitoAuthService {
    * @returns {Promise<Object|null>} Current user or null
    */
   async getCurrentUser() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       const cognitoUser = this.userPool.getCurrentUser();
       
       if (!cognitoUser) {

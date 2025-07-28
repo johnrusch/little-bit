@@ -47,26 +47,26 @@ export default EditSoundModal;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
     alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.65)",
+    flex: 1,
     justifyContent: "center",
+  },
+  loadingText: {
+    color: "white",
+    flex: 1,
+    fontSize: 18,
+    margin: "auto",
   },
   modalView: {
     flex: 1,
+    margin: "auto",
     top: windowHeight / 2.25,
-    margin: "auto",
-  },
-  loadingText: {
-    flex: 1,
-    color: "white",
-    margin: "auto",
-    fontSize: 18,
   },
   textInput: {
-    height: 40,
-    padding: 12,
-    margin: 12,
     backgroundColor: "transparent",
+    height: 40,
+    margin: 12,
+    padding: 12,
   },
 });

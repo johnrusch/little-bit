@@ -1,7 +1,6 @@
 import { getUrl } from "../services/storage";
 import { generateClient } from "../services/api";
 import * as subscriptions from "../graphql/subscriptions";
-import * as queries from "../graphql/queries";
 import * as customQueries from "../graphql/customQueries";
 
 const client = generateClient();
@@ -91,18 +90,20 @@ const sortSounds = (sounds, sortValue = 'createdAt-desc') => {
   
   return [...sounds].sort((a, b) => {
     switch (criteria) {
-      case 'createdAt':
+      case 'createdAt': {
         const dateA = new Date(a.createdAt);
         const dateB = new Date(b.createdAt);
         return order === 'desc' 
           ? dateB - dateA
           : dateA - dateB;
-      case 'name':
+      }
+      case 'name': {
         const nameA = (a.name || '').toLowerCase();
         const nameB = (b.name || '').toLowerCase();
         return order === 'asc' 
           ? nameA.localeCompare(nameB)
           : nameB.localeCompare(nameA);
+      }
       default:
         return 0;
     }

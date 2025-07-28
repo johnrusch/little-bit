@@ -356,22 +356,22 @@ export default Recorder;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: "rgba(255,255,255,1)",
+    flex: 1,
   },
   contentContainer: {
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 20,
   },
+  recordButton: {
+    alignSelf: "center",
+    width: "50%",
+  },
   settingsPanel: {
     marginBottom: 16,
   },
   statusIndicator: {
     marginBottom: 24,
-  },
-  recordButton: {
-    alignSelf: "center",
-    width: "50%",
   },
 });

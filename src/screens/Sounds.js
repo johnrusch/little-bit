@@ -3,22 +3,17 @@ import { View, StyleSheet, FlatList, RefreshControl, Text } from "react-native";
 import Sound from "../components/Sound";
 import SoundListHeader from "../components/SoundListHeader";
 import EditSoundModal from "../components/modals/EditSoundModal";
-import { wait } from "../utils/loading";
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
 import { PLAYBACK, SOUNDS } from "../api";
 
 const Sounds = (props) => {
   const {
-    user,
     sounds,
-    setLoadingStatus,
-    setSounds,
-    setRefreshing,
     refreshing,
   } = props;
   const [modalVisible, setModalVisible] = useState(false);
   const [soundToUpdate, setSoundToUpdate] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [playbackObj, setPlaybackObj] = useState(null);
   const [soundObj, setSoundObj] = useState(null);
   const [currentAudio, setCurrentAudio] = useState({});
@@ -310,25 +305,25 @@ export default Sounds;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: "rgba(255,255,255,1)",
+    flex: 1,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: 50,
+  },
+  emptyListContainer: {
+    flexGrow: 1,
+  },
+  emptyText: {
+    color: '#666',
+    fontSize: 16,
+    textAlign: 'center',
   },
   recordButton: {
     alignSelf: "center",
     width: "50%",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  emptyListContainer: {
-    flexGrow: 1,
   },
 });

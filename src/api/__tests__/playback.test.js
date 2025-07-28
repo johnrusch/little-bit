@@ -1,5 +1,4 @@
 import PLAYBACK from '../playback';
-import { Audio } from 'expo-av';
 
 describe('PLAYBACK Service', () => {
   let mockPlaybackObj;
@@ -63,7 +62,7 @@ describe('PLAYBACK Service', () => {
     });
 
     it('should handle missing URI', async () => {
-      const result = await PLAYBACK.play(mockPlaybackObj, null);
+      await PLAYBACK.play(mockPlaybackObj, null);
 
       expect(mockPlaybackObj.loadAsync).toHaveBeenCalledWith(
         { uri: null },

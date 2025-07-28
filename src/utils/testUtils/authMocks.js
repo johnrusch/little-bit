@@ -179,7 +179,7 @@ export const createAmplifyAuthMocks = () => {
       return authState.getTokens();
     }),
 
-    confirmSignUp: jest.fn(async ({ username, confirmationCode }) => {
+    confirmSignUp: jest.fn(async ({ confirmationCode }) => {
       if (!confirmationCode || confirmationCode.length !== 6) {
         throw AuthErrors.InvalidCode();
       }
