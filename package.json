@@ -19,7 +19,13 @@
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "build": "expo export --platform web"
+    "build": "expo export --platform web",
+    "prepare": "husky",
+    "ci:local": "npm run lint && npm run format:check && npm run test:unit -- --ci && npm run test:integration -- --ci",
+    "lint:staged": "eslint --fix --cache",
+    "format:staged": "prettier --write",
+    "test:staged": "jest --findRelatedTests --passWithNoTests",
+    "cdk:validate": "cd cdk && npm test"
   },
   "dependencies": {
     "@aws-amplify/react-native": "^1.1.10",
@@ -61,9 +67,11 @@
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-native": "^5.0.0",
+    "husky": "^9.1.7",
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4",
     "jest-expo": "^53.0.9",
+    "lint-staged": "^15.5.2",
     "msw": "^2.10.4",
     "prettier": "^3.6.2"
   },
