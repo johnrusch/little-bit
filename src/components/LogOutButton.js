@@ -13,13 +13,12 @@ export default LogOutButton;
 
 const styles = StyleSheet.create({
   buttonContainer: {
-    marginTop: 10,
-    // backgroundColor: '#69FAA0',
-    padding: 10,
     alignItems: 'center',
-    justifyContent: 'center',
     borderRadius: 40,
-    marginRight: 10
+    justifyContent: 'center',
+    marginRight: 10,
+    marginTop: 10,
+    padding: 10
   },
   buttonText: {
       color: 'black',
