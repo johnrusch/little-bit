@@ -63,7 +63,6 @@ class CognitoAuthService {
           resolve(userId);
         },
         onFailure: (_err) => {
-          console.error('Authentication failed');
           reject(new Error('Authentication failed'));
         },
         newPasswordRequired: (_userAttributes, _requiredAttributes) => {

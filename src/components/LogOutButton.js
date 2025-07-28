@@ -1,8 +1,6 @@
 import React from "react";
 import { Text, TouchableOpacity, StyleSheet } from "react-native";
 
-import { windowHeight, windowWidth } from "../utils/Dimensions";
-
 const LogOutButton = ({ buttonTitle, ...rest }) => {
   return (
     <TouchableOpacity style={styles.buttonContainer} {...rest}>

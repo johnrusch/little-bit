@@ -34,21 +34,16 @@ const Login = ({navigation, route}) => {
     }, [prefillUsername, fromConfirmation]);
 
     const handleLogin = async (username, password) => {
-      console.log('🔐 Login attempt with username:', username);
       if (username && password) {
         try {
           const login = await AUTH.logIn(username, password);
-          console.log('🔐 Login result:', login);
           
           if (login) {
-            console.log('✅ Login successful, user should be authenticated');
             // Navigation should happen automatically via UserContext
           } else {
-            console.log('❌ Login failed - no user returned');
             alert("Login failed. Please check your credentials and try again.");
           }
         } catch (error) {
-          console.error('❌ Login error:', error);
           alert("Login failed: " + error.message);
         }
       } else {
