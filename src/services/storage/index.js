@@ -46,6 +46,21 @@ export async function put(params) {
 }
 
 /**
+ * Upload a file using uploadData API - uses either new S3Service or Amplify Storage
+ * @param {Object} params - Parameters for uploadData
+ * @returns {Promise<Object>} Upload result
+ */
+export async function uploadFile(params) {
+  if (USE_NEW_STORAGE && storageAdapter) {
+    return storageAdapter.put(params);
+  }
+  
+  // Fallback to Amplify Storage uploadData
+  const { uploadData } = await import('aws-amplify/storage');
+  return uploadData(params);
+}
+
+/**
  * Remove a file - uses either new S3Service or Amplify Storage
  * @param {Object} params - Parameters for remove
  * @returns {Promise<Object>} Remove result

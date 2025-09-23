@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { confirmSignUp } from 'aws-amplify/auth';
+import { confirmSignUp } from '../services/auth';
 import { AUTH } from '../api';
 import DigitBox from '../components/DigitBox';
 import {CommonActions} from '@react-navigation/native';

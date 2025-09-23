@@ -51,9 +51,12 @@ class APIAdapter {
     
     return {
       graphql: (params) => {
-        // Handle subscription
-        if (params.query && typeof params.query === 'object' && params.query.subscribe) {
-          return adapter.graphqlService.subscribe(params);
+        const { query, variables } = params;
+        const queryString = typeof query === 'string' ? query : query.query || query;
+        
+        // Handle subscription based on query string content
+        if (queryString.trim().startsWith('subscription')) {
+          return adapter.graphqlService.subscribe({ query: queryString, variables });
         }
         
         // Handle regular query/mutation

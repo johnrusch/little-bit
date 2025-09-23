@@ -1,0 +1,117 @@
+type Sample {
+  id: ID!
+  name: String!
+  user_id: String
+  file: S3Object
+  processing_status: ProcessingStatus
+  processing_started_at: AWSDateTime
+  processing_completed_at: AWSDateTime
+  processing_error: String
+  processing_params: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+type S3Object {
+  bucket: String!
+  key: String!
+  region: String!
+}
+
+type Query {
+  getSample(id: ID!): Sample
+  listSamples(filter: SampleFilterInput, limit: Int, nextToken: String): SampleConnection
+}
+
+type Mutation {
+  createSample(input: CreateSampleInput!): Sample
+  updateSample(input: UpdateSampleInput!): Sample
+  deleteSample(id: ID!): Sample
+}
+
+type Subscription {
+  onCreateSample(user_id: String): Sample
+  onUpdateSample(user_id: String): Sample
+  onDeleteSample(user_id: String): Sample
+}
+
+input CreateSampleInput {
+  name: String!
+  user_id: String
+  file: S3ObjectInput
+  processing_status: ProcessingStatus
+  processing_started_at: AWSDateTime
+  processing_completed_at: AWSDateTime
+  processing_error: String
+  processing_params: AWSJSON
+}
+
+input UpdateSampleInput {
+  id: ID!
+  name: String
+  user_id: String
+  file: S3ObjectInput
+  processing_status: ProcessingStatus
+  processing_started_at: AWSDateTime
+  processing_completed_at: AWSDateTime
+  processing_error: String
+  processing_params: AWSJSON
+}
+
+input S3ObjectInput {
+  bucket: String!
+  key: String!
+  region: String!
+}
+
+input SampleFilterInput {
+  id: IDFilterInput
+  name: StringFilterInput
+  user_id: StringFilterInput
+  processing_status: ProcessingStatusFilterInput
+  and: [SampleFilterInput]
+  or: [SampleFilterInput]
+  not: SampleFilterInput
+}
+
+input IDFilterInput {
+  eq: ID
+  ne: ID
+  in: [ID]
+  notIn: [ID]
+}
+
+input StringFilterInput {
+  eq: String
+  ne: String
+  contains: String
+  notContains: String
+  beginsWith: String
+  in: [String]
+  notIn: [String]
+}
+
+input ProcessingStatusFilterInput {
+  eq: ProcessingStatus
+  ne: ProcessingStatus
+  in: [ProcessingStatus]
+  notIn: [ProcessingStatus]
+}
+
+type SampleConnection {
+  items: [Sample]
+  nextToken: String
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}

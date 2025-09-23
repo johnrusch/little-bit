@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { View } from "react-native";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
-import { Hub } from "aws-amplify/utils";
+import { Hub } from "../services/auth";
 
 import Login from "../screens/Login";
 import Signup from "../screens/Signup";

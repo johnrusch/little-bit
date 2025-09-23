@@ -56,6 +56,19 @@ export function updateAPIAuthToken(token) {
   }
 }
 
+/**
+ * Get the API service for direct access
+ * @returns {Object} API service
+ */
+export function getAPIService() {
+  if (USE_NEW_API && generatedClient) {
+    return generatedClient;
+  }
+  
+  // Fallback to Amplify API
+  return amplifyGenerateClient();
+}
+
 // Export the API adapter for direct access if needed
 export { apiAdapter };
 
