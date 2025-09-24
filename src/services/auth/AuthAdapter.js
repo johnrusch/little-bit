@@ -111,6 +111,26 @@ class AuthAdapter {
   }
 
   /**
+   * Confirm sign up (Amplify Auth.confirmSignUp replacement)
+   * @param {Object} params - Confirm sign up parameters
+   * @returns {Promise<Object>} Confirm sign up result matching Amplify format
+   */
+  async confirmSignUp(params) {
+    const { username, confirmationCode } = params;
+    
+    try {
+      await this.cognitoService.confirmSignUp(username, confirmationCode);
+      
+      return {
+        isSignUpComplete: true,
+        nextStep: { signUpStep: 'DONE' }
+      };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  /**
    * Get credentials for AWS SDK usage
    * @returns {Promise<Object>} AWS credentials
    */

@@ -105,6 +105,34 @@ class CognitoAuthService {
   }
 
   /**
+   * Confirm user sign up with verification code
+   * @param {string} username - The username (email)
+   * @param {string} confirmationCode - The verification code
+   * @returns {Promise<Object>} Confirmation result
+   */
+  async confirmSignUp(username, confirmationCode) {
+    return new Promise((resolve, reject) => {
+      const cognitoUser = new CognitoUser({
+        Username: username,
+        Pool: this.userPool
+      });
+
+      cognitoUser.confirmRegistration(confirmationCode, true, (err, result) => {
+        if (err) {
+          console.error('Confirm sign up failed:', err);
+          reject(new Error(err.message || 'Confirmation failed'));
+          return;
+        }
+
+        resolve({
+          username: username,
+          status: result
+        });
+      });
+    });
+  }
+
+  /**
    * Sign out the current user
    * @returns {Promise<boolean>} True if successful
    */

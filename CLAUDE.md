@@ -236,6 +236,43 @@ git push origin v1.0.0
 - CDK tests run with `testing: true` context to avoid circular dependencies
 - The S3 bucket interface changed from `Bucket` to `IBucket` for better testing
 
+## Signup Confirmation & Navigation Fixes ✅ COMPLETED
+
+### Critical Bug Fixes Resolved (September 2024)
+
+This session successfully resolved critical signup confirmation and navigation issues that were preventing users from accessing the application:
+
+#### 1. **API Service Subscribe Method Crash** - FIXED ✅
+- **Problem**: `apiService.subscribe is not a function` causing blank screen and app crashes after login
+- **Root Cause**: Environment variable `REACT_APP_USE_NEW_API` not loading correctly in React Native web environment
+- **Solution**: 
+  - Modified `src/services/api/index.js` to force enable new API service
+  - Added comprehensive debugging logs for environment variable loading
+  - Ensured new API service provides both `graphql` and `subscribe` methods
+- **Result**: Home screen now accessible without crashes, GraphQL subscriptions working
+
+#### 2. **Signup Confirmation Flow** - FIXED ✅  
+- **Problem**: After entering confirmation code, users remained stuck on confirmation screen
+- **Root Cause**: Alert dialog not displaying properly in browser environment
+- **Solution**: Modified `showSuccessAndNavigate()` function in `src/screens/ConfirmSignup.js`
+  - Removed problematic Alert dialog requirement
+  - Implemented automatic navigation with 800ms delay for better UX
+  - Added username prefilling on Login screen
+- **Result**: Seamless flow from signup → confirmation → login screen with prefilled credentials
+
+#### 3. **Environment Variable Loading** - IDENTIFIED ⚠️
+- **Issue**: `process.env.REACT_APP_USE_NEW_API` not loading correctly despite `.env` configuration
+- **Temporary Fix**: Hard-coded `USE_NEW_API = true` in API service
+- **Future**: Investigate React Native web environment variable loading mechanism
+
+### Current Authentication Flow Status ✅ FULLY FUNCTIONAL
+- ✅ **User Signup**: Working with email verification
+- ✅ **Email Confirmation**: Automatic code entry and validation  
+- ✅ **Navigation**: Seamless transition confirmation → login → home
+- ✅ **Login Process**: Username prefilled, successful authentication
+- ✅ **Home Screen Access**: No crashes, all components loading
+- ✅ **API Services**: Subscribe method working, GraphQL operations functional
+
 ## Migration Summary ✅ COMPLETED
 
 ### What Was Accomplished

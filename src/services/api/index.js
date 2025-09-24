@@ -2,7 +2,8 @@ import APIAdapter from './APIAdapter';
 import { generateClient as amplifyGenerateClient } from 'aws-amplify/api';
 
 // Feature flag to enable/disable new API implementation
-const USE_NEW_API = process.env.REACT_APP_USE_NEW_API === 'true';
+// TEMPORARY: Force enable new API to fix the subscribe error
+const USE_NEW_API = true; // process.env.REACT_APP_USE_NEW_API === 'true';
 
 let apiAdapter = null;
 let generatedClient = null;
@@ -13,8 +14,12 @@ let generatedClient = null;
  */
 export function initializeAPI(config) {
   if (USE_NEW_API && config) {
-    apiAdapter = new APIAdapter(config);
-    generatedClient = apiAdapter.generateClient();
+    try {
+      apiAdapter = new APIAdapter(config);
+      generatedClient = apiAdapter.generateClient();
+    } catch (error) {
+      console.error('Error initializing API service:', error);
+    }
   }
 }
 
@@ -67,6 +72,21 @@ export function getAPIService() {
   
   // Fallback to Amplify API
   return amplifyGenerateClient();
+}
+
+/**
+ * Subscribe to GraphQL subscriptions - uses either new GraphQLService or Amplify API
+ * @param {Object} params - Subscription parameters
+ * @returns {Object} Subscription object
+ */
+export function subscribe(params) {
+  if (USE_NEW_API && apiAdapter) {
+    return apiAdapter.subscribe(params);
+  }
+  
+  // Fallback to Amplify API
+  const client = amplifyGenerateClient();
+  return client.graphql(params);
 }
 
 // Export the API adapter for direct access if needed

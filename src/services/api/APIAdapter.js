@@ -16,7 +16,7 @@ class APIAdapter {
    * @returns {Promise<Object>} GraphQL result matching Amplify format
    */
   async graphql(params) {
-    const { query, variables, authMode } = params;
+    const { query, variables } = params;
     
     // Extract the query string if it's an object with a query property
     const queryString = typeof query === 'string' ? query : query.query || query;
@@ -44,7 +44,7 @@ class APIAdapter {
 
   /**
    * Generate client (for compatibility with generateClient)
-   * Returns an object with graphql method
+   * Returns an object with graphql and subscribe methods
    */
   generateClient() {
     const adapter = this;
@@ -61,8 +61,20 @@ class APIAdapter {
         
         // Handle regular query/mutation
         return adapter.graphql(params);
+      },
+      subscribe: (params) => {
+        return adapter.graphqlService.subscribe(params);
       }
     };
+  }
+
+  /**
+   * Subscribe to GraphQL subscriptions (Amplify API subscription replacement)
+   * @param {Object} params - Subscription parameters
+   * @returns {Object} Subscription object matching Amplify format
+   */
+  subscribe(params) {
+    return this.graphqlService.subscribe(params);
   }
 
   /**
