@@ -4,7 +4,8 @@ import {
   signUp as amplifySignUp, 
   signOut as amplifySignOut, 
   getCurrentUser as amplifyGetCurrentUser,
-  fetchAuthSession as amplifyFetchAuthSession
+  fetchAuthSession as amplifyFetchAuthSession,
+  confirmSignUp as amplifyConfirmSignUp
 } from 'aws-amplify/auth';
 import { Hub as AmplifyHub } from 'aws-amplify/utils';
 
@@ -88,6 +89,20 @@ export async function fetchAuthSession() {
   
   // Fallback to Amplify Auth
   return amplifyFetchAuthSession();
+}
+
+/**
+ * Confirm sign up - uses either new CognitoAuthService or Amplify Auth
+ * @param {Object} params - Confirm sign up parameters
+ * @returns {Promise<Object>} Confirm sign up result
+ */
+export async function confirmSignUp(params) {
+  if (USE_NEW_AUTH && authAdapter) {
+    return authAdapter.confirmSignUp(params);
+  }
+  
+  // Fallback to Amplify Auth
+  return amplifyConfirmSignUp(params);
 }
 
 /**

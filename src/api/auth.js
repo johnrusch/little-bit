@@ -70,8 +70,8 @@ const AUTH = {
     },
     isLoggedIn: async () => {
         try {
-            const { userId } = await getCurrentUser();
-            return userId;
+            const user = await getCurrentUser();
+            return user?.userId || user?.username || user;
         } catch (error) {
             // User is not logged in
             return null;

@@ -1,30 +1,19 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
-  StatusBar,
   StyleSheet,
-  ImageBackground,
-  Image,
-  Keyboard,
-  ActivityIndicator,
-  Text,
   TouchableOpacity,
-  Dimensions,
 } from "react-native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import { Audio } from "expo-av";
-import { uploadData } from "aws-amplify/storage";
-import { generateClient } from "aws-amplify/api";
+import { uploadFile } from "../services/storage";
+import { getAPIService } from "../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { onUpdateSample } from "../graphql/subscriptions";
-import NavBar from "../components/NavBar";
-import * as FileSystem from "expo-file-system";
-import UserContext from "../contexts/UserContext";
 import NameSoundModal from "../components/modals/NameSoundModal";
 import ProcessingSettingsPanel from "../components/ProcessingSettingsPanel";
 import ProcessingStatusIndicator from "../components/ProcessingStatusIndicator";
-import { windowHeight } from "../utils/Dimensions";
 import { 
   DEFAULT_PROCESSING_SETTINGS, 
   validateProcessingSettings, 
@@ -51,8 +40,7 @@ const Recorder = (props) => {
   const [processingProgress, setProcessingProgress] = useState(0);
   const [processingError, setProcessingError] = useState(null);
 
-  const userData = useContext(UserContext);
-  const client = generateClient();
+  const apiService = getAPIService();
   const loadingTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -68,7 +56,7 @@ const Recorder = (props) => {
     
     let isMounted = true;
     
-    const subscription = client.graphql({
+    const subscription = apiService.subscribe({
       query: onUpdateSample,
       variables: { user_id: user }
     }).subscribe({
@@ -118,7 +106,7 @@ const Recorder = (props) => {
         loadingTimeoutRef.current = null;
       }
     };
-  }, [user, client, setLoadingStatus]);
+  }, [user, apiService, setLoadingStatus]);
 
   const loadProcessingSettings = async () => {
     try {
@@ -179,40 +167,9 @@ const Recorder = (props) => {
         }
       };
       
-      // Device-level quality recording preset using uncompressed formats
-      // iOS AAC bitrate is limited to 64kbps, so use linear PCM for true high quality
-      const DEVICE_QUALITY_PRESET = {
-        isMeteringEnabled: true,
-        android: {
-          extension: '.wav',
-          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_DEFAULT,
-          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_DEFAULT,
-          sampleRate: 48000,  // Professional sample rate
-          numberOfChannels: 2,
-          bitRate: 1536000,   // 48kHz * 16-bit * 2 channels = 1536kbps uncompressed
-        },
-        ios: {
-          extension: '.wav',
-          outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_LINEARPCM,
-          audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MAX,
-          sampleRate: 48000,  // Professional sample rate
-          numberOfChannels: 2,
-          bitRate: 1536000,   // 48kHz * 16-bit * 2 channels = 1536kbps uncompressed
-          linearPCMBitDepth: 16, // 16-bit for compatibility
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-        web: {
-          mimeType: 'audio/webm;codecs=opus',
-          bitsPerSecond: 320000, // High quality Opus encoding
-        }
-      };
-      
-      // Try conservative first, fallback to built-in preset if it fails
-      let recordingPreset = CONSERVATIVE_HIGH_QUALITY;
       
       const { recording } = await Audio.Recording.createAsync(
-        recordingPreset
+        CONSERVATIVE_HIGH_QUALITY
       );
       
       // DEBUG: Log actual recording status to verify settings
@@ -255,10 +212,6 @@ const Recorder = (props) => {
     setModalVisible(true);
   };
 
-  const nameRecording = async () => {
-    setModalVisible(true);
-    saveRecording();
-  };
 
   const saveRecording = async () => {
     setLoadingStatus({ loading: true, processingSound: true });
@@ -268,7 +221,7 @@ const Recorder = (props) => {
     try {
       const metadata = formatProcessingMetadata(processingSettings);
       
-      await uploadData({
+      await uploadFile({
         key: `unprocessed/${user}/${text}.${format}`,
         data: blob,
         options: {
@@ -303,9 +256,6 @@ const Recorder = (props) => {
     }
   };
 
-  const handleTextSubmit = () => {
-    setModalVisible(!modalVisible);
-  };
 
   const renderModal = () => {
     return (

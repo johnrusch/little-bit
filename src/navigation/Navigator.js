@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { View } from "react-native";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
-import { Hub } from "aws-amplify/utils";
+import { Hub } from "../services/auth";
 
 import Login from "../screens/Login";
 import Signup from "../screens/Signup";
@@ -17,34 +17,43 @@ const Navigator = (props) => {
   const [user, setUser] = useState(false);
 
   const handleUserLoggedIn = async () => {
-    const userID = await AUTH.isLoggedIn();
-    setUser(userID);
+    try {
+      const userID = await AUTH.isLoggedIn();
+      setUser(userID);
+    } catch (error) {
+      console.error('Error checking auth status:', error.message);
+      setUser(false);
+    }
   };
 
   useEffect(() => {
-    // Store the unsubscribe function returned by Hub.listen
-    const unsubscribe = Hub.listen("auth", async (data) => {
-      const { payload } = data;
-      switch (payload.event) {
-        case "signedIn":
-          try {
-            const username = await AUTH.getUsername(payload.data);
-            setUser(username);
-          } catch (error) {
+    try {
+      // Store the unsubscribe function returned by Hub.listen
+      const unsubscribe = Hub.listen("auth", async (data) => {
+        const { payload } = data;
+        switch (payload.event) {
+          case "signedIn":
+            try {
+              const username = await AUTH.getUsername(payload.data);
+              setUser(username);
+            } catch (error) {
+              setUser(false);
+            }
+            break;
+          case "signedOut":
             setUser(false);
-          }
-          break;
-        case "signedOut":
-          setUser(false);
-          break;
-      }
-    });
+            break;
+        }
+      });
 
-    // Check auth status on app load
-    handleUserLoggedIn();
+      // Check auth status on app load
+      handleUserLoggedIn();
 
-    // Return the unsubscribe function for cleanup
-    return unsubscribe;
+      // Return the unsubscribe function for cleanup
+      return unsubscribe;
+    } catch (error) {
+      console.error('Error in Navigator useEffect:', error.message);
+    }
   }, []);
 
   return (

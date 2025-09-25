@@ -13,8 +13,12 @@ let generatedClient = null;
  */
 export function initializeAPI(config) {
   if (USE_NEW_API && config) {
-    apiAdapter = new APIAdapter(config);
-    generatedClient = apiAdapter.generateClient();
+    try {
+      apiAdapter = new APIAdapter(config);
+      generatedClient = apiAdapter.generateClient();
+    } catch (error) {
+      console.error('Error initializing API service:', error);
+    }
   }
 }
 
@@ -54,6 +58,34 @@ export function updateAPIAuthToken(token) {
   if (USE_NEW_API && apiAdapter) {
     apiAdapter.updateAuthToken(token);
   }
+}
+
+/**
+ * Get the API service for direct access
+ * @returns {Object} API service
+ */
+export function getAPIService() {
+  if (USE_NEW_API && generatedClient) {
+    return generatedClient;
+  }
+  
+  // Fallback to Amplify API
+  return amplifyGenerateClient();
+}
+
+/**
+ * Subscribe to GraphQL subscriptions - uses either new GraphQLService or Amplify API
+ * @param {Object} params - Subscription parameters
+ * @returns {Object} Subscription object
+ */
+export function subscribe(params) {
+  if (USE_NEW_API && apiAdapter) {
+    return apiAdapter.subscribe(params);
+  }
+  
+  // Fallback to Amplify API
+  const client = amplifyGenerateClient();
+  return client.graphql(params);
 }
 
 // Export the API adapter for direct access if needed

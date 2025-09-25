@@ -1,22 +1,14 @@
-import React, {useState, useRef, useEffect, useContext} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
   View,
-  Image,
   StyleSheet,
-  ImageBackground,
-  Dimensions,
   Text,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { confirmSignUp } from 'aws-amplify/auth';
-import { AUTH } from '../api';
+import { confirmSignUp } from '../services/auth';
 import DigitBox from '../components/DigitBox';
 import {CommonActions} from '@react-navigation/native';
-import UserContext from '../contexts/UserContext';
-
-import { windowHeight, windowWidth } from "../utils/Dimensions";
 
 const ConfirmSignup = (props) => {
     const digit1Ref = useRef();
@@ -26,7 +18,6 @@ const ConfirmSignup = (props) => {
     const digit5Ref = useRef();
     const digit6Ref = useRef();
 
-    const context = useContext(UserContext);
   
     const [loading, setLoading] = useState(false);
     const [confirmationCode, setConfirmationCode] = useState({
@@ -67,26 +58,13 @@ const ConfirmSignup = (props) => {
     const showSuccessAndNavigate = () => {
       setLoading(false);
       
-      Alert.alert(
-        "Account Confirmed! ✅",
-        "Your account has been successfully verified. Please log in with your credentials.",
-        [
-          { 
-            text: "Continue to Login", 
-            onPress: () => {
-              console.log('🚀 Navigating to Login with params:', { 
-                prefillUsername: username,
-                fromConfirmation: true
-              });
-              props.navigation.navigate('Login', { 
-                prefillUsername: username,
-                fromConfirmation: true
-              });
-            }
-          }
-        ],
-        { cancelable: false }
-      );
+      // Brief delay to show success state, then navigate automatically
+      setTimeout(() => {
+        props.navigation.navigate('Login', { 
+          prefillUsername: username,
+          fromConfirmation: true
+        });
+      }, 800); // 800ms delay to let users see the loading state change
     }
   
     const handleConfirmSignUp = async () => {
@@ -102,12 +80,10 @@ const ConfirmSignup = (props) => {
           )
         ]);
         
-        // Show success alert and then navigate to login
         showSuccessAndNavigate();
         
       } catch (error) {
-        console.error('❌ ERROR in handleConfirmSignUp:', error);
-        console.error('❌ Error details:', error.message, error.code, error.name);
+        
         setLoading(false);
         
         // Show specific error message based on error type
@@ -119,8 +95,17 @@ const ConfirmSignup = (props) => {
           errorMessage = "Confirmation code has expired. Please request a new one.";
         } else if (error.code === 'NotAuthorizedException') {
           errorMessage = "This account has already been confirmed.";
+        } else if (error.code === 'UserNotFoundException') {
+          errorMessage = "User not found. Please check your username or sign up again.";
+        } else if (error.code === 'InvalidParameterException') {
+          errorMessage = "Invalid parameters provided. Please try again.";
         } else if (error.message && error.message.includes('timeout')) {
           errorMessage = "Request timed out. Please check your connection and try again.";
+        }
+        
+        // Include limited technical details in development (avoid exposing sensitive AWS info)
+        if (__DEV__) {
+          errorMessage += `\n\nDev Info: ${error.code || 'Unknown error'}`;
         }
         
         Alert.alert(

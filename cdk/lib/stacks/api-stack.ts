@@ -19,8 +19,8 @@ export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
-    // Read GraphQL schema
-    const schemaPath = path.join(__dirname, '../../graphql/schema.graphql');
+    // Read GraphQL schema (use AppSync version without Amplify directives)
+    const schemaPath = path.join(__dirname, '../../graphql/schema-appsync.graphql');
     const schema = fs.readFileSync(schemaPath, 'utf-8');
 
     // Create CloudWatch Logs role for GraphQL API
