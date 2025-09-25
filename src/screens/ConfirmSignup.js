@@ -103,9 +103,9 @@ const ConfirmSignup = (props) => {
           errorMessage = "Request timed out. Please check your connection and try again.";
         }
         
-        // Include technical details in development
+        // Include limited technical details in development (avoid exposing sensitive AWS info)
         if (__DEV__) {
-          errorMessage += `\n\nDev Info: ${error.code || error.name || 'Unknown error'}: ${error.message}`;
+          errorMessage += `\n\nDev Info: ${error.code || 'Unknown error'}`;
         }
         
         Alert.alert(

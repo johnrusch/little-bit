@@ -120,7 +120,12 @@ class CognitoAuthService {
       cognitoUser.confirmRegistration(confirmationCode, true, (err, result) => {
         if (err) {
           console.error('Confirm sign up failed:', err);
-          reject(new Error(err.message || 'Confirmation failed'));
+          // Preserve original error properties for proper error handling
+          const error = new Error(err.message || 'Confirmation failed');
+          error.code = err.code;
+          error.name = err.name;
+          error.__type = err.__type;
+          reject(error);
           return;
         }
 
@@ -234,7 +239,7 @@ class CognitoAuthService {
       throw new Error('Invalid AWS region format');
     }
     
-    if (!userPoolId || !userPoolId.match(/^[a-zA-Z0-9_-]+$/)) {
+    if (!userPoolId || !userPoolId.match(/^[a-z0-9]+_[a-zA-Z0-9]+$/)) {
       throw new Error('Invalid User Pool ID format');
     }
 
