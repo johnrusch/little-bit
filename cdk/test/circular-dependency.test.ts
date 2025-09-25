@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
+import { Template, Match } from 'aws-cdk-lib/assertions';
 import { CoreStack } from '../lib/stacks/core-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { ComputeStack } from '../lib/stacks/compute-stack';
@@ -71,7 +71,9 @@ describe('CDK Circular Dependency Resolution', () => {
     // Verify that Lambda has proper S3 invoke permissions
     // even when S3 event notification is skipped
     template.hasResourceProperties('AWS::Lambda::Permission', {
-      FunctionName: { Ref: expect.stringMatching(/CreateSampleRecord.*/) },
+      FunctionName: {
+        'Fn::GetAtt': [Match.stringLikeRegexp('CreateSampleRecord.*'), 'Arn'],
+      },
       Principal: 's3.amazonaws.com',
       Action: 'lambda:InvokeFunction',
     });

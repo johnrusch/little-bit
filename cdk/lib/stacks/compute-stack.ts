@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import * as iam from 'aws-cdk-lib/aws-iam';
@@ -37,14 +38,19 @@ export class ComputeStack extends cdk.Stack {
       },
     });
 
+    // Create log group for CreateSampleRecord function
+    const createSampleRecordLogGroup = new logs.LogGroup(this, 'CreateSampleRecordLogGroup', {
+      logGroupName: `/aws/lambda/CreateSampleRecord-${cdk.Stack.of(this).stackName}`,
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     // Create CreateSampleRecord Lambda function
     this.createSampleRecordFunction = new lambda.Function(this, 'CreateSampleRecord', {
       functionName: `CreateSampleRecord-${cdk.Stack.of(this).stackName}`,
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset(
-        path.join(__dirname, '../../lambda/create-sample-record')
-      ),
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/create-sample-record')),
       memorySize: 128,
       timeout: cdk.Duration.seconds(60),
       environment: {
@@ -57,7 +63,7 @@ export class ComputeStack extends cdk.Stack {
         REGION: cdk.Stack.of(this).region,
         SQS_QUEUE_URL: this.processingQueue.queueUrl,
       },
-      logRetention: 7,
+      logGroup: createSampleRecordLogGroup,
     });
 
     // Grant permissions to CreateSampleRecord function
@@ -65,16 +71,16 @@ export class ComputeStack extends cdk.Stack {
     this.processingQueue.grantSendMessages(this.createSampleRecordFunction);
 
     // Add GraphQL mutation permissions with specific API ID
-    this.createSampleRecordFunction.addToRolePolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'appsync:GraphQL',
-      ],
-      resources: [
-        `arn:aws:appsync:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:apis/${props.apiId}/types/Mutation/fields/createSample`,
-        `arn:aws:appsync:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:apis/${props.apiId}/types/Mutation/fields/updateSample`,
-      ],
-    }));
+    this.createSampleRecordFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['appsync:GraphQL'],
+        resources: [
+          `arn:aws:appsync:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:apis/${props.apiId}/types/Mutation/fields/createSample`,
+          `arn:aws:appsync:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:apis/${props.apiId}/types/Mutation/fields/updateSample`,
+        ],
+      })
+    );
 
     // Configure S3 trigger for CreateSampleRecord
     // Grant S3 permission to invoke the Lambda function
@@ -100,22 +106,31 @@ export class ComputeStack extends cdk.Stack {
       );
     }
 
+    // Create log group for EditandConvertRecordings function
+    const editAndConvertRecordingsLogGroup = new logs.LogGroup(
+      this,
+      'EditandConvertRecordingsLogGroup',
+      {
+        logGroupName: `/aws/lambda/EditandConvertRecordings-${cdk.Stack.of(this).stackName}`,
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }
+    );
+
     // Create EditandConvertRecordings Lambda function
     // Note: This is a placeholder as the actual processing is done by ECS
     this.editAndConvertRecordingsFunction = new lambda.Function(this, 'EditandConvertRecordings', {
       functionName: `EditandConvertRecordings-${cdk.Stack.of(this).stackName}`,
       runtime: lambda.Runtime.PYTHON_3_11,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset(
-        path.join(__dirname, '../../lambda/edit-and-convert-recordings')
-      ),
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/edit-and-convert-recordings')),
       memorySize: 3008,
       timeout: cdk.Duration.minutes(15),
       environment: {
         ENV: this.node.tryGetContext('env') || 'dev',
         REGION: cdk.Stack.of(this).region,
       },
-      logRetention: 7,
+      logGroup: editAndConvertRecordingsLogGroup,
     });
 
     // Grant S3 permissions to EditandConvertRecordings function
