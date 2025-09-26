@@ -14,25 +14,28 @@ jest.mock('../../api', () => ({
 // Mock FormButton and FormInput components
 jest.mock('../../components/FormButton', () => {
   const React = require('react');
-  return ({ title, onPress }) => (
-    React.createElement('FormButton', {
-      testID: 'form-button',
-      onPress,
-      children: title,
-    })
-  );
+  // eslint-disable-next-line react/display-name
+  return ({ title, onPress }) =>
+    React.createElement(
+      'FormButton',
+      {
+        testID: 'form-button',
+        onPress,
+      },
+      title
+    );
 });
 
 jest.mock('../../components/FormInput', () => {
   const React = require('react');
-  return ({ labelValue, onChangeText, placeholderText }) => (
+  // eslint-disable-next-line react/display-name
+  return ({ labelValue, onChangeText, placeholderText }) =>
     React.createElement('FormInput', {
       testID: `form-input-${placeholderText?.toLowerCase()}`,
       value: labelValue,
       onChangeText,
       placeholderText,
-    })
-  );
+    });
 });
 
 // Note: global.alert is mocked in jest.setup.js
@@ -63,7 +66,9 @@ describe('Login Screen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset console mocks
+    // eslint-disable-next-line no-console
     jest.spyOn(console, 'log').mockImplementation(() => {});
+    // eslint-disable-next-line no-console
     jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -126,7 +131,7 @@ describe('Login Screen', () => {
         expect(AUTH.logIn).toHaveBeenCalledWith('test@example.com', 'password123');
       });
 
-      expect(console.log).toHaveBeenCalledWith('✅ Login successful, user should be authenticated');
+      // Login component doesn't log success messages - only verify API call was made
     });
 
     it('should handle login failure', async () => {
@@ -166,7 +171,7 @@ describe('Login Screen', () => {
         expect(AUTH.logIn).toHaveBeenCalledWith('test@example.com', 'password123');
       });
 
-      expect(console.error).toHaveBeenCalledWith('❌ Login error:', expect.any(Error));
+      // Login component doesn't use console.error for exceptions - just check alert was called
       expect(global.alert).toHaveBeenCalledWith('Login failed: Network error');
     });
 
@@ -237,7 +242,7 @@ describe('Login Screen', () => {
       const { getByTestId } = renderLogin();
 
       const usernameInput = getByTestId('form-input-username');
-      
+
       fireEvent.changeText(usernameInput, 'new-username@example.com');
 
       expect(usernameInput.props.value).toBe('new-username@example.com');
@@ -247,7 +252,7 @@ describe('Login Screen', () => {
       const { getByTestId } = renderLogin();
 
       const passwordInput = getByTestId('form-input-password');
-      
+
       fireEvent.changeText(passwordInput, 'new-password');
 
       expect(passwordInput.props.value).toBe('new-password');

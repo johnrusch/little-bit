@@ -13,22 +13,22 @@ describe('ApiStack', () => {
   beforeEach(() => {
     app = new cdk.App({
       context: {
-        testing: true
-      }
+        testing: true,
+      },
     });
-    
+
     // Create a core stack with the user pool
     const coreStack = new cdk.Stack(app, 'MockCoreStack', {
       env: { account: '123456789012', region: 'us-west-2' },
     });
     mockUserPool = new cognito.UserPool(coreStack, 'MockUserPool');
-    
+
     // Create API stack in the same app
     stack = new ApiStack(app, 'TestApiStack', {
       env: { account: '123456789012', region: 'us-west-2' },
       userPool: mockUserPool,
     });
-    
+
     // Only analyze the API stack
     template = Template.fromStack(stack);
   });
@@ -69,22 +69,24 @@ describe('ApiStack', () => {
 
   test('DynamoDB table has byOwner GSI', () => {
     template.hasResourceProperties('AWS::DynamoDB::Table', {
-      GlobalSecondaryIndexes: [{
-        IndexName: 'byOwner',
-        KeySchema: [
-          {
-            AttributeName: 'user_id',
-            KeyType: 'HASH',
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: 'byOwner',
+          KeySchema: [
+            {
+              AttributeName: 'user_id',
+              KeyType: 'HASH',
+            },
+            {
+              AttributeName: 'createdAt',
+              KeyType: 'RANGE',
+            },
+          ],
+          Projection: {
+            ProjectionType: 'ALL',
           },
-          {
-            AttributeName: 'createdAt',
-            KeyType: 'RANGE',
-          },
-        ],
-        Projection: {
-          ProjectionType: 'ALL',
         },
-      }],
+      ],
     });
   });
 
@@ -122,7 +124,7 @@ describe('ApiStack', () => {
       },
     });
 
-    template.hasOutput('GraphQLAPIKey', {
+    template.hasOutput('GraphQLAPIKeyOutput', {
       Description: 'GraphQL API Key',
       Export: {
         Name: 'TestApiStack-GraphQLAPIKey',
