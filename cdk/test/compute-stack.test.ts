@@ -12,18 +12,18 @@ describe('ComputeStack', () => {
   beforeEach(() => {
     app = new cdk.App({
       context: {
-        testing: true // Set testing context to skip S3 notifications
-      }
+        testing: true, // Set testing context to skip S3 notifications
+      },
     });
-    
+
     // Create a separate stack for the test
     const testStack = new cdk.Stack(app, 'TestStack', {
-      env: { account: '123456789012', region: 'us-west-2' }
+      env: { account: '123456789012', region: 'us-west-2' },
     });
-    
+
     // Use mock bucket to avoid cross-stack dependencies
     const mockBucket = new MockBucket(testStack, 'MockBucket') as unknown as s3.IBucket;
-    
+
     stack = new ComputeStack(app, 'TestComputeStack', {
       env: { account: '123456789012', region: 'us-west-2' },
       bucket: mockBucket,
@@ -59,7 +59,11 @@ describe('ComputeStack', () => {
       Timeout: 60,
       Environment: {
         Variables: Match.objectLike({
-          API_ENDPOINT: 'https://mock-api.appsync.amazonaws.com/graphql',
+          API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIENDPOINTOUTPUT:
+            'https://mock-api.appsync.amazonaws.com/graphql',
+          API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIIDOUTPUT: 'mock-api-id',
+          API_LITTLEBITGRAPHQLAPI_GRAPHQLAPIKEYOUTPUT: 'mock-api-key',
+          AUTH_LITTLEBIT3EDEDEC2_USERPOOLID: 'mock-user-pool-id',
           ENV: 'dev',
           REGION: 'us-west-2',
         }),
@@ -96,7 +100,7 @@ describe('ComputeStack', () => {
         Statement: Match.arrayWith([
           Match.objectLike({
             Effect: 'Allow',
-            Action: ['appsync:GraphQL'],
+            Action: 'appsync:GraphQL',
           }),
         ]),
       },

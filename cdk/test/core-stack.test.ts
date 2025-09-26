@@ -35,10 +35,7 @@ describe('CoreStack', () => {
     template.hasResourceProperties('AWS::Cognito::UserPoolClient', {
       ClientName: 'littlebit-client',
       GenerateSecret: false,
-      ExplicitAuthFlows: Match.arrayWith([
-        'ALLOW_USER_PASSWORD_AUTH',
-        'ALLOW_USER_SRP_AUTH',
-      ]),
+      ExplicitAuthFlows: Match.arrayWith(['ALLOW_USER_PASSWORD_AUTH', 'ALLOW_USER_SRP_AUTH']),
     });
   });
 
@@ -53,25 +50,34 @@ describe('CoreStack', () => {
     template.hasResourceProperties('AWS::S3::Bucket', {
       BucketName: 'littlebit-audio-123456789012-us-west-2',
       BucketEncryption: {
-        ServerSideEncryptionConfiguration: [{
-          ServerSideEncryptionByDefault: {
-            SSEAlgorithm: 'AES256',
+        ServerSideEncryptionConfiguration: [
+          {
+            ServerSideEncryptionByDefault: {
+              SSEAlgorithm: 'AES256',
+            },
           },
-        }],
+        ],
       },
       CorsConfiguration: {
-        CorsRules: [{
-          AllowedHeaders: ['*'],
-          AllowedMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
-          AllowedOrigins: ['*'],
-          ExposedHeaders: Match.arrayWith([
-            'x-amz-server-side-encryption',
-            'x-amz-request-id',
-            'x-amz-id-2',
-            'ETag',
-          ]),
-          MaxAge: 3000,
-        }],
+        CorsRules: [
+          {
+            AllowedHeaders: ['*'],
+            AllowedMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
+            AllowedOrigins: [
+              'http://localhost:*',
+              'capacitor://localhost',
+              'ionic://localhost',
+              'https://*.amplifyapp.com',
+            ],
+            ExposedHeaders: Match.arrayWith([
+              'x-amz-server-side-encryption',
+              'x-amz-request-id',
+              'x-amz-id-2',
+              'ETag',
+            ]),
+            MaxAge: 3000,
+          },
+        ],
       },
     });
   });
@@ -80,38 +86,42 @@ describe('CoreStack', () => {
     // Check authenticated role
     template.hasResourceProperties('AWS::IAM::Role', {
       AssumeRolePolicyDocument: {
-        Statement: [{
-          Effect: 'Allow',
-          Principal: {
-            Federated: 'cognito-identity.amazonaws.com',
-          },
-          Action: 'sts:AssumeRoleWithWebIdentity',
-          Condition: Match.objectLike({
-            StringEquals: Match.anyValue(),
-            'ForAnyValue:StringLike': {
-              'cognito-identity.amazonaws.com:amr': 'authenticated',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Principal: {
+              Federated: 'cognito-identity.amazonaws.com',
             },
-          }),
-        }],
+            Action: 'sts:AssumeRoleWithWebIdentity',
+            Condition: Match.objectLike({
+              StringEquals: Match.anyValue(),
+              'ForAnyValue:StringLike': {
+                'cognito-identity.amazonaws.com:amr': 'authenticated',
+              },
+            }),
+          },
+        ],
       },
     });
 
     // Check unauthenticated role
     template.hasResourceProperties('AWS::IAM::Role', {
       AssumeRolePolicyDocument: {
-        Statement: [{
-          Effect: 'Allow',
-          Principal: {
-            Federated: 'cognito-identity.amazonaws.com',
-          },
-          Action: 'sts:AssumeRoleWithWebIdentity',
-          Condition: Match.objectLike({
-            StringEquals: Match.anyValue(),
-            'ForAnyValue:StringLike': {
-              'cognito-identity.amazonaws.com:amr': 'unauthenticated',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Principal: {
+              Federated: 'cognito-identity.amazonaws.com',
             },
-          }),
-        }],
+            Action: 'sts:AssumeRoleWithWebIdentity',
+            Condition: Match.objectLike({
+              StringEquals: Match.anyValue(),
+              'ForAnyValue:StringLike': {
+                'cognito-identity.amazonaws.com:amr': 'unauthenticated',
+              },
+            }),
+          },
+        ],
       },
     });
   });
@@ -135,12 +145,14 @@ describe('CoreStack', () => {
   test('S3 bucket has lifecycle rule for debug files', () => {
     template.hasResourceProperties('AWS::S3::Bucket', {
       LifecycleConfiguration: {
-        Rules: [{
-          Id: 'DeleteDebugFiles',
-          Status: 'Enabled',
-          Prefix: 'debug/',
-          ExpirationInDays: 7,
-        }],
+        Rules: [
+          {
+            Id: 'DeleteDebugFiles',
+            Status: 'Enabled',
+            Prefix: 'debug/',
+            ExpirationInDays: 7,
+          },
+        ],
       },
     });
   });
